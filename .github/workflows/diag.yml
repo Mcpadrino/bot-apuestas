@@ -8,20 +8,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
-      - name: Probar el token de Telegram (manda un mensaje al dueño)
-        env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      - name: Buscar el id del canal de YouTube
         run: |
-          python3 - <<'PY'
-          import os, urllib.request, json
-          t = "".join(os.environ["TELEGRAM_TOKEN"].split())
-          print("largo", len(t), "inicio", t[:13], "tiene AAG1", "AAG1" in t, "tiene 40lJ9", "40lJ9" in t, "tiene 40IJ9", "40IJ9" in t, "espacios", len(os.environ["TELEGRAM_TOKEN"]) - len(t))
-          try:
-              print("getMe", urllib.request.urlopen(f"https://api.telegram.org/bot{t}/getMe", timeout=15).status)
-              d = json.dumps({"chat_id": os.environ["TELEGRAM_CHAT_ID"].strip(), "text": "✅ Prueba: GitHub ya tiene el token nuevo. Las alertas de las 18:00 sí van a llegar."}).encode()
-              r = urllib.request.Request(f"https://api.telegram.org/bot{t}/sendMessage", data=d, headers={"content-type": "application/json"})
-              print("mensaje", urllib.request.urlopen(r, timeout=15).status)
-          except Exception as e:
-              print("error", e)
-          PY
+          for h in IbaiExtra ibaiextra Ibai_Extra; do
+            echo "== $h"
+            curl -sL -A "Mozilla/5.0" -H "Accept-Language: es" "https://www.youtube.com/@$h" | grep -oE '"(channelId|externalId)":"UC[A-Za-z0-9_-]{22}"|<title>[^<]*' | sort | uniq -c | head -5
+          done
