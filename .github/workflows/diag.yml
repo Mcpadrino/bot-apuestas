@@ -11,6 +11,6 @@ jobs:
         run: |
           cd telegram && node --input-type=module -e "
           const m = await import('./api/deportes.js');
-          for (const n of ['Santiago Bernabéu','Estadio Akron','Alfredo Harp Helú','Nemesio Diez','Estadio Hidalgo','Ciudad de los Deportes','Estadio Olímpico Universitario','Riyadh Air Metropolitano','Arrowhead Stadium','Benito Villamarín','Estadio Jalisco','Estadio Victoria','Estadio Corregidora','Signal Iduna Park','Emirates Stadium']) {
+          for (const n of ['Estadio Jalisco','Estadio Victoria','Estadio Corregidora','Signal Iduna Park','Emirates Stadium']) {
             const r = await m.wikiEstadio(n); console.log(n, '=>', r ? r.nombre + ' | ' + r.foto.slice(-50) : 'NADA');
           }"
