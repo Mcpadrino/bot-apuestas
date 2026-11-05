@@ -311,9 +311,13 @@ def escanear(args):
 
     if args.deporte == "auto":
         # días (en hora de México) que cubre la ventana de este escaneo
+        # (un día que la ventana solo toca menos de 6 h no cuenta: ahorra créditos)
         dias, d = set(), ahora.astimezone(ZONA).date()
         while d <= limite.astimezone(ZONA).date():
-            dias.add(d.weekday())
+            inicio_dia = dt.datetime.combine(d, dt.time(), ZONA)
+            cubierto = min(limite, inicio_dia + dt.timedelta(days=1)) - max(ahora, inicio_dia)
+            if cubierto >= dt.timedelta(hours=6):
+                dias.add(d.weekday())
             d += dt.timedelta(days=1)
         ligas = [lg for lg, ds in CALENDARIO.items() if ds & dias]
     else:
