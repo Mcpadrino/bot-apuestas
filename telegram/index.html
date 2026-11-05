@@ -491,6 +491,36 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
 .cap-op input { padding: 6px 8px; font: 600 .9rem var(--font-mono, monospace); text-align: center; }
 .cap-ver { font-size: .72rem; font-weight: 700; padding: 3px 7px; border-radius: 999px; white-space: nowrap; }
 .cap-ver.barata { background: #1d7a52; color: #fff; } .cap-ver.justa { background: #d48a16; color: #1b1203; } .cap-ver.cara { background: #b3261e; color: #fff; }
+.f3 { position: relative; width: 100%; max-width: 480px; margin: 0 auto; border-radius: 18px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+.f3-canvas { display: block; width: 100%; aspect-ratio: 3 / 4; touch-action: none; user-select: none; -webkit-user-select: none; }
+.f3-hud { position: absolute; top: 8px; left: 8px; right: 8px; display: flex; justify-content: space-between; align-items: center; gap: 8px; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.6); pointer-events: none; }
+.f3-hud span { display: flex; gap: 4px; }
+.f3-hud i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid rgba(255,255,255,.7); background: rgba(0,0,0,.25); }
+.f3-hud i.si { background: #2ecc71; border-color: #2ecc71; } .f3-hud i.top { background: #f1c40f; border-color: #f1c40f; box-shadow: 0 0 8px #f1c40f; } .f3-hud i.no { background: #e74c3c; border-color: #e74c3c; }
+.f3-hud b { background: rgba(0,0,0,.45); padding: 3px 10px; border-radius: 999px; font-size: .95rem; } .f3-hud small { opacity: .85; }
+.f3-aviso { position: absolute; left: 0; right: 0; top: 38%; text-align: center; font: 900 2.2rem/1 var(--font-display, system-ui); letter-spacing: .02em; color: #fff;
+  text-shadow: 0 4px 0 rgba(0,0,0,.35), 0 0 24px rgba(0,0,0,.5); transform: scale(.4); opacity: 0; transition: transform .35s cubic-bezier(.2,1.6,.4,1), opacity .2s; pointer-events: none; }
+.f3-aviso.ver { transform: scale(1); opacity: 1; } .f3-aviso.pos { color: #fff36b; } .f3-aviso.neg { color: #ffb3a7; }
+.f3-ayuda { text-align: center; transition: opacity .3s; }
+.jcard-nuevo { border-color: #f1c40f !important; box-shadow: 0 0 0 1px #f1c40f inset, 0 6px 20px rgba(241,196,15,.18); }
+.jcard em { font-style: normal; font-size: .6rem; background: #f1c40f; color: #1b1203; padding: 1px 5px; border-radius: 6px; vertical-align: middle; }
+.pet-wrap { cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: transform .25s ease; }
+.pet-wrap::after { content: ""; position: absolute; left: 18%; right: 18%; bottom: -4px; height: 16px; border-radius: 50%; background: radial-gradient(rgba(0,0,0,.35), transparent 70%); z-index: -1; transition: transform .3s; }
+.pet-wrap.salta #pet svg { animation: p-salta .6s cubic-bezier(.3,1.6,.5,1) !important; }
+.pet-wrap.gira #pet svg { animation: p-gira .9s cubic-bezier(.4,1.4,.5,1) !important; }
+.pet-wrap.mimo #pet svg { animation: p-mimo .5s ease-in-out infinite alternate !important; }
+.pet-wrap.salta::after, .pet-wrap.gira::after { transform: scale(.6); }
+@keyframes p-salta { 0% { transform: scale(1.12, .86); } 40% { transform: translateY(-46px) scale(.94, 1.08); } 70% { transform: translateY(0) scale(1.1, .9); } 100% { transform: none; } }
+@keyframes p-gira { 0% { transform: scale(1.1, .9); } 30% { transform: translateY(-50px); } 65% { transform: translateY(-50px) rotate(360deg); } 100% { transform: rotate(360deg); } }
+@keyframes p-mimo { from { transform: scale(1.03, .97) rotate(-3deg); } to { transform: scale(.98, 1.02) rotate(3deg); } }
+.p-part { position: absolute; pointer-events: none; z-index: 5; font-size: 1.3rem; animation: p-sube 1.2s ease-out forwards; }
+@keyframes p-sube { from { transform: translate(-50%, 0) scale(.6); opacity: 1; } to { transform: translate(calc(-50% + var(--dx)), -90px) scale(1.2); opacity: 0; } }
+.corral .brillo { position: absolute; width: 6px; height: 6px; border-radius: 50%; background: #fff; box-shadow: 0 0 10px 3px rgba(255,255,255,.8); opacity: 0; animation: p-brilla 3s ease-in-out infinite; pointer-events: none; }
+@keyframes p-brilla { 0%, 100% { opacity: 0; transform: scale(.4); } 50% { opacity: .9; transform: scale(1); } }
+.corral .pet-tip { position: absolute; bottom: 8px; left: 0; right: 0; text-align: center; font-size: .72rem; color: rgba(255,255,255,.9); text-shadow: 0 1px 2px rgba(0,0,0,.5); pointer-events: none; }
+.f3-pet { position: absolute; left: 8px; bottom: 8px; width: 74px; height: 74px; pointer-events: none; filter: drop-shadow(0 4px 6px rgba(0,0,0,.4)); transition: transform .3s; }
+.f3-pet.festeja { animation: p-gira .9s cubic-bezier(.4,1.4,.5,1) 2; }
+.f3-pet.triste { animation: tiembla .3s linear 4; filter: grayscale(.6) drop-shadow(0 4px 6px rgba(0,0,0,.4)); }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip-op { display: grid; gap: 1px; padding: 7px 11px; border-radius: 12px; font-size: .8rem; text-align: left; min-width: 0;
   transition: background .2s, color .2s, transform .15s cubic-bezier(.3,1.6,.5,1); }
@@ -1223,7 +1253,8 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
       <p class="hint" id="j-tope"></p>
       <div class="juegos-grid">
         <button type="button" class="jcard" data-juego="logos"><span>🛡️</span><b>Adivina el logo</b><small>Elige tus ligas · $1 por acierto</small></button>
-        <button type="button" class="jcard" data-juego="penales"><span>⚽</span><b>Penales</b><small>5 tiros · $2 por gol</small></button>
+        <button type="button" class="jcard jcard-nuevo" data-juego="tiro_libre"><span>🎯</span><b>Tiro libre <em>NUEVO</em></b><small>Barrera, efecto y escuadras; tu mascota te echa porras · $2 por punto</small></button>
+        <button type="button" class="jcard" data-juego="penales"><span>⚽</span><b>Penales</b><small>¡Tu mascota es la portera! · $2 por punto</small></button>
         <button type="button" class="jcard" data-juego="canasta"><span>🏀</span><b>Canasta</b><small>5 tiros · $2 por canasta</small></button>
         <button type="button" class="jcard" data-juego="gol_campo"><span>🏈</span><b>Gol de campo</b><small>5 patadas · $3 por gol</small></button>
       </div>
@@ -3426,7 +3457,7 @@ async function cargarRanking() {
       d.append(el("span", "", ["🥇", "🥈", "🥉"][i] || i + 1 + "."), n, el("b", "num", String(x.puntos))); tg.append(d); });
     c.append(tg);
     pintarLogros(c);
-    const NOM = { logos: "🛡️ Adivina el logo", penales: "⚽ Penales", canasta: "🏀 Canasta", gol_campo: "🏈 Gol de campo" };
+    const NOM = { logos: "🛡️ Adivina el logo", penales: "⚽ Penales", tiro_libre: "🎯 Tiro libre", canasta: "🏀 Canasta", gol_campo: "🏈 Gol de campo" };
     c.append(el("h2", "", "🐾 Mascotas más ricas"));
     const rm = el("div", "rk");
     (r.mascotas || []).forEach((x, i) => { const d = el("div", x.yo ? "yo" : ""); d.append(el("span", "", ["🥇", "🥈", "🥉"][i] || i + 1 + "."),
@@ -3530,40 +3561,424 @@ function rondaLogos(eqs, modo, i, pts, total) {
 }
 
 // ---- ⚽ Penales
-function juegoPenales() {
-  abrirJuego("⚽ Penales");
-  let tiro = 0, goles = 0; const marcas = [];
-  const a = $("jm-area");
-  const pintar = () => {
-    a.innerHTML = ""; $("jm-score").textContent = `⚽ ${goles}/${tiro}`;
-    const t = el("div", "tiros"); for (let i = 0; i < 5; i++) t.append(el("span", "", marcas[i] || "⚪")); a.append(t);
-    const c = el("div", "cancha");
-    c.innerHTML = `<svg viewBox="0 0 300 220"><rect width="300" height="220" fill="#2f8f4e"/><rect y="150" width="300" height="70" fill="#36a058"/>
-      <rect x="40" y="30" width="220" height="110" fill="rgba(255,255,255,.12)" stroke="#fff" stroke-width="5"/>
-      ${Array.from({ length: 11 }, (_, i) => `<line x1="${40 + i * 22}" y1="30" x2="${40 + i * 22}" y2="140" stroke="rgba(255,255,255,.25)"/>`).join("")}
-      ${Array.from({ length: 5 }, (_, i) => `<line x1="40" y1="${30 + i * 22}" x2="260" y2="${30 + i * 22}" stroke="rgba(255,255,255,.25)"/>`).join("")}
-      <g id="portero" style="transition:transform .45s cubic-bezier(.2,.9,.25,1)"><circle cx="150" cy="96" r="13" fill="#ffcf8a"/><rect x="134" y="108" width="32" height="34" rx="8" fill="#f2c200"/>
-        <rect x="112" y="110" width="22" height="9" rx="4" fill="#f2c200"/><rect x="166" y="110" width="22" height="9" rx="4" fill="#f2c200"/></g>
-      ${[0, 1, 2].map(col => [0, 1].map(fila => `<rect class="zona" data-c="${col}" data-f="${fila}" x="${40 + col * 73.3}" y="${30 + fila * 55}" width="73.3" height="55" fill="transparent"/>`).join("")).join("")}
-      <circle id="balon" cx="150" cy="195" r="10" fill="#fff" stroke="#222" stroke-width="2" style="transition:all .45s cubic-bezier(.2,.9,.25,1)"/></svg>`;
-    a.append(c, el("p", "hint", "Toca dónde quieres tirar. Las esquinas de arriba son más difíciles de atajar… pero a veces se van por arriba."), el("div", "mensaje-j"));
-    c.querySelectorAll(".zona").forEach(z => z.addEventListener("click", () => tirar(+z.dataset.c, +z.dataset.f, c), { once: true }));
+// ---------------------------------------------------------------- ⚽ Motor de futbol en 3D (Penales y Tiro libre)
+// Mundo en metros: x = lado (0 = centro de la portería), y = altura, z = profundidad (la línea de gol está en z = 0, la cancha en z < 0).
+// El resultado sale de la geometría (dónde cruza el balón y dónde están las manos del portero), así que lo que ves es lo que pasó.
+const F3 = { ANCHO: 7.32, ALTO: 2.44, R: 0.11, G: 9.8 };
+function f3Sonido() {
+  let ctx = null;
+  const ok = () => { try { ctx = ctx || new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === "suspended") ctx.resume(); return ctx; } catch (e) { return null; } };
+  const ruido = (dur, frec, q, vol, sube = 0) => {
+    const c = ok(); if (!c) return;
+    const n = c.sampleRate * dur, b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1);
+    const s = c.createBufferSource(); s.buffer = b;
+    const f = c.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = frec; f.Q.value = q;
+    const g = c.createGain(), t = c.currentTime;
+    g.gain.setValueAtTime(sube ? 0.0001 : vol, t);
+    if (sube) { g.gain.exponentialRampToValueAtTime(vol, t + sube); }
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(f); f.connect(g); g.connect(c.destination); s.start();
   };
-  const tirar = (col, fila, c) => {
-    c.querySelectorAll(".zona").forEach(z => z.style.pointerEvents = "none");
-    const portero = Math.random() < .45 ? col : azar([0, 1, 2].filter(x => x !== col));        // el portero adivina 45%
-    const esquina = fila === 0 && col !== 1, fuera = esquina && Math.random() < .14;
-    const atajada = !fuera && portero === col && !(esquina && Math.random() < .55);
-    const bx = 40 + col * 73.3 + 36.6 + (fuera ? (col === 0 ? -30 : 30) : 0), by = fuera ? 12 : 30 + fila * 55 + 27;
-    c.querySelector("#portero").style.transform = `translateX(${(portero - 1) * 70}px) rotate(${(portero - 1) * 25}deg)`;
-    const b = c.querySelector("#balon"); requestAnimationFrame(() => { b.setAttribute("cx", bx); b.setAttribute("cy", by); b.setAttribute("r", 7); });
-    const gol = !fuera && !atajada; tiro++; if (gol) goles++; marcas.push(gol ? "⚽" : "❌");
-    const m = $("jm-area").querySelector(".mensaje-j");
-    setTimeout(() => { m.textContent = gol ? "¡GOOOL!" : fuera ? "¡Por arriba!" : "¡Atajada!"; m.className = "mensaje-j " + (gol ? "pos" : "neg"); if (navigator.vibrate) navigator.vibrate(gol ? [20, 30, 20] : 40); }, 420);
-    setTimeout(() => tiro >= 5 ? finJuego("penales", goles, 5) : pintar(), 1500);
+  return {
+    patada: () => { const c = ok(); if (!c) return; const o = c.createOscillator(), g = c.createGain(), t = c.currentTime;
+      o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(45, t + .12); g.gain.setValueAtTime(.5, t); g.gain.exponentialRampToValueAtTime(.001, t + .15);
+      o.connect(g); g.connect(c.destination); o.start(); o.stop(t + .16); ruido(.06, 2000, .8, .25); },
+    poste: () => { const c = ok(); if (!c) return; [880, 1320].forEach((fq, i) => { const o = c.createOscillator(), g = c.createGain(), t = c.currentTime;
+      o.type = "triangle"; o.frequency.value = fq; g.gain.setValueAtTime(.18 / (i + 1), t); g.gain.exponentialRampToValueAtTime(.001, t + .7); o.connect(g); g.connect(c.destination); o.start(); o.stop(t + .7); }); },
+    gol: () => { ruido(2.4, 900, .5, .35, .25); ruido(1.6, 2400, 1.2, .12, .1); },
+    uy: () => ruido(1.1, 500, .7, .22, .15),
+    guante: () => ruido(.12, 700, 1.5, .4),
+    iniciar: ok,
   };
-  pintar();
 }
+
+function motorFutbol(opts) {
+  // opts: { modo: "penal" | "libre", dist, lado, barrera, titulo, juego, tiros, alTerminar }
+  const a = $("jm-area"); a.innerHTML = "";
+  const marco = el("div", "f3"); a.append(marco);
+  const cv = document.createElement("canvas"); cv.className = "f3-canvas"; marco.append(cv);
+  const hud = el("div", "f3-hud"); marco.append(hud);
+  const aviso = el("div", "f3-aviso"); marco.append(aviso);
+  let fan = null;
+  if (opts.fan) { fan = document.createElement("img"); fan.className = "f3-pet"; fan.src = opts.fan.src; fan.alt = "Tu mascota"; marco.append(fan); }
+  const ayuda = el("p", "hint f3-ayuda", opts.modo === "penal"
+    ? "Toca la portería donde quieres tirar. La mira tiembla: entre más esperes, más firme. El portero adivina un lado… ¡engáñalo!"
+    : "Desliza desde el balón hacia la portería: más largo y rápido = más fuerte; en curva = con efecto para librar la barrera.");
+  a.append(ayuda);
+  const snd = f3Sonido();
+  const W = 360, H = 480, dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+  cv.width = W * dpr; cv.height = H * dpr;
+  const g = cv.getContext("2d"); g.scale(dpr, dpr);
+  let HZ = 112;                                  // línea del horizonte en pantalla (depende del modo)
+  let tiro = 0, puntos = 0, marcas = [], estado = "listo", tShot = 0, sacudida = 0, slow = 1, fin = null;
+  let esc = null;                                 // escenario del tiro actual
+  let ball, keeper, wall, trail, red, particulas, mira, swipe, prediccion;
+
+  // ---------- proyección
+  const cam = { x: 0, y: 1.65, z: -16, f: 600, yaw: 0, cs: 1, sn: 0 };
+  // cámara detrás del balón, girada para ver el centro de la portería
+  const P = (x, y, z) => { const dx = x - cam.x, dz0 = z - cam.z, xr = dx * cam.cs - dz0 * cam.sn, d = Math.max(0.2, dx * cam.sn + dz0 * cam.cs);
+    return { x: W / 2 + cam.f * xr / d, y: HZ - cam.f * (y - cam.y) / d, s: cam.f / d }; };
+
+  // ---------- fondo (estadio) pre-pintado
+  const fondo = document.createElement("canvas"); fondo.width = W * dpr; fondo.height = H * dpr;
+  let hzFondo = null;
+  const pintarFondo = () => {
+    if (hzFondo === HZ) return; hzFondo = HZ;
+    const b = fondo.getContext("2d"); b.setTransform(1, 0, 0, 1, 0, 0); b.clearRect(0, 0, fondo.width, fondo.height); b.scale(dpr, dpr);
+    const cielo = b.createLinearGradient(0, 0, 0, HZ); cielo.addColorStop(0, "#081322"); cielo.addColorStop(1, "#1d3550");
+    b.fillStyle = cielo; b.fillRect(0, 0, W, HZ);
+    // tribuna con público
+    const tr = b.createLinearGradient(0, 38, 0, HZ); tr.addColorStop(0, "#1a1f2b"); tr.addColorStop(1, "#2b3242");
+    b.fillStyle = tr; b.fillRect(0, 38, W, HZ - 38);
+    const cols = ["#e74c3c", "#f1c40f", "#ecf0f1", "#3498db", "#2ecc71", "#e67e22", "#9b59b6", "#ffffff"];
+    for (let i = 0; i < 900; i++) { b.fillStyle = cols[i % cols.length]; b.globalAlpha = .35 + Math.random() * .45;
+      const y = 42 + Math.random() * (HZ - 50); b.fillRect(Math.random() * W, y, 1.6 + y / 90, 1.6 + y / 90); }
+    b.globalAlpha = 1;
+    // anuncios
+    b.fillStyle = "#0e5132"; b.fillRect(0, HZ - 14, W, 14);
+    b.fillStyle = "rgba(255,255,255,.85)"; b.font = "bold 9px system-ui"; b.textAlign = "center";
+    for (let x = 0; x < W + 200; x += 210) b.fillText("BITÁCORA · APUESTA CON CABEZA", x + 60, HZ - 4);
+    // reflectores
+    [[40, 18], [W - 40, 18]].forEach(([x, y]) => { const r = b.createRadialGradient(x, y, 0, x, y, 70); r.addColorStop(0, "rgba(255,255,230,.55)"); r.addColorStop(1, "rgba(255,255,230,0)");
+      b.fillStyle = r; b.fillRect(x - 70, y - 70, 140, 140); b.fillStyle = "#fffbe0"; b.fillRect(x - 12, y - 4, 24, 8); });
+  };
+
+  // ---------- escenario de cada tiro
+  function nuevoTiro() {
+    estado = "listo"; slow = 1; fin = null; trail = []; particulas = []; swipe = null; aviso.className = "f3-aviso";
+    const dist = opts.modo === "penal" ? 11 : 18 + Math.random() * 8;
+    const lado = opts.modo === "penal" ? 0 : (Math.random() * 2 - 1) * 7;
+    esc = { dist, lado };
+    if (opts.modo === "penal") { HZ = 112; cam.x = 0; cam.y = 1.2; cam.z = -dist - 2.3; cam.f = 560; cam.yaw = 0; }
+    else {
+      HZ = 84; cam.y = 2.4; cam.f = 760;
+      cam.yaw = Math.atan2(0 - lado, dist);                                   // mira hacia el centro de la portería
+      cam.x = lado - Math.sin(cam.yaw) * 6; cam.z = -dist - Math.cos(cam.yaw) * 6;
+    }
+    cam.cs = Math.cos(cam.yaw); cam.sn = Math.sin(cam.yaw);
+    pintarFondo();
+    ball = { x: lado, y: F3.R, z: -dist, vx: 0, vy: 0, vz: 0, spin: 0, dip: 0, rot: 0, vivo: false, dentro: false };
+    keeper = { x: 0, y: 0, ang: 0, tx: 0, ty: 0, t0: 0, reaccion: 0, dir: 0, salto: 0, listo: false, atajo: false, mano: null };
+    red = { x: 0, y: 0, fuerza: 0 };
+    wall = [];
+    if (opts.modo === "libre") {
+      // barrera a 9.15 m del balón, en la línea hacia el centro de la portería, tapando el palo cercano
+      const dx = 0 - lado, dz = dist, L = Math.hypot(dx, dz), ux = dx / L, uz = dz / L;
+      const cx = lado + ux * 9.15, cz = -dist + uz * 9.15;
+      const n = Math.abs(lado) > 4 ? 4 : 3, cerca = Math.sign(lado || 1) * 1.6;
+      for (let i = 0; i < n; i++) {
+        const off = (i - (n - 1) / 2) * 0.55 + cerca * 0.45;
+        wall.push({ x: cx + off * uz, z: cz - off * ux * 0.2, salto: 0, color: ["#c0392b", "#c0392b", "#c0392b", "#c0392b"][i] });
+      }
+    }
+    mira = { x: 0, y: 1.2, t: 0, vx: 0, vy: 0 };
+    pintarHud();
+  }
+  function pintarHud() {
+    hud.innerHTML = `<span>${Array.from({ length: opts.tiros }, (_, i) => `<i class="${marcas[i] || ""}"></i>`).join("")}</span>
+      <b>${puntos} pts</b><small>${opts.modo === "libre" ? `${esc.dist.toFixed(0)} m` : "Penal"}</small>`;
+  }
+
+  // ---------- física
+  function paso(dt) {
+    if (!ball.vivo) return;
+    ball.vx += ball.spin * ball.vz * 0.012 * dt;          // efecto Magnus
+    ball.vy -= (F3.G + (ball.z < 0 ? ball.dip : 0)) * dt;  // la gravedad + el "efecto hacia abajo"
+    ball.x += ball.vx * dt; ball.y += ball.vy * dt; ball.z += ball.vz * dt;
+    ball.rot += (Math.abs(ball.vz) + Math.abs(ball.spin) * 3) * dt * 2;
+    if (ball.y < F3.R) { ball.y = F3.R; ball.vy = -ball.vy * 0.45; ball.vz *= .8; ball.vx *= .8; }
+    trail.push({ x: ball.x, y: ball.y, z: ball.z }); if (trail.length > 14) trail.shift();
+    // barrera
+    wall.forEach(w => {
+      const top = 1.82 + w.salto;
+      if (!fin && Math.abs(ball.z - w.z) < 0.25 && Math.abs(ball.x - w.x) < 0.32 && ball.y < top + F3.R) {
+        resultado("barrera"); ball.vz = -Math.abs(ball.vz) * 0.35; ball.vy = 3; ball.vx += (ball.x - w.x) * 6; snd.guante();
+      }
+    });
+    // portero
+    if (!fin && ball.vz > 0 && ball.z > -0.6 && ball.z < 0.15 && !keeper.atajo) {
+      const h = manos();
+      const d = distSeg(ball.x, ball.y, h.ax, h.ay, h.bx, h.by);
+      if (d < 0.32 + F3.R) {
+        keeper.atajo = true; resultado("atajada"); snd.guante();
+        ball.vz = -Math.abs(ball.vz) * 0.25; ball.vx = (ball.x - keeper.x) * 4 + (Math.random() - .5) * 3; ball.vy = 2 + Math.random() * 2;
+      }
+    }
+    // línea de gol
+    if (!fin && ball.z >= 0 && ball.vz > 0) {
+      const ax = Math.abs(ball.x), mitad = F3.ANCHO / 2;
+      const poste = (Math.abs(ax - mitad) < F3.R + 0.06 && ball.y < F3.ALTO + 0.06) || (Math.abs(ball.y - F3.ALTO) < F3.R + 0.06 && ax < mitad + 0.06);
+      if (poste) { resultado("poste"); snd.poste(); ball.vz = -ball.vz * 0.55; ball.vx += (ball.x > 0 ? -1 : 1) * (ax > mitad - .1 ? 2 : 0); ball.vy = Math.abs(ball.vy) * .3 + 1; sacudida = 6; }
+      else if (ax < mitad && ball.y < F3.ALTO) {
+        const escuadra = ax > mitad - 0.75 && ball.y > F3.ALTO - 0.6;
+        resultado(escuadra ? "escuadra" : "gol"); ball.dentro = true; red.x = ball.x; red.y = ball.y; red.fuerza = 1;
+      } else resultado(ball.y >= F3.ALTO ? "arriba" : "desviado");
+    }
+    if (ball.dentro && ball.z > 1.7) { ball.z = 1.7; ball.vz = -ball.vz * 0.15; ball.vx *= .3; }
+    if (ball.z > 6 || ball.z < -40 || Math.abs(ball.x) > 30) ball.vivo = false;
+  }
+  function distSeg(px, py, ax, ay, bx, by) {
+    const vx = bx - ax, vy = by - ay, t = Math.max(0, Math.min(1, ((px - ax) * vx + (py - ay) * vy) / (vx * vx + vy * vy || 1)));
+    return Math.hypot(px - (ax + vx * t), py - (ay + vy * t));
+  }
+  // el cuerpo del portero como un "palo" de los pies a las manos, girado según el lance
+  function manos() {
+    const cx = keeper.x, cy = 1.0 + keeper.y, ang = keeper.ang;
+    const largo = 1.15 + Math.abs(Math.sin(ang)) * 0.35;           // estirado alcanza más
+    const ux = Math.sin(ang), uy = Math.cos(ang);
+    return { ax: cx - ux * 0.9, ay: Math.max(0, cy - uy * 0.9), bx: cx + ux * largo, by: cy + uy * largo, cx, cy };
+  }
+  // dónde cruzará el balón la línea de gol (simulación rápida)
+  function predecir() {
+    const b = { ...ball }; let t = 0;
+    for (let i = 0; i < 600 && b.z < 0; i++) { const dt = 1 / 240; b.vx += b.spin * b.vz * 0.012 * dt; b.vy -= (F3.G + b.dip) * dt; b.x += b.vx * dt; b.y += b.vy * dt; b.z += b.vz * dt; if (b.y < F3.R) { b.y = F3.R; b.vy = -b.vy * .45; } t += dt; }
+    return { x: b.x, y: b.y, t };
+  }
+  function moverPortero(dt, t) {
+    // antes del tiro: se balancea
+    if (estado === "listo" || estado === "apuntando") { keeper.x = Math.sin(performance.now() / 600) * 0.25; keeper.ang = 0; keeper.y = 0; return; }
+    if (t < keeper.reaccion) return;
+    const k = Math.min(1, (t - keeper.reaccion) / keeper.dur);
+    const e = 1 - Math.pow(1 - k, 3);
+    keeper.x = keeper.x0 + (keeper.tx - keeper.x0) * e;
+    keeper.y = Math.sin(Math.min(1, k * 1.2) * Math.PI) * keeper.salto + (keeper.ty > 1.6 ? 0.3 * e : 0);
+    const lateral = keeper.tx - keeper.x0;
+    // se lanza (gira) si tiene que ir lejos o arriba; si va a ras de suelo se tira acostado
+    const objetivoAng = Math.abs(lateral) < 0.6 ? 0 : Math.sign(lateral) * Math.min(1.35, Math.abs(lateral) * 0.42 + (keeper.ty < 0.7 ? 0.45 : 0));
+    keeper.ang = objetivoAng * e;
+  }
+  function decidePortero(pred) {
+    const t = pred.t;
+    keeper.x0 = keeper.x;
+    if (opts.modo === "penal") {
+      // en penales el portero se juega un lado justo al patear
+      keeper.reaccion = 0.06;
+      const adivina = Math.random() < 0.42;
+      const lados = [-2.4, 0, 2.4];
+      let tx = adivina ? pred.x : azar(lados.filter(l => Math.abs(l - pred.x) > 1.4));
+      tx = Math.max(-3.1, Math.min(3.1, tx + (Math.random() - .5) * 0.6));
+      keeper.tx = tx; keeper.ty = adivina ? pred.y : 0.6 + Math.random();
+    } else {
+      keeper.reaccion = 0.16 + Math.random() * 0.1;
+      const ruido = 0.35 + Math.abs(ball.spin) * 0.08 + Math.max(0, Math.hypot(ball.vx, ball.vz) - 24) * 0.04;
+      keeper.tx = Math.max(-3.2, Math.min(3.2, pred.x + (Math.random() - .5) * 2 * ruido));
+      keeper.ty = pred.y;
+    }
+    keeper.salto = Math.max(0, Math.min(0.95, keeper.ty - 1.2));
+    const distancia = Math.abs(keeper.tx - keeper.x0);
+    keeper.dur = Math.max(0.28, distancia / 6.5);                     // velocidad máxima del lance
+    if (opts.modo === "libre" && keeper.reaccion + keeper.dur > t) keeper.dur = Math.max(0.2, keeper.dur);
+  }
+
+  // ---------- resultado
+  const TEXTOS = { gol: ["¡GOOOL!", "pos", 1], escuadra: ["¡A LA ESCUADRA!", "pos", 2], atajada: ["¡ATAJADA!", "neg", 0], poste: ["¡AL POSTE!", "neg", 0],
+    arriba: ["¡POR ARRIBA!", "neg", 0], desviado: ["¡DESVIADO!", "neg", 0], barrera: ["¡EN LA BARRERA!", "neg", 0] };
+  function resultado(tipo) {
+    if (fin) return;
+    fin = tipo; const [txt, cls, pts] = TEXTOS[tipo];
+    puntos += pts; marcas.push(pts ? (pts > 1 ? "top" : "si") : "no");
+    if (fan) { fan.className = "f3-pet"; void fan.offsetWidth; fan.className = "f3-pet " + (pts ? "festeja" : "triste"); }
+    if (pts) { snd.gol(); sacudida = 10; confeti(); if (navigator.vibrate) navigator.vibrate([20, 40, 30]); }
+    else { snd.uy(); if (navigator.vibrate) navigator.vibrate(60); }
+    if (tipo === "poste" || (pts === 0 && Math.abs(ball.z) < 0.8)) slow = 0.35;
+    setTimeout(() => { aviso.textContent = txt + (pts === 2 ? " +2" : ""); aviso.className = "f3-aviso ver " + cls; pintarHud(); }, 120);
+    setTimeout(() => { tiro++; if (tiro >= opts.tiros) { estado = "fin"; finJuego(opts.juego, puntos, opts.max || opts.tiros); } else nuevoTiro(); }, 2100);
+  }
+  function confeti() {
+    const p = P(red.x, red.y, 0);
+    for (let i = 0; i < 70; i++) particulas.push({ x: p.x, y: p.y, vx: (Math.random() - .5) * 260, vy: -Math.random() * 260 - 60, v: 1,
+      c: ["#f1c40f", "#2ecc71", "#ecf0f1", "#e74c3c", "#3498db"][i % 5], r: 2 + Math.random() * 3 });
+  }
+
+  // ---------- disparo
+  function patear(vx, vy, vz, spin, dip = 0) {
+    snd.iniciar(); snd.patada();
+    ball.vx = vx; ball.vy = vy; ball.vz = vz; ball.spin = spin; ball.dip = dip; ball.vivo = true;
+    estado = "volando"; tShot = 0; ayuda.style.opacity = .35;
+    decidePortero(predecir());
+  }
+  function toque(ev) {
+    const r = cv.getBoundingClientRect();
+    return { x: (ev.clientX - r.left) * W / r.width, y: (ev.clientY - r.top) * H / r.height, t: performance.now() };
+  }
+  cv.addEventListener("pointerdown", ev => {
+    if (estado !== "listo") return;
+    snd.iniciar(); cv.setPointerCapture(ev.pointerId);
+    const p = toque(ev);
+    if (opts.modo === "penal") {
+      // apuntar a la portería: el tiro va a donde toques, más el temblor de la mira
+      const gz = 0, d = gz - cam.z, x = cam.x + (p.x - W / 2) * d / cam.f, y = cam.y + (HZ - p.y) * d / cam.f;
+      if (y < -0.3 || y > F3.ALTO + 1.2 || Math.abs(x) > F3.ANCHO / 2 + 1.5) return;
+      const temblor = 0.35 * Math.max(0.25, 1 - mira.t / 2.5);
+      const tx = x + (Math.random() - .5) * 2 * temblor, ty = Math.max(0.12, y + (Math.random() - .5) * 2 * temblor);
+      const T = 0.48, dz = esc.dist;
+      patear((tx - ball.x) / T, (ty - ball.y + 0.5 * F3.G * T * T) / T, dz / T, 0);
+      return;
+    }
+    const b = P(ball.x, ball.y, ball.z);
+    if (Math.hypot(p.x - b.x, p.y - b.y) > 110 && p.y < H * 0.55) return;
+    swipe = [p]; estado = "apuntando";
+  });
+  cv.addEventListener("pointermove", ev => { if (estado === "apuntando" && swipe) { swipe.push(toque(ev)); if (swipe.length > 60) swipe.splice(1, 1); } });
+  const soltar = () => {
+    if (estado !== "apuntando" || !swipe) return;
+    const s = swipe, a0 = s[0], a1 = s[s.length - 1];
+    const dx = a1.x - a0.x, dy = a0.y - a1.y, largo = Math.hypot(dx, dy), dur = Math.max(60, a1.t - a0.t);
+    if (largo < 40 || dy < 25) { estado = "listo"; swipe = null; return; }
+    // curva: cuánto se separa el dedo de la línea recta (a la izq. o der.)
+    let curva = 0; s.forEach(q => { const c = ((q.x - a0.x) * dy - (a0.y - q.y) * dx) / largo; if (Math.abs(c) > Math.abs(curva)) curva = c; });
+    const vel = Math.min(1, largo / 260) * 0.55 + Math.min(1, 400 / dur) * 0.45;
+    const rapidez = 18 + vel * 12;                                  // 18 a 30 m/s
+    const dirX = dx / largo;
+    // apuntas a un punto de la portería: el ángulo del dedo = lado, lo largo del trazo = altura
+    const ancho = F3.ANCHO / 2 + 1.2;
+    const tx = Math.max(-ancho, Math.min(ancho, ball.x * 0 + (dx / dy) * 7));
+    const ty = Math.max(0.15, 0.2 + (dy - 80) / 170 * 2.6);
+    const dist = Math.hypot(tx - ball.x, esc.dist), T = dist / rapidez;
+    const ang = Math.atan2(tx - ball.x, esc.dist);
+    const vz = rapidez * Math.cos(ang), vx = rapidez * Math.sin(ang);
+    // la comba: el balón sube sobre la barrera y cae a donde apuntaste (los tiros bajos y muy fuertes pegan en la barrera)
+    const tw = 9.15 / rapidez, hw = 1.55 + (ty - 0.2) * 0.5 + (1 - vel) * 0.45;
+    let acc = 2 * ((hw - ball.y) * T - (ty - ball.y) * tw) / (tw * T * (T - tw));
+    acc = Math.max(F3.G, Math.min(F3.G + 14, acc));
+    const vy = (ty - ball.y + 0.5 * acc * T * T) / T, dip = acc - F3.G;
+    const spin = Math.max(-1, Math.min(1, -curva / 70)) * 9;
+    swipe = null; patear(vx, vy, vz, spin, dip);
+  };
+  cv.addEventListener("pointerup", soltar); cv.addEventListener("pointercancel", soltar);
+
+  // ---------- dibujo
+  function dibujarCancha() {
+    // pasto con franjas en perspectiva
+    g.fillStyle = "#2c8a47"; g.fillRect(0, HZ, W, H - HZ);
+    for (let i = -40; i < 4; i += 2) {
+      const a1 = P(-40, 0, i), a2 = P(40, 0, i), b1 = P(-40, 0, i + 1), b2 = P(40, 0, i + 1);
+      if (a1.y < HZ) continue;
+      g.fillStyle = "#33994f"; g.beginPath(); g.moveTo(a1.x, a1.y); g.lineTo(a2.x, a2.y); g.lineTo(b2.x, b2.y); g.lineTo(b1.x, b1.y); g.fill();
+    }
+    const v = g.createLinearGradient(0, HZ, 0, H); v.addColorStop(0, "rgba(0,0,0,.25)"); v.addColorStop(.3, "rgba(0,0,0,0)"); g.fillStyle = v; g.fillRect(0, HZ, W, H - HZ);
+    g.strokeStyle = "rgba(255,255,255,.85)"; g.lineWidth = 1.6;
+    const linea = (pts) => { g.beginPath(); pts.forEach(([x, z], i) => { const p = P(x, 0, z); i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y); }); g.stroke(); };
+    linea([[-30, 0], [30, 0]]);                                         // línea de gol
+    linea([[-20.16, 0], [-20.16, -16.5], [20.16, -16.5], [20.16, 0]]);  // área grande
+    linea([[-9.16, 0], [-9.16, -5.5], [9.16, -5.5], [9.16, 0]]);        // área chica
+    const pm = P(0, 0, -11); g.fillStyle = "#fff"; g.beginPath(); g.ellipse(pm.x, pm.y, 2.2 * pm.s / 30, 1.2 * pm.s / 30, 0, 0, 7); g.fill();
+    g.beginPath(); for (let k = 0; k <= 20; k++) { const an = -0.93 + k * 0.093, p = P(Math.sin(an) * 9.15, 0, -11 - Math.cos(an) * 9.15); k ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y); } g.stroke();
+  }
+  function dibujarPorteria() {
+    const m = F3.ANCHO / 2, A = F3.ALTO, fondoZ = 1.9;
+    // red con abombado
+    g.strokeStyle = "rgba(255,255,255,.38)"; g.lineWidth = .8;
+    const bulto = (x, y) => { if (!red.fuerza) return 0; const d = Math.hypot(x - red.x, y - red.y); return red.fuerza * 0.55 * Math.exp(-d * d / 0.9); };
+    for (let x = -m; x <= m + .01; x += 0.36) { g.beginPath(); for (let y = 0; y <= A + .01; y += 0.25) { const p = P(x, y, fondoZ * (0.45 + 0.55 * (1 - y / A)) + bulto(x, y)); y ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y); } g.stroke(); }
+    for (let y = 0; y <= A + .01; y += 0.3) { g.beginPath(); for (let x = -m; x <= m + .01; x += 0.36) { const p = P(x, y, fondoZ * (0.45 + 0.55 * (1 - y / A)) + bulto(x, y)); x > -m ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y); } g.stroke(); }
+    // laterales y techo
+    [[-m], [m]].forEach(([x]) => { for (let z = 0; z <= fondoZ; z += 0.38) { const a1 = P(x, 0, z), a2 = P(x, A * (1 - 0.45 * z / fondoZ), z); g.beginPath(); g.moveTo(a1.x, a1.y); g.lineTo(a2.x, a2.y); g.stroke(); } });
+    // postes con sombra
+    const poste = (x1, y1, x2, y2) => { const a1 = P(x1, y1, 0), a2 = P(x2, y2, 0); g.lineCap = "round";
+      g.strokeStyle = "rgba(0,0,0,.25)"; g.lineWidth = 0.12 * a1.s + 2; g.beginPath(); g.moveTo(a1.x + 2, a1.y + 1); g.lineTo(a2.x + 2, a2.y + 1); g.stroke();
+      g.strokeStyle = "#f7f7f7"; g.lineWidth = 0.12 * a1.s; g.beginPath(); g.moveTo(a1.x, a1.y); g.lineTo(a2.x, a2.y); g.stroke(); };
+    poste(-m, 0, -m, A); poste(m, 0, m, A); poste(-m, A, m, A);
+  }
+  function dibujarPersona(x, z, alto, color, ang = 0, yExtra = 0, brazos = 0, guantes = false) {
+    // persona estilizada en el plano (x, y) a la profundidad z
+    const base = P(x, yExtra, z), s = base.s;
+    g.save(); g.translate(base.x, base.y - (1.0) * s); g.rotate(ang); g.translate(0, 1.0 * s);
+    const u = s;                                         // 1 metro en pantalla
+    // sombra
+    g.fillStyle = "rgba(0,0,0,.28)"; g.beginPath(); g.ellipse(0, 2, 0.35 * u, 0.07 * u, 0, 0, 7); g.fill();
+    // piernas
+    g.fillStyle = "#1b1b1b"; g.fillRect(-0.17 * u, -0.85 * u, 0.13 * u, 0.85 * u); g.fillRect(0.04 * u, -0.85 * u, 0.13 * u, 0.85 * u);
+    g.fillStyle = "#f4f4f4"; g.fillRect(-0.19 * u, -0.06 * u, 0.17 * u, 0.06 * u); g.fillRect(0.02 * u, -0.06 * u, 0.17 * u, 0.06 * u);
+    // short
+    g.fillStyle = "#111"; g.fillRect(-0.21 * u, -0.98 * u, 0.42 * u, 0.22 * u);
+    // torso
+    const gr = g.createLinearGradient(-0.25 * u, 0, 0.25 * u, 0); gr.addColorStop(0, color); gr.addColorStop(1, shade(color, -30));
+    g.fillStyle = gr; rr(-0.24 * u, -1.52 * u, 0.48 * u, 0.58 * u, 0.1 * u);
+    // brazos
+    g.strokeStyle = color; g.lineCap = "round"; g.lineWidth = 0.12 * u;
+    const br = -1.42 * u, ab = brazos;                   // 0 = abajo, 1 = arriba
+    [[-1, -0.22], [1, 0.22]].forEach(([sgn, bx]) => {
+      const ex = bx * u + sgn * (0.35 - 0.2 * ab) * u, ey = br + (0.45 - 1.05 * ab) * u;
+      g.beginPath(); g.moveTo(bx * u, br); g.lineTo(ex, ey); g.stroke();
+      if (guantes) { g.fillStyle = "#2ecc71"; g.beginPath(); g.arc(ex, ey, 0.09 * u, 0, 7); g.fill(); g.fillStyle = "#fff"; g.fillRect(ex - 0.03 * u, ey - 0.02 * u, 0.06 * u, 0.04 * u); }
+    });
+    // cabeza
+    g.fillStyle = "#e0ac69"; g.beginPath(); g.arc(0, -1.66 * u, 0.13 * u, 0, 7); g.fill();
+    g.fillStyle = "#2b1a10"; g.beginPath(); g.arc(0, -1.7 * u, 0.13 * u, Math.PI, 0); g.fill();
+    g.restore();
+  }
+  function shade(hex, p) { const n = parseInt(hex.slice(1), 16); const f = (v) => Math.max(0, Math.min(255, v + p)); return `rgb(${f(n >> 16)},${f((n >> 8) & 255)},${f(n & 255)})`; }
+  function rr(x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.fill(); }
+  function dibujarPortero() {
+    const enAire = keeper.y > 0.05 || Math.abs(keeper.ang) > 0.1;
+    if (opts.pet && opts.pet.complete && opts.pet.naturalWidth) {
+      // tu mascota de portera: mismo cuerpo (y misma zona de atajada), con guantes en las manos
+      const h = manos(), c = P(h.cx, h.cy, -0.25), s = c.s, tam = 2.0 * s;
+      const sombra = P(keeper.x, 0, -0.25); g.fillStyle = "rgba(0,0,0,.28)"; g.beginPath(); g.ellipse(sombra.x, sombra.y, 0.45 * s, 0.09 * s, 0, 0, 7); g.fill();
+      g.save(); g.translate(c.x, c.y); g.rotate(keeper.ang); g.drawImage(opts.pet, -tam / 2, -tam * 0.62, tam, tam); g.restore();
+      [P(h.bx + 0.25, h.by, -0.25), P(h.bx - 0.25, h.by, -0.25)].forEach(q => { g.fillStyle = "#2ecc71"; g.strokeStyle = "#fff"; g.lineWidth = 2; g.beginPath(); g.arc(q.x, q.y, 0.13 * s, 0, 7); g.fill(); g.stroke(); });
+      return;
+    }
+    dibujarPersona(keeper.x, -0.25, 1.85, "#f2c200", keeper.ang, keeper.y, enAire || estado === "listo" ? 0.85 : 0.35, true);
+  }
+  function dibujarBalon() {
+    const p = P(ball.x, ball.y, ball.z), sombra = P(ball.x, 0, ball.z), r = Math.max(2.5, F3.R * p.s);
+    g.fillStyle = `rgba(0,0,0,${Math.max(.08, .35 - ball.y * .06)})`; g.beginPath(); g.ellipse(sombra.x, sombra.y, r * 1.1, r * .35, 0, 0, 7); g.fill();
+    // estela
+    if (estado === "volando") trail.forEach((t, i) => { const q = P(t.x, t.y, t.z); g.fillStyle = `rgba(255,255,255,${i / trail.length * .25})`; g.beginPath(); g.arc(q.x, q.y, Math.max(1, F3.R * q.s * i / trail.length), 0, 7); g.fill(); });
+    const gr = g.createRadialGradient(p.x - r * .35, p.y - r * .35, r * .1, p.x, p.y, r); gr.addColorStop(0, "#fff"); gr.addColorStop(1, "#c9cdd2");
+    g.fillStyle = gr; g.beginPath(); g.arc(p.x, p.y, r, 0, 7); g.fill();
+    g.save(); g.beginPath(); g.arc(p.x, p.y, r, 0, 7); g.clip(); g.fillStyle = "#222";
+    for (let k = 0; k < 5; k++) { const an = ball.rot + k * 1.256, px = p.x + Math.cos(an) * r * .62, py = p.y + Math.sin(an * .7) * r * .55;
+      g.beginPath(); for (let j = 0; j < 5; j++) { const a2 = j * 1.256 + ball.rot; const xx = px + Math.cos(a2) * r * .25, yy = py + Math.sin(a2) * r * .25; j ? g.lineTo(xx, yy) : g.moveTo(xx, yy); } g.fill(); }
+    g.restore(); g.strokeStyle = "rgba(0,0,0,.35)"; g.lineWidth = 1; g.beginPath(); g.arc(p.x, p.y, r, 0, 7); g.stroke();
+  }
+  function dibujarMira(t) {
+    if (opts.modo !== "penal" || estado !== "listo") return;
+    mira.t += t;
+    const temblor = 0.35 * Math.max(0.25, 1 - mira.t / 2.5), now = performance.now() / 1000;
+    const p = P(Math.sin(now * 2.1) * temblor * 2, 1.2 + Math.cos(now * 2.7) * temblor, 0);
+    g.strokeStyle = "rgba(255,230,0,.9)"; g.lineWidth = 2; g.beginPath(); g.arc(p.x, p.y, 10 + temblor * 14, 0, 7); g.stroke();
+    g.fillStyle = "rgba(255,230,0,.95)"; g.beginPath(); g.arc(p.x, p.y, 2.5, 0, 7); g.fill();
+  }
+  function dibujarSwipe() {
+    if (!swipe || swipe.length < 2) return;
+    g.strokeStyle = "rgba(255,255,255,.75)"; g.lineWidth = 5; g.lineCap = "round"; g.lineJoin = "round";
+    g.beginPath(); swipe.forEach((q, i) => i ? g.lineTo(q.x, q.y) : g.moveTo(q.x, q.y)); g.stroke();
+  }
+
+  // ---------- ciclo
+  let ultimo = performance.now();
+  function cuadro(now) {
+    if (estado === "fin" || $("juego-modal").hidden || !cv.isConnected) return;
+    let dt = Math.min(0.033, (now - ultimo) / 1000); ultimo = now;
+    const dts = dt * slow;
+    if (estado === "volando") { tShot += dts; for (let i = 0; i < 4; i++) paso(dts / 4); }
+    moverPortero(dts, tShot);
+    wall.forEach(w => { if (estado === "volando") w.salto = Math.max(0, Math.sin(Math.min(1, Math.max(0, (tShot - 0.12) / 0.55)) * Math.PI) * 0.22); });
+    if (red.fuerza) red.fuerza = Math.max(0, red.fuerza - dt * 0.9);
+    if (slow < 1) slow = Math.min(1, slow + dt * 0.7);
+    g.save();
+    if (sacudida > 0) { g.translate((Math.random() - .5) * sacudida, (Math.random() - .5) * sacudida); sacudida *= 0.88; if (sacudida < .3) sacudida = 0; }
+    g.drawImage(fondo, 0, 0, W, H);
+    dibujarCancha(); dibujarPorteria();
+    // orden por profundidad: portero, barrera, balón
+    const cosas = [{ z: -0.25, d: dibujarPortero }, ...wall.map(w => ({ z: w.z, d: () => dibujarPersona(w.x, w.z, 1.82, w.color, 0, w.salto, w.salto > .05 ? 1 : 0.15) })), { z: ball.z, d: dibujarBalon }];
+    cosas.sort((a, b) => b.z - a.z).forEach(c => c.d());
+    dibujarMira(dt); dibujarSwipe();
+    particulas.forEach(p => { p.vy += 420 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.v -= dt * .5; g.globalAlpha = Math.max(0, p.v); g.fillStyle = p.c; g.fillRect(p.x, p.y, p.r, p.r * .6); });
+    g.globalAlpha = 1; particulas = particulas.filter(p => p.v > 0);
+    g.restore();
+    rafJ = requestAnimationFrame(cuadro);
+  }
+  nuevoTiro();
+  rafJ = requestAnimationFrame(cuadro);
+}
+function juegoPenales() { abrirJuego(mascota ? `⚽ Penales vs ${mascota.mascota.nombre || "tu mascota"}` : "⚽ Penales"); motorFutbol({ modo: "penal", tiros: 5, juego: "penales", max: 10, pet: petImagen() }); }
+function juegoTiroLibre() { abrirJuego("🎯 Tiro libre"); motorFutbol({ modo: "libre", tiros: 5, juego: "tiro_libre", max: 10, fan: petImagen() }); }
 
 // ---- medidor que va y viene (canasta y gol de campo)
 function medidor(cont, ancho, velocidad, alParar) {
@@ -3658,7 +4073,7 @@ function juegoGolCampo() {
   };
   pintar();
 }
-const JUEGOS = { logos: juegoLogos, penales: juegoPenales, canasta: juegoCanasta, gol_campo: juegoGolCampo };
+const JUEGOS = { logos: juegoLogos, penales: juegoPenales, tiro_libre: juegoTiroLibre, canasta: juegoCanasta, gol_campo: juegoGolCampo };
 document.querySelectorAll("[data-juego]").forEach(b => b.addEventListener("click", () => JUEGOS[b.dataset.juego]()));
 
 
@@ -4884,6 +5299,99 @@ function pintarCaptura(props, casa) {
     res.innerHTML = `<p class="hint">✅ Guardé ${n} momio(s) de ${casaSel}${err ? ` (${err} no se pudieron)` : ""}. Abajo ves si conviene cada uno.</p>`;
     cargarConviene();
   };
+}
+
+// ---------------------------------------------------------------- 🐾 Interacción con la mascota
+const FRASES_PET = {
+  feliz: ["¡Jeje, cosquillas!", "¿Jugamos penales? ⚽", "¡Otra vez!", "¡Eres el mejor!", "¿Hoy sí metemos la buena?", "¡Me gusta mi playera!", "¿Y si revisamos las señales?", "😎 Soy la mascota más rica", "¡Vamos {equipo}!"],
+  hambre: ["Tengo hambre… 🌮", "¿Me compras unos tacos?", "Un snack y juego contigo"],
+  huesos: ["🦴 No tengo fuerzas…", "Necesito comer, porfa", "Gana una apuesta y me alimentas"],
+};
+const VOZ_PET = { gato: [700, 1100], perro: [260, 180], lagarto: [180, 120], tigre: [140, 90], pinguino: [900, 1300], jirafa: [420, 520] };
+let petCtx = null, petTimer = null, petClicks = 0, petClickT = null, petMimoT = null;
+function petSonido(especie, tipo = "feliz") {
+  try {
+    petCtx = petCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const [f1, f2] = VOZ_PET[especie] || [400, 600], t = petCtx.currentTime, o = petCtx.createOscillator(), g = petCtx.createGain();
+    o.type = especie === "tigre" || especie === "lagarto" ? "sawtooth" : "triangle";
+    o.frequency.setValueAtTime(tipo === "triste" ? f2 : f1, t); o.frequency.exponentialRampToValueAtTime(tipo === "triste" ? f1 * .7 : f2, t + .18);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.12, t + .03); g.gain.exponentialRampToValueAtTime(.0001, t + .28);
+    o.connect(g); g.connect(petCtx.destination); o.start(); o.stop(t + .3);
+  } catch (e) {}
+}
+function petParticulas(emojis, n, x, y) {
+  const w = $("pet-wrap");
+  for (let i = 0; i < n; i++) {
+    const s = el("span", "p-part", emojis[i % emojis.length]);
+    s.style.left = (x ?? 85) + (Math.random() - .5) * 40 + "px"; s.style.top = (y ?? 60) + "px";
+    s.style.setProperty("--dx", (Math.random() - .5) * 90 + "px"); s.style.animationDelay = i * 70 + "ms";
+    w.append(s); setTimeout(() => s.remove(), 1400 + i * 70);
+  }
+}
+function petDecir(txt) {
+  const b = $("burbuja"); b.hidden = false; b.textContent = txt;
+  clearTimeout(petTimer); petTimer = setTimeout(() => { const m = mascota && estadoMascota(mascota); if (m === "feliz") b.hidden = true; else pintarMascota(); }, 2600);
+}
+function petAnim(cls) { const w = $("pet-wrap"); w.classList.remove("salta", "gira"); void w.offsetWidth; w.classList.add(cls); setTimeout(() => w.classList.remove(cls), 950); }
+function petFrase(est) {
+  const fav = perfil && perfil.equipo_fav, lista = FRASES_PET[est] || FRASES_PET.feliz;
+  return azar(lista).replace("{equipo}", fav && fav.nombre ? fav.nombre.split(" ").slice(-1)[0] : "equipo");
+}
+(function initPet() {
+  const w = $("pet-wrap");
+  w.setAttribute("role", "button"); w.setAttribute("aria-label", "Toca a tu mascota"); w.tabIndex = 0;
+  const especie = () => (mascota && mascota.mascota && mascota.mascota.especie) || "perro";
+  const toque = (ev) => {
+    if (!mascota) return;
+    const est = estadoMascota(mascota), r = w.getBoundingClientRect();
+    const x = ev && ev.clientX ? ev.clientX - r.left : 85, y = ev && ev.clientY ? ev.clientY - r.top : 60;
+    petClicks++; clearTimeout(petClickT);
+    petClickT = setTimeout(() => {
+      const n = petClicks; petClicks = 0;
+      if (est !== "feliz") { petAnim("salta"); petSonido(especie(), "triste"); petParticulas(est === "huesos" ? ["🦴", "💧"] : ["🍽️", "🌮"], 3, x, y); petDecir(petFrase(est)); return; }
+      if (n >= 2) { petAnim("gira"); petSonido(especie()); petParticulas(["⭐", "✨", "⚽", "🎉"], 8, x, y); petDecir(azar(["¡Mira mi truco! 🤸", "¡Voltereta!", "¿Viste eso? 😎"])); if (navigator.vibrate) navigator.vibrate([15, 30, 15]); }
+      else { petAnim("salta"); petSonido(especie()); petParticulas(["❤️", "💚", "✨"], 4, x, y); petDecir(petFrase(est)); if (navigator.vibrate) navigator.vibrate(10); }
+    }, 260);
+  };
+  w.addEventListener("click", toque);
+  w.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toque(); } });
+  // mantener presionado = acariciar
+  w.addEventListener("pointerdown", (ev) => {
+    clearTimeout(petMimoT);
+    petMimoT = setTimeout(() => {
+      if (!mascota) return; petClicks = -99;                                  // que no cuente como toque
+      w.classList.add("mimo"); petDecir(azar(["Mmm… 😌", "¡Qué rico!", "Ronroneo modo ON", "No pares 🥰"]));
+      const iv = setInterval(() => petParticulas(["💕", "💗"], 1), 260);
+      const fin = () => { clearInterval(iv); w.classList.remove("mimo"); petClicks = 0; w.removeEventListener("pointerup", fin); w.removeEventListener("pointerleave", fin); };
+      w.addEventListener("pointerup", fin); w.addEventListener("pointerleave", fin);
+      petSonido(especie());
+    }, 550);
+  });
+  ["pointerup", "pointerleave", "pointercancel"].forEach(t => w.addEventListener(t, () => clearTimeout(petMimoT)));
+  // voltea a ver tu dedo / el mouse
+  $("corral").addEventListener("pointermove", (ev) => {
+    const r = w.getBoundingClientRect(), dx = (ev.clientX - (r.left + r.width / 2)) / r.width;
+    w.style.transform = `perspective(400px) rotateY(${Math.max(-18, Math.min(18, dx * 22))}deg)`;
+  });
+  $("corral").addEventListener("pointerleave", () => { w.style.transform = ""; });
+  // destellos y pista
+  const c = $("corral");
+  for (let i = 0; i < 6; i++) { const b = el("i", "brillo"); b.style.left = 10 + Math.random() * 80 + "%"; b.style.top = 8 + Math.random() * 50 + "%"; b.style.animationDelay = i * .55 + "s"; c.append(b); }
+  c.append(el("div", "pet-tip", "Tócala · doble toque = truco · mantén presionado = apapacho"));
+  // de vez en cuando hace algo sola
+  setInterval(() => {
+    if (!mascota || vista !== "juegos" || document.hidden || Math.random() < .5) return;
+    if (estadoMascota(mascota) === "feliz") { petAnim(Math.random() < .3 ? "gira" : "salta"); if (Math.random() < .4) petDecir(petFrase("feliz")); }
+  }, 9000);
+})();
+// imagen de la mascota para los juegos (penales: es la portera)
+function petImagen(estado = "feliz") {
+  if (!mascota || !mascota.mascota) return null;
+  const fav = perfil && perfil.equipo_fav, hex = c => /^#[0-9a-f]{6}$/i.test(c || "") ? c : null;
+  const c1 = (fav && hex(fav.color)) || "#c0392b", c2 = (fav && hex(fav.color2) && fav.color2.toLowerCase() !== c1.toLowerCase() ? fav.color2 : "#ffffff");
+  let svg = animalSVG(mascota.mascota.especie || "perro", estado, c1, c2);
+  if (!/xmlns=/.test(svg)) svg = svg.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"');
+  const img = new Image(); img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg); return img;
 }
 </script>
 </body>
