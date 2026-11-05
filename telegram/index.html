@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0d1411">
 <title>Bitácora de Apuestas</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Bitácora">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
 <style>
@@ -109,6 +116,11 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
 .tag { font-size: .68rem; letter-spacing: .06em; text-transform: uppercase; font-weight: 600; color: var(--muted); }
 .tag.normal { color: var(--normal); } .tag.bot { color: var(--accent); }
 .res .amt .num { font-size: 1.05rem; font-weight: 600; }
+.instalar { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: .9rem; }
+.inst-btns { display: flex; gap: 6px; }
+.inst-btns button { padding: 7px 12px; font-size: .85rem; }
+@media (display-mode: standalone) { .instalar { display: none !important; } }
 /* Comunidad */
 .feed { display: grid; gap: 12px; }
 .msg { display: grid; gap: 6px; max-width: 88%; justify-self: start; background: var(--surface); border: 1px solid var(--line);
@@ -146,6 +158,10 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
     <h1>Bitácora de Apuestas</h1>
     <div class="quien" id="quien" hidden><span id="q-nombre"></span><button type="button" id="refrescar">Actualizar</button></div>
   </header>
+  <div class="instalar" id="instalar" hidden>
+    <span id="inst-txt">📲 Instala la bitácora como app en tu celular.</span>
+    <span class="inst-btns"><button type="button" class="primary" id="inst-si">Instalar</button><button type="button" id="inst-no">Ahora no</button></span>
+  </div>
 
   <section class="login" id="v-login" hidden>
     <h2>Iniciar sesión</h2>
@@ -533,6 +549,29 @@ $("salir").addEventListener("click", async () => {
   try { await fetch("/api/web", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ op: "salir", token }) }); } catch (e) {}
   salirLocal(); listo = false; mostrarLogin("Cerraste sesión en este navegador.");
 });
+
+// ---------------------------------------------------------------- instalar como app
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
+let promptInstalar = null;
+const yaInstalada = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const ocultoInst = () => { try { return localStorage.getItem("inst-no") === "1"; } catch (e) { return false; } };
+window.addEventListener("beforeinstallprompt", e => {
+  e.preventDefault(); promptInstalar = e;
+  if (!yaInstalada() && !ocultoInst()) $("instalar").hidden = false;
+});
+// iPhone no tiene botón de instalar: se explica cómo hacerlo desde Safari
+if (/iphone|ipad|ipod/i.test(navigator.userAgent) && !yaInstalada() && !ocultoInst()) {
+  $("inst-txt").textContent = "📲 Para tenerla como app: toca Compartir ⬆️ y luego “Agregar a inicio”.";
+  $("inst-si").hidden = true; $("instalar").hidden = false;
+}
+$("inst-si").addEventListener("click", async () => {
+  if (!promptInstalar) return;
+  promptInstalar.prompt();
+  await promptInstalar.userChoice.catch(() => {});
+  promptInstalar = null; $("instalar").hidden = true;
+});
+$("inst-no").addEventListener("click", () => { $("instalar").hidden = true; try { localStorage.setItem("inst-no", "1"); } catch (e) {} });
+window.addEventListener("appinstalled", () => { $("instalar").hidden = true; });
 
 // ---------------------------------------------------------------- comunidad
 let fotoData = null, feedTimer = null;

@@ -1,0 +1,16 @@
+{
+  "name": "Bitácora de Apuestas",
+  "short_name": "Bitácora",
+  "description": "Tus apuestas, tu banca y la comunidad.",
+  "lang": "es-MX",
+  "start_url": "/#bot",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d1411",
+  "theme_color": "#0d1411",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
