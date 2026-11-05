@@ -2,7 +2,7 @@
 // de Telegram) y solo puede ver y cambiar sus propias apuestas.
 
 import { buscarLogo, sugerencias, equipoPorClave, proximos, PRINCIPALES } from "../lib/espn.js";
-import { mas, tg, textoReto, botonesReto, avisarRespuesta, agruparSenales, conv, avisarValor, sacarMomio, buscarSenal, veredicto } from "../lib/mas.js";
+import { mas, tg, textoReto, botonesReto, avisarRespuesta, agruparSenales, conv, avisarValor, sacarMomio, buscarSenal, veredicto, guru } from "../lib/mas.js";
 
 // Ligas para la quiniela, en orden: se usa la primera que tenga partidos en los próximos días
 const QUINIELA = ["soccer/mex.1", "soccer/uefa.champions", "soccer/eng.1", "soccer/esp.1"];
@@ -199,6 +199,10 @@ export default async function handler(req, res) {
       }
       case "mov_anular":
         return res.status(200).json(await mas("mov_anular", { usuario, id: num((b.datos || {}).id) }));
+      case "guru": {
+        const [lista, precision] = await Promise.all([guru("lista"), guru("precision")]);
+        return res.status(200).json({ lista, precision });
+      }
       case "analisis":
         return res.status(200).json(await conv("analisis", { dias: 90 }));
       case "lineas":

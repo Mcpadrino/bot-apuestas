@@ -4,7 +4,7 @@
 // SUPABASE_URL, SUPABASE_KEY (publishable/anon), BOT_CLAVE (clave de la función bot en la BD).
 
 import { buscarLogo, sugerencias, equipoPorClave } from "../lib/espn.js";
-import { mas, avisarRespuesta, textoSenales, botonesSenales, sacarMomio, casaDe, buscarSenal, veredicto, conv } from "../lib/mas.js";
+import { mas, avisarRespuesta, textoSenales, botonesSenales, sacarMomio, casaDe, buscarSenal, veredicto, conv, guru } from "../lib/mas.js";
 
 const env = (k) => (process.env[k] || "").replace(/\s/g, "");
 const TG = () => `https://api.telegram.org/bot${env("TELEGRAM_TOKEN")}`;
@@ -537,9 +537,16 @@ export default async function handler(req, res) {
     if (!tokenOk()) return res.status(401).json({ error: "no" });
     const b = req.body || {};
     const PERMITIDAS = ["favoritos", "aviso", "quiniela_pendientes", "quiniela_res", "retos_abiertos", "reto_cerrar",
-      "practica_pendientes", "practica_pierna", "respaldo"];
+      "practica_pendientes", "practica_pierna", "respaldo", "lineas2"];
     if (!PERMITIDAS.includes(b.accion)) return res.status(400).json({ error: "acción" });
     return res.status(200).json(await mas(b.accion, b.datos || {}));
+  }
+  // Para pronosticos.py de GitHub: guardar pronósticos del Gurú y sus resultados
+  if (req.query.guru !== undefined && req.method === "POST") {
+    if (!tokenOk()) return res.status(401).json({ error: "no" });
+    const b = req.body || {};
+    if (!["guardar", "pendientes", "resultado"].includes(b.accion)) return res.status(400).json({ error: "acción" });
+    return res.status(200).json(await guru(b.accion, b.datos || {}));
   }
   if (req.query.semana !== undefined) {
     if (!tokenOk()) return res.status(401).json({ error: "no" });

@@ -1,0 +1,28 @@
+name: Gurú (pronósticos)
+
+on:
+  schedule:
+    - cron: "25 13 * * *"     # después del escaneo de la mañana (7:25 CDMX)
+    - cron: "25 0 * * *"      # después del escaneo de la tarde (18:25 CDMX)
+  workflow_dispatch:
+    inputs:
+      prueba:
+        description: "Solo mostrar (no guarda nada)"
+        type: boolean
+        default: false
+
+jobs:
+  guru:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt penaltyblog pandas
+      - name: Calcular pronósticos y calificar los terminados
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+        run: python pronosticos.py ${{ inputs.prueba && '--prueba' || '' }}
