@@ -445,7 +445,7 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
 .senal { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; display: grid; gap: 6px; }
 .senal .cab { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
 .senal .cab b { font-size: .95rem; } .senal .cab span { font-size: .75rem; color: var(--muted); white-space: nowrap; }
-.senal .mk { font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin-top: 4px; }
+.cv-cuerpo .mk, .senal .mk { font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin-top: 4px; }
 .op-sen { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 7px 9px; border-radius: 10px;
   background: var(--bg); transition: background .2s, transform .12s; }
 .op-sen.top { background: var(--win-bg); }
@@ -453,6 +453,47 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
 .op-sen .paga { font-family: var(--font-mono); color: var(--fg); }
 .op-sen button { padding: 6px 10px; font-size: .78rem; border-radius: 999px; }
 .mas-ops { justify-self: start; padding: 4px 10px; font-size: .78rem; border-radius: 999px; }
+
+/* ---------- ¿Conviene? ---------- */
+.cv-partido { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.cv-partido > summary { list-style: none; display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 12px;
+  cursor: pointer; color: var(--fg); font-size: .95rem; }
+.cv-partido > summary::-webkit-details-marker { display: none; }
+.cv-partido > summary::after { content: "›"; color: var(--muted); font-size: 1.3rem; transition: transform .25s; margin-left: 4px; }
+.cv-partido[open] > summary::after { transform: rotate(90deg); }
+.cv-partido > summary small { display: block; color: var(--muted); font-size: .74rem; }
+.cv-chips { display: flex; gap: 4px; flex-wrap: wrap; justify-content: end; }
+.cv-chips span { font-size: .7rem; padding: 2px 7px; border-radius: 999px; background: var(--bg); white-space: nowrap; }
+.cv-chips .v { background: var(--win-bg); color: var(--win); font-weight: 700; }
+.cv-cuerpo { padding: 0 12px 12px; display: grid; gap: 8px; }
+.cv-op { border-radius: 12px; background: var(--bg); padding: 10px; display: grid; gap: 8px; transition: box-shadow .25s, background .25s; }
+.cv-op.valor { box-shadow: 0 0 0 2px var(--win) inset; background: var(--win-bg); }
+.cv-op .t { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.cv-op .t b { font-size: .92rem; } .cv-op .t span { font-size: .75rem; color: var(--muted); white-space: nowrap; }
+.cv-casas { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.cv-casa { display: grid; gap: 3px; }
+.cv-casa label { font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; }
+.cv-casa input { padding: 8px 9px; font: 600 1rem var(--font-mono); }
+.cv-casa input.ok { border-color: var(--win); } .cv-casa input.mal { border-color: var(--loss); }
+.veredicto { font-size: .74rem; font-weight: 700; min-height: 1.1em; }
+.veredicto.ok { color: var(--win); } .veredicto.justo { color: var(--pend); } .veredicto.mal { color: var(--loss); }
+.cv-otros { font-size: .76rem; color: var(--muted); display: grid; gap: 2px; }
+.cv-otros b { color: var(--fg); }
+.cv-acc { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.cv-acc button { padding: 6px 11px; font-size: .8rem; border-radius: 999px; transition: transform .15s cubic-bezier(.3,1.6,.5,1), background .2s; }
+.cv-acc button[aria-pressed="true"].si { background: var(--win); color: var(--accent-ink); border-color: var(--win); transform: scale(1.05); }
+.cv-acc button[aria-pressed="true"].no { background: var(--loss); color: #fff; border-color: var(--loss); transform: scale(1.05); }
+.cv-acc .quienes { font-size: .72rem; color: var(--muted); }
+.cv-acc .ap { margin-left: auto; }
+.guardado { animation: guardado .9s ease; }
+@keyframes guardado { 30% { box-shadow: 0 0 0 3px var(--accent); } }
+.an-casa { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: grid; gap: 8px; }
+.an-casa h3 { margin: 0; font: 700 1.2rem var(--font-display); text-transform: uppercase; letter-spacing: .04em; }
+.an-kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.an-kpis div { background: var(--bg); border-radius: 10px; padding: 8px 10px; display: grid; gap: 2px; }
+.an-kpis b { font: 600 1.1rem var(--font-mono); }
+.an-fila { display: grid; grid-template-columns: 110px 1fr auto; gap: 10px; align-items: center; font-size: .85rem; }
+.an-fila .barra { grid-column: auto; height: 8px; border-radius: 4px; }
 </style>
 </head>
 <body>
@@ -509,6 +550,7 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
     </section>
     <section class="section" id="sen-sec">
       <div class="head"><h2>🎯 Señales del bot</h2><span class="label" id="sen-cuando"></span></div>
+      <button type="button" class="primary" id="ir-conviene" style="justify-self:start">✅ ¿Conviene? Compara con Caliente y Draftea →</button>
       <p class="hint">Lo último que mandó el bot por Telegram, para que no se te pierda. Apuesta solo si tu casa paga igual o mejor.</p>
       <div class="list" id="senales"><p class="empty">Cargando…</p></div>
     </section>
@@ -593,6 +635,27 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
   </div>
   <div class="visor" id="visor" hidden><img id="visor-img" alt="Foto ampliada"></div>
 
+
+
+  <!-- ===================== ¿CONVIENE? ===================== -->
+  <div id="v-conviene" class="vista section" hidden>
+    <div class="seg" role="tablist" aria-label="¿Conviene?">
+      <button type="button" role="tab" data-c="senales" aria-selected="true">🎯 Señales</button>
+      <button type="button" role="tab" data-c="analisis" aria-selected="false">📊 Análisis</button>
+    </div>
+    <div id="cv-senales" class="section">
+      <p class="explica">Escribe lo que paga tu casa (por ejemplo <b class="num">-150</b> o <b class="num">+120</b>) y te digo al instante si
+        <span class="sube">✅ conviene</span> o <span class="baja">❌ no vale</span>. Lo que captures lo ven tus amigos, pueden votar si la
+        apuestan, y si encuentras valor les llega un aviso por Telegram. Todo se guarda para el análisis.</p>
+      <div class="filters" role="group" aria-label="Mostrar">
+        <button type="button" data-cf="todas" aria-pressed="true">Todas</button>
+        <button type="button" data-cf="valor" aria-pressed="false">✅ Con valor</button>
+        <button type="button" data-cf="votadas" aria-pressed="false">👍 Votadas</button>
+      </div>
+      <div class="list" id="cv-lista"><p class="empty">Cargando…</p></div>
+    </div>
+    <div id="cv-analisis" class="section" hidden><p class="empty">Cargando…</p></div>
+  </div>
 
   <!-- ===================== MOVIMIENTO DE LÍNEAS ===================== -->
   <div id="v-lineas" class="vista section" hidden>
@@ -744,6 +807,7 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
   <div class="menu-scroll" id="menu-items">
     <div class="menu-grupo">Mis apuestas</div>
     <button class="menu-item" data-v="bot"><span class="mi">🤖</span><span class="txt">Banca del bot<small>Señales, banca y pendientes</small></span><span class="flecha">›</span></button>
+    <button class="menu-item" data-v="conviene"><span class="mi">✅</span><span class="txt">¿Conviene?<small>Compara Caliente y Draftea con el bot</small></span><span class="punto" id="conv-punto" hidden></span><span class="flecha">›</span></button>
     <button class="menu-item" data-v="normal"><span class="mi">🎲</span><span class="txt">Apuestas normales<small>Parlays y por tu cuenta</small></span><span class="flecha">›</span></button>
     <button class="menu-item" data-v="resultados"><span class="mi">📜</span><span class="txt">Historial<small>Resultados, estadísticas y Excel</small></span><span class="flecha">›</span></button>
     <div class="menu-grupo">En vivo</div>
@@ -834,7 +898,7 @@ async function hacer(op, datos, errorTxt) {
 
 // ---------------------------------------------------------------- vistas
 const SECCIONES = {
-  bot: ["🤖", "Banca del bot"], normal: ["🎲", "Normales"], resultados: ["📜", "Historial"], hoy: ["📺", "Hoy"],
+  bot: ["🤖", "Banca del bot"], conviene: ["✅", "¿Conviene?"], normal: ["🎲", "Normales"], resultados: ["📜", "Historial"], hoy: ["📺", "Hoy"],
   lineas: ["📈", "Líneas"], comunidad: ["💬", "Comunidad"], quiniela: ["🏆", "Quiniela"], retos: ["⚔️", "Retos"],
   practica: ["🎮", "Práctica"], equipo: ["⭐", "Mi equipo"] };
 function irA(v) {
@@ -853,6 +917,7 @@ function irA(v) {
   if (vista === "bot") cargarSenales();
   if (vista === "comunidad") cargarFeed();
   if (vista === "lineas") cargarLineas();
+  if (vista === "conviene") cargarConviene();
   if (vista === "quiniela") cargarQuiniela();
   if (vista === "retos") cargarRetos();
   if (vista === "practica") cargarPractica();
@@ -1907,6 +1972,206 @@ function pintarSenales() {
     cont.append(c);
   });
 }
+
+// ---------------------------------------------------------------- ¿Conviene? (momios de las casas, votos y análisis)
+let conv = null, convFiltro = "todas", convSub = "senales", convTimer = null;
+const CASAS_CV = ["Caliente", "Draftea"];
+const clave3 = (p, mk, sel) => `${p}|${mk}|${sel}`;
+function veredicto(prob, cuota) {
+  if (!(cuota > 1)) return ["", ""];
+  const v = prob * cuota - 1;
+  return v >= .03 ? ["ok", `✅ Conviene +${(v * 100).toFixed(1)}%`] : v >= 0 ? ["justo", `⚠️ Justo (+${(v * 100).toFixed(1)}%)`] : ["mal", `❌ No vale (${(v * 100).toFixed(1)}%)`];
+}
+async function cargarConviene() {
+  clearTimeout(convTimer);
+  if (convSub === "analisis") return cargarAnalisis();
+  try { conv = await api("conviene"); pintarConviene(); }
+  catch (e) { if (!conv) { $("cv-lista").innerHTML = ""; $("cv-lista").append(el("p", "empty", e.message || "No se pudo cargar.")); } }
+  if (vista === "conviene" && !document.hidden) convTimer = setTimeout(cargarConviene, 60000);
+}
+function datosConv() {
+  const cot = {}, votos = {};
+  (conv.cotizaciones || []).forEach(c => (cot[clave3(c.evento, c.mercado, c.seleccion)] ||= []).push(c));
+  (conv.votos || []).forEach(v => (votos[clave3(v.evento, v.mercado, v.seleccion)] ||= []).push(v));
+  return { cot, votos };
+}
+function llenarApuesta(partido, sel, prob, cuota, casa) {
+  irA("bot");
+  $("f-partido").value = partido; $("f-sel").value = sel; $("f-prob").value = (prob * 100).toFixed(1);
+  $("f-cuota").value = cuota > 1 ? aAmericano(cuota) : ""; $("f-monto").value = montoSug(prob, cuota > 1 ? cuota : 0) || "";
+  if (casa) $("f-casa").value = casa;
+  setTimeout(() => { $("f").scrollIntoView({ behavior: "smooth", block: "center" }); (cuota > 1 ? $("f-monto") : $("f-cuota")).focus(); }, 250);
+  vistaPrevia();
+  estado(cuota > 1 ? "👉 Revisa el monto y guarda." : "👉 Escribe el momio que te dieron y guarda."); setTimeout(() => estado(""), 4000);
+}
+function pintarConviene() {
+  const { cot, votos } = datosConv(), cont = $("cv-lista");
+  const abiertos = new Set([...cont.querySelectorAll("details[open]")].map(d => d.dataset.ev));
+  const enfocado = document.activeElement && document.activeElement.dataset && document.activeElement.dataset.k;
+  if (enfocado) return;                                   // no redibujar mientras escribes
+  cont.innerHTML = "";
+  const partidos = (conv.partidos || []).filter(p => Date.parse(p.inicio) > Date.now());
+  let conValorTotal = 0;
+  const lista = partidos.map(p => {
+    const ops = [];
+    ["h2h", "totals", "spreads"].forEach(mk => (p.mercados[mk] || []).slice().sort((a, b) => b.prob - a.prob).forEach((o, i) => ops.push({ ...o, mk, i })));
+    const valor = ops.filter(o => (cot[clave3(p.evento, o.mk, o.seleccion)] || []).some(c => o.prob * c.cuota - 1 >= .03)).length;
+    const nv = ops.reduce((s, o) => s + (votos[clave3(p.evento, o.mk, o.seleccion)] || []).length, 0);
+    conValorTotal += valor;
+    return { p, ops, valor, nv };
+  }).filter(x => convFiltro === "todas" || (convFiltro === "valor" ? x.valor : x.nv));
+  $("conv-punto").hidden = !conValorTotal; $("conv-punto").textContent = conValorTotal;
+  if (!lista.length) {
+    cont.append(el("p", "empty", convFiltro === "todas" ? "No hay señales vigentes. El bot escanea a las 7:00 y a las 18:00."
+      : convFiltro === "valor" ? "Nadie ha encontrado momios con valor todavía. Captura lo que paga tu casa." : "Nadie ha votado todavía."));
+    return;
+  }
+  lista.forEach(({ p, ops, valor, nv }, idx) => {
+    const d = el("details", "cv-partido"); d.dataset.ev = p.evento;
+    d.open = abiertos.size ? abiertos.has(p.evento) : idx < 2 || valor > 0;
+    const sm = el("summary"), t = el("div");
+    t.append(el("b", "", `${DEP(p.deporte)} ${p.partido}`), el("small", "", cuando(p.inicio)));
+    const ch = el("div", "cv-chips");
+    if (valor) ch.append(el("span", "v", `✅ ${valor}`));
+    if (nv) ch.append(el("span", "", `🗳 ${nv}`));
+    ch.append(el("span", "", `${ops.length} opc.`));
+    sm.append(t, ch); d.append(sm);
+    const cuerpo = el("div", "cv-cuerpo");
+    let mkPrevio = null;
+    ops.forEach(o => {
+      if (o.mk !== mkPrevio) { mkPrevio = o.mk; cuerpo.append(el("div", "mk", NOMBRE_MK[o.mk])); }
+      const k = clave3(p.evento, o.mk, o.seleccion), cs = cot[k] || [], vs = votos[k] || [];
+      const box = el("div", "cv-op" + (cs.some(c => o.prob * c.cuota - 1 >= .03) ? " valor" : ""));
+      const top = el("div", "t");
+      top.append(el("b", "", `${o.i === 0 ? "⭐ " : ""}${o.seleccion}`), el("span", "", `${(o.prob * 100).toFixed(1)}% · mín ${aAmericano(o.minima)}`));
+      box.append(top);
+      // momios que capturo yo
+      const casas = el("div", "cv-casas");
+      CASAS_CV.forEach(casa => {
+        const mia = cs.find(c => c.mio && c.casa === casa);
+        const w = el("div", "cv-casa"), lab = el("label", "", casa), inp = el("input"), ver = el("span", "veredicto");
+        inp.inputMode = "text"; inp.placeholder = "momio"; inp.autocomplete = "off"; inp.dataset.k = k + "|" + casa;
+        inp.setAttribute("aria-label", `Momio de ${casa} para ${o.seleccion}`);
+        if (mia) inp.value = aAmericano(Number(mia.cuota));
+        const pinta = () => {
+          const c = aDecimal(inp.value), [cls, txt] = veredicto(o.prob, c);
+          ver.className = "veredicto " + cls; ver.textContent = inp.value.trim() && !c ? "Escribe -150, +120 o 2.20" : txt;
+          inp.classList.toggle("ok", cls === "ok"); inp.classList.toggle("mal", cls === "mal");
+        };
+        pinta();
+        inp.addEventListener("input", pinta);
+        const guardar = async () => {
+          const c = aDecimal(inp.value);
+          if (inp.value.trim() && !c) return;
+          const antes = mia ? Number(mia.cuota) : null;
+          if ((c || null) === antes) return;
+          try {
+            await api("cotizar", { evento: p.evento, mercado: o.mk, seleccion: o.seleccion, casa, cuota: c || null });
+            inp.classList.remove("guardado"); void inp.offsetWidth; inp.classList.add("guardado");
+            if (c && o.prob * c - 1 >= .03 && navigator.vibrate) navigator.vibrate([10, 40, 10]);
+            inp.blur(); await cargarConviene();
+          } catch (e) { estado(e.message || "No se pudo guardar el momio."); }
+        };
+        inp.addEventListener("change", guardar);
+        inp.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); inp.blur(); } });
+        w.append(lab, inp, ver); casas.append(w);
+      });
+      box.append(casas);
+      // lo que capturaron los demás (el mejor por casa)
+      const otros = cs.filter(c => !c.mio);
+      if (otros.length) {
+        const ot = el("div", "cv-otros");
+        CASAS_CV.concat(["Otra"]).forEach(casa => {
+          const mejor = otros.filter(c => c.casa === casa).sort((a, b) => b.cuota - a.cuota)[0];
+          if (!mejor) return;
+          const [cls, txt] = veredicto(o.prob, Number(mejor.cuota)), ln = el("span");
+          ln.append(`${mejor.nombre} vio `, el("b", "", `${aAmericano(Number(mejor.cuota))} en ${casa}`), ` · ${hace(Date.parse(mejor.creada))} · `, el("span", "veredicto " + cls, txt));
+          ot.append(ln);
+        });
+        box.append(ot);
+      }
+      // votos
+      const acc = el("div", "cv-acc"), mio = (vs.find(v => v.mio) || {}).voto || "";
+      [["si", "👍 La apuesto"], ["no", "👎 Paso"]].forEach(([vv, txt]) => {
+        const n = vs.filter(v => v.voto === vv).length, b = el("button", vv, n ? `${txt} · ${n}` : txt); b.type = "button";
+        b.setAttribute("aria-pressed", String(mio === vv));
+        b.onclick = async () => {
+          b.disabled = true;
+          try { await api("votar", { evento: p.evento, mercado: o.mk, seleccion: o.seleccion, voto: mio === vv ? "" : vv }); await cargarConviene(); }
+          catch (e) { estado(e.message || "No se pudo votar."); b.disabled = false; }
+        };
+        acc.append(b);
+      });
+      const quien = vs.filter(v => !v.mio && v.voto === "si").map(v => v.nombre);
+      if (quien.length) acc.append(el("span", "quienes", `La apuesta: ${quien.join(", ")}`));
+      const mejorMio = cs.filter(c => c.mio).sort((a, b) => b.cuota - a.cuota)[0];
+      const ap = el("button", "ap", "Lo aposté"); ap.type = "button";
+      ap.onclick = () => llenarApuesta(p.partido, o.seleccion, o.prob, mejorMio ? Number(mejorMio.cuota) : 0, mejorMio && mejorMio.casa);
+      acc.append(ap);
+      box.append(acc);
+      cuerpo.append(box);
+    });
+    d.append(cuerpo); cont.append(d);
+  });
+}
+async function cargarAnalisis() {
+  const cont = $("cv-analisis");
+  try {
+    const a = await api("analisis"); cont.innerHTML = "";
+    const pct = x => x == null ? "—" : `${x > 0 ? "+" : ""}${(Number(x) * 100).toFixed(1)}%`;
+    cont.append(el("p", "explica", "Con los momios que ustedes capturan (últimos 90 días): qué tan seguido cada casa paga lo que pide el bot, cuánta ventaja dejan y su margen (lo que se queda la casa). Entre más momios capturen, más confiable."));
+    if (!(a.casas || []).length) { cont.append(el("p", "empty", "Todavía no hay momios capturados. Empieza en 🎯 Señales.")); return; }
+    a.casas.forEach(c => {
+      const box = el("div", "an-casa"); box.append(el("h3", "", c.casa));
+      const k = el("div", "an-kpis");
+      const kp = (lbl, val, cls = "") => { const d = el("div"); d.append(el("span", "label", lbl), el("b", cls, val)); k.append(d); };
+      kp("Momios capturados", String(c.n));
+      kp("Pagan lo del bot", `${Math.round(c.con_valor / c.n * 100)}%`, c.con_valor ? "pos" : "");
+      kp("Ventaja promedio", pct(c.ventaja), Number(c.ventaja) >= 0 ? "pos" : "neg");
+      kp("Margen de la casa", c.margen == null ? "—" : `${(Number(c.margen) * 100).toFixed(1)}%`);
+      box.append(k);
+      box.append(el("p", "hint", c.margen == null ? "El margen sale cuando capturan los dos (o tres) lados de un mismo mercado."
+        : `Margen calculado con ${c.mercados} mercado(s) completo(s). Pinnacle suele andar en 2–3%.`));
+      cont.append(box);
+    });
+    const tabla = (tit, filas, nombre) => {
+      if (!filas.length) return;
+      cont.append(el("h2", "", tit));
+      const max = Math.max(...filas.map(f => f.n));
+      filas.forEach(f => {
+        const r = el("div", "an-fila"), bar = el("div", "barra"), i = el("i");
+        i.style.width = `${f.con_valor / max * 100}%`; bar.append(i);
+        r.append(el("span", "", nombre(f)), bar, el("span", "num " + (Number(f.ventaja) >= 0 ? "pos" : "neg"), `${f.con_valor}/${f.n} · ${pct(f.ventaja)}`));
+        cont.append(r);
+      });
+    };
+    tabla("Por deporte", a.deportes || [], f => `${DEP(f.deporte)} ${f.deporte.split("_").pop().toUpperCase()}`);
+    tabla("Por mercado", a.mercados || [], f => NOMBRE_MK[f.mercado] || f.mercado);
+    if ((a.top || []).length) {
+      cont.append(el("h2", "", "🏅 Los mejores momios encontrados"));
+      a.top.filter(t => t.ventaja > 0).forEach(t => {
+        const r = el("div", "res gana"), tx = el("div");
+        tx.append(el("div", "sel", `${t.seleccion} · ${aAmericano(Number(t.cuota))} en ${t.casa}`), el("div", "meta", `${t.partido} · lo vio ${t.nombre}`));
+        r.append(tx, el("div", "amt num pos", pct(t.ventaja))); cont.append(r);
+      });
+    }
+    const v = a.votos || {};
+    if (v.si || v.no) cont.append(el("p", "hint", `🗳 Votos: ${v.si} “la apuesto” · ${v.no} “paso”.`));
+  } catch (e) { cont.innerHTML = ""; cont.append(el("p", "empty", e.message || "No se pudo cargar el análisis.")); }
+}
+document.querySelectorAll("[data-c]").forEach(b => b.addEventListener("click", () => {
+  convSub = b.dataset.c;
+  document.querySelectorAll("[data-c]").forEach(x => x.setAttribute("aria-selected", String(x === b)));
+  $("cv-senales").hidden = convSub !== "senales"; $("cv-analisis").hidden = convSub !== "analisis";
+  cargarConviene();
+}));
+document.querySelectorAll("[data-cf]").forEach(b => b.addEventListener("click", () => {
+  convFiltro = b.dataset.cf;
+  document.querySelectorAll("[data-cf]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  if (conv) pintarConviene();
+}));
+document.addEventListener("visibilitychange", () => { if (!document.hidden && vista === "conviene" && listo) cargarConviene(); });
+$("ir-conviene").addEventListener("click", () => irA("conviene"));
 $("login").addEventListener("submit", async e => {
   e.preventDefault();
   $("l-btn").disabled = true; estado("Entrando…");

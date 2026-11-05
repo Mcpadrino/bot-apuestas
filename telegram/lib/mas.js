@@ -108,3 +108,26 @@ export function botonesSenales(lineas) {
     return [{ text: `${EMO(p.deporte)} ${p.partido}`.slice(0, 60), callback_data: `p:${id}` }];
   });
 }
+
+// ---------------------------------------------------------------- ¿Conviene? (momios de las casas, votos y análisis)
+export async function conv(accion, datos = {}) {
+  const r = await fetch(`${env("SUPABASE_URL")}/rest/v1/rpc/conviene`, {
+    method: "POST",
+    headers: { "content-type": "application/json", apikey: env("SUPABASE_KEY"), authorization: `Bearer ${env("SUPABASE_KEY")}` },
+    body: JSON.stringify({ p_clave: env("BOT_CLAVE"), p_accion: accion, p_datos: datos }),
+  });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.message || "error de base de datos");
+  return j;
+}
+
+// Alguien encontró un momio con valor: avisar a los demás (una sola vez por selección, casa y momio)
+export async function avisarValor(usuarios, autor, d, r) {
+  const pct = (r.ventaja * 100).toFixed(1);
+  const texto = `💡 *${limpio(r.nombre || "Un amigo")}* vio *${limpio(d.seleccion)}* a *${amer(d.cuota)}* en ${limpio(d.casa)}\n` +
+    `${limpio(r.partido)}\n✅ Conviene: ${pct}% de ventaja (mínimo del bot ${amer(Number(r.minima))})\n${WEB_URL}/#conviene`;
+  await Promise.all(usuarios.filter((u) => String(u.chat_id) !== String(autor)).map(async (u) => {
+    const nuevo = await mas("aviso", { usuario: String(u.chat_id), clave: `val:${d.evento}|${d.mercado}|${d.seleccion}|${d.casa}|${d.cuota}` });
+    if (nuevo) await tg("sendMessage", { chat_id: u.chat_id, parse_mode: "Markdown", disable_web_page_preview: true, text: texto });
+  }));
+}

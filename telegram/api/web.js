@@ -2,7 +2,7 @@
 // de Telegram) y solo puede ver y cambiar sus propias apuestas.
 
 import { buscarLogo, sugerencias, equipoPorClave, proximos, PRINCIPALES } from "../lib/espn.js";
-import { mas, tg, textoReto, botonesReto, avisarRespuesta, agruparSenales } from "../lib/mas.js";
+import { mas, tg, textoReto, botonesReto, avisarRespuesta, agruparSenales, conv, avisarValor } from "../lib/mas.js";
 
 // Ligas para la quiniela, en orden: se usa la primera que tenga partidos en los próximos días
 const QUINIELA = ["soccer/mex.1", "soccer/uefa.champions", "soccer/eng.1", "soccer/esp.1"];
@@ -139,6 +139,33 @@ export default async function handler(req, res) {
       // ---------- movimiento de líneas
       case "senales":
         return res.status(200).json(agruparSenales(await mas("lineas2", {})));
+      // ---------- ¿Conviene? momios de Caliente/Draftea que captura cada quien, votos y análisis
+      case "conviene": {
+        const [lineas, est] = await Promise.all([mas("lineas2", {}), conv("estado", { usuario })]);
+        return res.status(200).json({ partidos: agruparSenales(lineas), ...est });
+      }
+      case "cotizar": {
+        const d = b.datos || {};
+        const casa = ["Caliente", "Draftea", "Otra"].includes(d.casa) ? d.casa : null;
+        const cuota = d.cuota === null || d.cuota === "" ? null : num(d.cuota);
+        if (!casa || (cuota !== null && !(cuota > 1 && cuota < 100))) return res.status(400).json({ error: "Momio inválido." });
+        const datos = { usuario, evento: txt(d.evento, 80), mercado: txt(d.mercado, 20), seleccion: txt(d.seleccion), casa,
+          cuota: cuota === null ? null : Math.round(cuota * 1000) / 1000 };
+        const r = await conv("cotizar", datos);
+        if (r && r.error) return res.status(400).json(r);
+        if (r && r.ventaja >= 0.03 && r.nuevo_mejor) {
+          try { await avisarValor(await rpc("bot", "usuarios"), usuario, datos, r); } catch (e) { console.error("aviso valor", e); }
+        }
+        return res.status(200).json(r);
+      }
+      case "votar": {
+        const d = b.datos || {};
+        if (!["si", "no", ""].includes(d.voto)) return res.status(400).json({ error: "Voto inválido" });
+        const r = await conv("votar", { usuario, evento: txt(d.evento, 80), mercado: txt(d.mercado, 20), seleccion: txt(d.seleccion), voto: d.voto });
+        return res.status(r && r.error ? 400 : 200).json(r);
+      }
+      case "analisis":
+        return res.status(200).json(await conv("analisis", { dias: 90 }));
       case "lineas":
         return res.status(200).json(await mas("lineas2", {}));
       // ---------- quiniela

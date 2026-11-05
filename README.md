@@ -109,6 +109,7 @@ gastan. Guarda 15 créditos de reserva y te avisa por Telegram si se acaban.
 ## Funciones nuevas (no gastan créditos de cuotas)
 
 - **🎯 Señales**: botón en Telegram y sección en la página con lo último que mandó el bot (se lee de la base de datos).
+- **✅ ¿Conviene?**: capturas lo que paga Caliente/Draftea y te dice si conviene; tus amigos votan y les llega aviso si hay valor. Pestaña de análisis con ventaja y margen de cada casa.
 - **📈 Movimiento de líneas**: cómo cambió la probabilidad de Pinnacle entre escaneos.
 - **🏆 Quiniela**: pronósticos de la jornada sin dinero, con tabla entre amigos.
 - **⚔️ Retos 1 vs 1**: retas a un amigo; el bot avisa quién ganó.
