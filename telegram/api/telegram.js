@@ -96,6 +96,10 @@ function parsearApuesta(texto) {
   return { seleccion, cuota, monto, prob, casa, cartera };
 }
 
+const TERMINOS_URL = "https://bot-apuestas-telegram.vercel.app/terminos.html";
+const TERMINOS_CORTO = "⚖️ *Importante:* los porcentajes son de modelos predictivos y pueden fallar; no hay ganancias garantizadas. " +
+  "Cada quien decide y es responsable de lo que apuesta. Solo mayores de 18. Términos completos: " + TERMINOS_URL;
+
 const AYUDA = [
   "🧾 *Cómo registrar una apuesta*",
   "Escribe la selección, la cuota, el monto y (opcional) el % del bot y la casa:",
@@ -120,6 +124,7 @@ const AYUDA = [
   "`limite 300` — tope semanal para apuestas normales (opcional; `limite off` lo quita)",
   "🌐 *Mi página* — la dirección de tu bitácora web",
   "📘 *Guía* — te mando el folleto y la guía en PDF",
+  "⚖️ `terminos` — términos, responsabilidad y privacidad",
   "📝 `idea ...` · `error ...` · `opinion ... 5` — mándame ideas, fallas o tu calificación",
   "`cuenta usuario contraseña` — crea o cambia tu acceso a la página",
   "",
@@ -217,11 +222,17 @@ async function atenderTexto(chat, texto, esDueno, msgId) {
     ];
     if (esDueno) docs.push(["manual-completo.pdf", "🛠 *Manual completo* (con la parte de administrador)."]);
     for (const [f, cap] of docs) {
-      const r = await tg("sendDocument", { chat_id: chat, document: base + f + "?v=2", caption: cap, parse_mode: "Markdown" });
+      const r = await tg("sendDocument", { chat_id: chat, document: base + f + "?v=3", caption: cap, parse_mode: "Markdown" });
       if (!r.ok) await enviar(`${cap}\n${base}${f}`);
     }
     return;
   }
+
+  if (["terminos", "condiciones", "privacidad", "aviso"].includes(cmd))
+    return enviar("⚖️ *Términos y condiciones (resumen)*\n\n• Es una herramienta de información y estadística, no una casa de apuestas ni asesoría financiera. No recibe ni mueve dinero real.\n" +
+      "• Los porcentajes y señales salen de modelos predictivos: pueden fallar y no garantizan ganancias.\n• Tú decides y eres responsable de lo que apuestas; el creador no responde por pérdidas.\n" +
+      "• Solo mayores de 18. Usa casas con permiso en México.\n• La cartera, la tienda y los juegos son dinero virtual sin valor real.\n• Tus datos solo se usan para que funcione el bot y no se comparten.\n\n" +
+      "Completos: " + TERMINOS_URL + "\n\n🆘 Si apostar te está afectando: Línea de la Vida 800 911 2000 (gratis, 24 h).", { disable_web_page_preview: true });
 
   // 📝 Opiniones: idea / error / opinión + texto
   const TIPOS = { idea: "idea", sugerencia: "idea", mejora: "idea", error: "error", falla: "error", bug: "error", opinion: "opinion", opinar: "opinion", comentario: "opinion" };
@@ -532,7 +543,7 @@ async function atenderBoton(q) {
       await db("agregar", { usuario: id, nombre: nombre.slice(0, 40) });
       await editar(`✅ Aceptaste a *${limpiar(nombre)}* (\`${id}\`).`);
       await tg("sendMessage", { chat_id: id, parse_mode: "Markdown", reply_markup: TECLADO,
-        text: "🎉 *¡Ya tienes acceso al bot!*\n\nToca ❓ Ayuda para ver cómo funciona, o 🌐 Mi página para crear tu usuario de la página web." });
+        text: "🎉 *¡Ya tienes acceso al bot!*\n\nToca ❓ Ayuda para ver cómo funciona, 📘 Guía para recibir el manual, o 🌐 Mi página para crear tu usuario de la página web.\n\n" + TERMINOS_CORTO, disable_web_page_preview: true });
     } else {
       await editar(`❌ Rechazaste la solicitud de \`${id}\`.`);
     }
@@ -619,7 +630,7 @@ async function pedirAcceso(u, chatId) {
   // primera vez (o cualquier mensaje): pedir el número con un botón
   const nuevo = await mas("aviso", { usuario: env("TELEGRAM_CHAT_ID"), clave: `solicitud:${chatId}` }).catch(() => true);
   await tg("sendMessage", { chat_id: chatId,
-    text: "🔒 Este bot es privado.\n\nToca el botón de abajo 👇 para pedir acceso: le llega tu nombre y tu número al dueño para que te acepte.",
+    text: "🔒 Este bot es privado.\n\nToca el botón de abajo 👇 para pedir acceso: le llega tu nombre y tu número al dueño para que te acepte.\n\nAl pedir acceso confirmas que eres mayor de 18 y aceptas los términos: https://bot-apuestas-telegram.vercel.app/terminos.html", disable_web_page_preview: true,
     reply_markup: { keyboard: [[{ text: "📱 Pedir acceso (compartir mi número)", request_contact: true }]], resize_keyboard: true, one_time_keyboard: true } });
   if (nuevo) await tg("sendMessage", { chat_id: env("TELEGRAM_CHAT_ID"), parse_mode: "Markdown",
     text: `👀 ${limpiar(nombre)}${quien.username ? ` (@${limpiar(quien.username)})` : ""} le escribió al bot y no tiene acceso. Ya le pedí que comparta su número.\n🆔 \`${chatId}\``,

@@ -301,6 +301,10 @@ export default async function handler(req, res) {
       }
       case "practica_reiniciar":
         return res.status(200).json(await mas("practica_reiniciar", { usuario }));
+      case "terminos":
+        return res.status(200).json(await rpc("terminos", "estado", { usuario }));
+      case "aceptar_terminos":
+        return res.status(200).json(await rpc("terminos", "aceptar", { usuario, v: txt((b.datos || {}).v, 20), medio: "web" }));
       case "opiniones": {
         const lista = await opinion("lista", { usuario });
         const dueno = String(usuario) === env("TELEGRAM_CHAT_ID");
