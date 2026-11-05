@@ -4,7 +4,7 @@
 // SUPABASE_URL, SUPABASE_KEY (publishable/anon), BOT_CLAVE (clave de la función bot en la BD).
 
 import { buscarLogo, sugerencias, equipoPorClave } from "../lib/espn.js";
-import { mas, avisarRespuesta, textoSenales, botonesSenales } from "../lib/mas.js";
+import { mas, avisarRespuesta, textoSenales, botonesSenales, sacarMomio, casaDe, buscarSenal, veredicto, conv } from "../lib/mas.js";
 
 const env = (k) => (process.env[k] || "").replace(/\s/g, "");
 const TG = () => `https://api.telegram.org/bot${env("TELEGRAM_TOKEN")}`;
@@ -105,6 +105,12 @@ const AYUDA = [
   "",
   "Al terminar el partido toca ✅ Ganó / ❌ Perdió en el mensaje de la apuesta,",
   "o escribe `gano 3`, `perdio 3`, `nula 3`, `borrar 3`.",
+  "",
+  "🔎 *¿Conviene?* Escribe lo que te ofrece el casino con un signo de interrogación:",
+  "`Ravens -250?` o `checa más 2.5 1.90 draftea` → te digo si está barata, justa o cara.",
+  "",
+  "💸 `retiro 50` — sacaste $50 a tu tarjeta (baja la banca del bot)",
+  "➕ `deposito 50` — metiste $50 más (sube la banca del bot)",
   "",
   "💰 *Saldo* — tu banca, récord y ganancia",
   "📋 *Pendientes* — apuestas sin resultado",
@@ -242,6 +248,42 @@ async function atenderTexto(chat, texto, esDueno, msgId) {
     const bt = botonesSenales(lineas);
     if (bt.length) await enviar("👇 ¿Apostaste alguna? Toca el partido y te pregunto el momio.", { reply_markup: { inline_keyboard: bt } });
     return;
+  }
+
+  // Retiros y depósitos: cambian la banca del bot (y con eso los montos sugeridos)
+  if (["retiro", "retire", "retirar", "saque", "deposito", "deposite", "depositar", "meti"].includes(cmd)) {
+    const monto = Number(String(args[0] || "").replace(/[$,]/g, ""));
+    if (!(monto > 0)) return enviar("Escribe el monto, por ejemplo: `retiro 50` o `deposito 50`.");
+    const tipo = /^(dep|meti)/.test(cmd) ? "deposito" : "retiro";
+    if (tipo === "retiro") {
+      const r0 = await dbu("resumen");
+      const disponible = Number(r0.banca_inicial) + Number(r0.bot.ganancia) - Number(r0.bot.en_juego);
+      if (monto > disponible + 0.001) return enviar(`No puedes retirar ${money(monto)}: tienes ${money(disponible)} disponibles en la banca del bot.`);
+    }
+    await mas("mov_crear", { usuario: String(chat), tipo, monto, nota: args.slice(1).join(" ").slice(0, 80) });
+    const r = await dbu("resumen");
+    const actual = Number(r.banca_inicial) + Number(r.bot.ganancia);
+    return enviar(`${tipo === "retiro" ? "💸 Retiro" : "➕ Depósito"} de *${money(monto)}* guardado.
+🤖 Banca del bot ahora: *${money(actual)}*
+` +
+      `_Los montos sugeridos de las próximas señales ya usan esta banca._`, { reply_markup: TECLADO });
+  }
+
+  // ¿Conviene? "Ravens -250?" o "checa más 2.5 1.90 draftea"
+  const pregunta = /\?\s*$/.test(limpio);
+  if (["checa", "checar", "conviene", "vale", "checame"].includes(cmd) || (pregunta && sacarMomio(limpio)[0])) {
+    const consulta = ["checa", "checar", "conviene", "vale", "checame"].includes(cmd) ? args.join(" ") : limpio;
+    const [cuota, resto] = sacarMomio(consulta.replace(/\?/g, " "));
+    if (!cuota) return enviar("Dime el momio que te ofrecen, por ejemplo: `Ravens -250?` o `checa América +120 caliente`.");
+    const ops = buscarSenal(await mas("lineas2", {}), resto);
+    if (!ops.length) return enviar("No encontré esa apuesta entre las señales vigentes del bot. Revisa el nombre (o 🎯 Señales para ver la lista).\n_Solo puedo calificar lo que el bot analizó con Pinnacle._");
+    if (ops.length > 1 && ops[0].pts - ops[1].pts < 0.3 && ops[0].seleccion !== ops[1].seleccion)
+      return enviar("¿Cuál de estas?\n" + ops.map((o) => `• ${o.seleccion} (${o.partido})`).join("\n") + "\n\nEscríbela más completa, por ejemplo `checa " + ops[0].seleccion + " " + (cuota >= 2 ? "+" + Math.round((cuota - 1) * 100) : "-" + Math.round(100 / (cuota - 1))) + "`");
+    const o = ops[0], v = veredicto(o.prob, Number(o.minima), cuota), casa = casaDe(consulta);
+    if (casa) await conv("cotizar", { usuario: String(chat), evento: o.evento, mercado: o.mercado, seleccion: o.seleccion, casa, cuota: Math.round(cuota * 1000) / 1000 }).catch(() => {});
+    return enviar([`*${v.titulo}*`, "", `*${o.seleccion}* · ${o.partido}`, `Te ofrecen: *${amer(cuota)}*${casa ? " en " + casa : ""}`,
+      `Probabilidad real (Pinnacle): *${(o.prob * 100).toFixed(1)}%* · efectividad ${v.efectividad}`, "", v.detalle, `_${v.necesitas}_`,
+      casa ? "\n📝 Lo guardé en ¿Conviene? para tus amigos y el análisis." : ""].join("\n"));
   }
 
   if (["pendientes", "abiertas", "📋"].includes(cmd) || texto.includes("Pendientes")) {

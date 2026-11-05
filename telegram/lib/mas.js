@@ -131,3 +131,76 @@ export async function avisarValor(usuarios, autor, d, r) {
     if (nuevo) await tg("sendMessage", { chat_id: u.chat_id, parse_mode: "Markdown", disable_web_page_preview: true, text: texto });
   }));
 }
+
+// ---------------------------------------------------------------- Checador: "el casino me ofrece esto, ¿conviene?"
+const normal = (t) => String(t || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "")
+  .replace(/\b(over|alta|altas)\b/g, "mas").replace(/\b(under|baja|bajas)\b/g, "menos").replace(/\bdraw\b/g, "empate");
+const IGNORAR = new Set(["de", "del", "la", "el", "los", "las", "a", "en", "vs", "@", "gana", "ganador", "me", "dan", "paga", "pagan",
+  "caliente", "draftea", "conviene", "checa", "checar", "vale", "la", "pena", "si", "o", "no", "y", "fc", "cf", "club"]);
+function lev(a, b) {
+  const d = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    let prev = d[0]; d[0] = i;
+    for (let j = 1; j <= b.length; j++) { const t = d[j]; d[j] = Math.min(d[j] + 1, d[j - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1)); prev = t; }
+  }
+  return 1 - d[b.length] / Math.max(a.length, b.length);
+}
+// Saca el momio del texto: -250, +120 o 2.10 (decimal). Devuelve [cuotaDecimal, textoSinMomio]
+export function sacarMomio(texto) {
+  const t = String(texto || "");
+  let m = t.match(/(^|\s)([+-]\d{3,4})(?=\s|$|\?)/);
+  if (m) { const n = Number(m[2]); return [n > 0 ? 1 + n / 100 : 1 + 100 / Math.abs(n), t.replace(m[2], " ")]; }
+  m = t.match(/(^|\s)(\d{1,2}[.,]\d{1,3})(?=\s|$|\?)/g);
+  if (m) {
+    // si hay varios números decimales, el momio es el último (el primero puede ser la línea: "mas 2.5 1.90")
+    const ult = m[m.length - 1].trim(), n = Number(ult.replace(",", "."));
+    if (n > 1 && n < 50 && !(m.length === 1 && /\b(mas|menos|over|under|alta|baja|[+-])\s*$/i.test(t.slice(0, t.lastIndexOf(ult)))))
+      return [n, t.slice(0, t.lastIndexOf(ult)) + " " + t.slice(t.lastIndexOf(ult) + ult.length)];
+  }
+  return [null, t];
+}
+export function casaDe(texto) {
+  const t = normal(texto);
+  return /caliente/.test(t) ? "Caliente" : /draftea/.test(t) ? "Draftea" : null;
+}
+// Las señales vigentes que más se parecen a lo que escribió el usuario
+export function buscarSenal(lineas, texto) {
+  const toks = normal(texto).split(/[^a-z0-9.+-]+/).filter((w) => w && !IGNORAR.has(w));
+  if (!toks.length) return [];
+  const ahora = Date.now();
+  const cands = [];
+  for (const l of lineas) {
+    if (!(Date.parse(l.inicio) > ahora && Number(l.minima) > 1)) continue;
+    const sel = normal(l.seleccion), todo = sel + " " + normal(l.partido);
+    const pal = todo.split(/[^a-z0-9.+-]+/).filter(Boolean);
+    let pts = 0;
+    for (const w of toks) {
+      if (/^[+-]?\d+(\.\d+)?$/.test(w)) { if (sel.includes(w.replace(/^\+/, ""))) pts += 1.2; continue; }   // la línea (2.5, +3.5)
+      let mejor = 0;
+      for (const p of pal) mejor = Math.max(mejor, p === w ? 1 : p.startsWith(w) && w.length >= 3 ? 0.9 : w.length >= 4 && p.length >= 4 ? (lev(w, p) >= 0.75 ? 0.8 : 0) : 0);
+      // si la palabra está en la selección (no solo en el partido) cuenta más
+      if (mejor && sel.split(/\s+/).some((p) => p === w || (p.startsWith(w) && w.length >= 3) || (w.length >= 4 && lev(w, p) >= 0.75))) mejor += 0.5;
+      pts += mejor;
+    }
+    if (pts >= 0.8) cands.push({ ...l, pts, prob: Number(l.serie[l.serie.length - 1][1]) });
+  }
+  cands.sort((a, b) => b.pts - a.pts || b.prob - a.prob);
+  return cands.filter((c) => c.pts >= cands[0]?.pts - 0.3).slice(0, 4);
+}
+export function veredicto(prob, minima, cuota) {
+  const justa = 1 / prob, ventaja = prob * cuota - 1;
+  const efect = prob >= 0.6 ? "alta" : prob >= 0.4 ? "media" : "baja";
+  let nivel, titulo, detalle;
+  if (ventaja >= 0.03) {
+    nivel = "barata"; titulo = "🟢 BARATA · MÉTELE";
+    detalle = `Te pagan ${amer(cuota)} y lo justo es ${amer(justa)}: cobras ${(ventaja * 100).toFixed(1)}% de más.`;
+  } else if (ventaja >= 0) {
+    nivel = "justa"; titulo = "🟡 PRECIO JUSTO · MEJOR NO";
+    detalle = `Te pagan casi lo justo (${amer(justa)}). Sin ventaja, a la larga no ganas.`;
+  } else {
+    nivel = "cara"; titulo = "🔴 CARA · NO LA METAS";
+    detalle = (prob >= 0.6 ? `Tiene buena efectividad (${(prob * 100).toFixed(0)}%) pero te pagan de menos: ` : "Te pagan de menos: ") +
+      `lo justo es ${amer(justa)} y te dan ${amer(cuota)} (${(ventaja * 100).toFixed(1)}%).`;
+  }
+  return { nivel, titulo, detalle, ventaja, efectividad: efect, justa, minima, necesitas: `Métele solo si te dan ${amer(minima)} o mejor.` };
+}

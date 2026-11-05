@@ -494,6 +494,36 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
 .an-kpis b { font: 600 1.1rem var(--font-mono); }
 .an-fila { display: grid; grid-template-columns: 110px 1fr auto; gap: 10px; align-items: center; font-size: .85rem; }
 .an-fila .barra { grid-column: auto; height: 8px; border-radius: 4px; }
+
+/* ---------- Retiros / depósitos ---------- */
+.mov-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.summary.hero .mov-btns button { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.22); color: #fff; padding: 8px 12px; font-size: .85rem;
+  border-radius: 999px; transition: background .2s, transform .12s; }
+.summary.hero .mov-btns button:active { transform: scale(.95); }
+.summary.hero .mov-btns button.primary { background: #fff; color: #10251b; }
+.mov-form { background: rgba(0,0,0,.22); border-radius: 12px; padding: 12px; display: grid; gap: 8px; animation: aparece .3s ease both; }
+.mov-form label { color: var(--hl); }
+.mov-form input { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.25); color: #fff; }
+.mov-form small { color: var(--hl); }
+.mov { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 10px; padding: 8px 12px; font-size: .88rem; }
+.mov button { padding: 4px 9px; font-size: .75rem; }
+/* ---------- Checador ---------- */
+.checador { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: grid; gap: 10px; }
+.checador form { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.checador form input { grid-column: 1 / -1; font-family: var(--font-mono); }
+.ck-card { border-radius: 14px; padding: 14px; display: grid; gap: 6px; color: #fff; animation: aparece .35s cubic-bezier(.2,.9,.25,1) both; }
+.ck-card.barata { background: linear-gradient(135deg, #16a06b, #0b5c3e); }
+.ck-card.justa { background: linear-gradient(135deg, #c98a12, #7a5106); }
+.ck-card.cara { background: linear-gradient(135deg, #d0473a, #7c1f17); }
+.ck-card .tit { font: 700 1.5rem/1.05 var(--font-display); letter-spacing: .03em; }
+.ck-card .sel { font-size: .95rem; } .ck-card small { opacity: .85; }
+.ck-card .kp { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 4px; }
+.ck-card .kp div { background: rgba(0,0,0,.2); border-radius: 10px; padding: 6px 8px; display: grid; }
+.ck-card .kp span { font-size: .65rem; letter-spacing: .08em; text-transform: uppercase; opacity: .8; }
+.ck-card .kp b { font: 600 1rem var(--font-mono); }
+@media (prefers-reduced-motion: no-preference) { .ck-card.barata .tit { animation: latido2 1.2s ease 2; } }
+@keyframes latido2 { 50% { transform: scale(1.05); } }
 </style>
 </head>
 <body>
@@ -546,6 +576,19 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
         <div><span class="label">Esperada</span><span class="num" id="b-esp">$0.00</span></div>
         <div><span class="label">En juego</span><span class="num" id="b-juego">$0.00</span></div>
       </div>
+      <div class="mov-btns">
+        <button type="button" id="btn-retiro">💸 Retirar a mi tarjeta</button>
+        <button type="button" id="btn-dep">➕ Depositar</button>
+      </div>
+      <form class="mov-form" id="mov-form" hidden>
+        <b id="mov-tit">💸 ¿Cuánto retiraste?</b>
+        <div class="row">
+          <label>Monto $<input id="mov-monto" inputmode="decimal" placeholder="50" autocomplete="off"></label>
+          <label>Nota (opcional)<input id="mov-nota" maxlength="80" placeholder="A mi tarjeta" autocomplete="off"></label>
+        </div>
+        <small id="mov-prev"></small>
+        <div class="mov-btns"><button type="submit" class="primary" id="mov-ok">Guardar</button><button type="button" id="mov-cancel">Cancelar</button></div>
+      </form>
       <p class="verdict" id="b-verdict"></p>
     </section>
     <section class="section" id="sen-sec">
@@ -608,6 +651,7 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
         <label>Banca inicial $<input id="cfg-banca" inputmode="decimal" value="200"></label>
         <button type="submit">Guardar banca inicial</button>
       </form>
+      <div class="section" style="margin-top:14px"><h2>💸 Retiros y depósitos</h2><div class="list" id="movs"></div></div>
       <button type="button" id="salir" style="margin-top:12px">Cerrar sesión en este navegador</button>
     </details>
   </div>
@@ -643,6 +687,15 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
       <button type="button" role="tab" data-c="senales" aria-selected="true">🎯 Señales</button>
       <button type="button" role="tab" data-c="analisis" aria-selected="false">📊 Análisis</button>
     </div>
+    <section class="checador" aria-label="Checador rápido">
+      <b>🔎 ¿El casino te ofrece esto?</b>
+      <form id="ck-form">
+        <input id="ck-texto" placeholder="Ravens -250  ·  más 2.5 1.90" autocomplete="off" aria-label="Apuesta y momio que te ofrecen">
+        <select id="ck-casa" aria-label="Casa"><option>Caliente</option><option>Draftea</option><option value="">No guardar</option></select>
+        <button class="primary" type="submit" id="ck-btn">Checar</button>
+      </form>
+      <div id="ck-res" aria-live="polite"></div>
+    </section>
     <div id="cv-senales" class="section">
       <p class="explica">Escribe lo que paga tu casa (por ejemplo <b class="num">-150</b> o <b class="num">+120</b>) y te digo al instante si
         <span class="sube">✅ conviene</span> o <span class="baja">❌ no vale</span>. Lo que captures lo ven tus amigos, pueden votar si la
@@ -869,10 +922,12 @@ async function cargar() {
   if (!token) { mostrarLogin(); return; }
   estado("Cargando…");
   try {
-    const r = await api("todas");
-    bancaInicial = Number(r.banca) || 200;
+    const [r, mv] = await Promise.all([api("todas"), api("movimientos").catch(() => null)]);
+    bancaInicial = Number(r.banca) || 200;          // ya incluye retiros y depósitos
     limiteSemanal = Number(r.limite) || 0;
-    $("cfg-banca").value = bancaInicial;
+    movs = mv || { neto: 0, lista: [] };
+    $("cfg-banca").value = +(bancaInicial - Number(movs.neto || 0)).toFixed(2);
+    pintarMovs();
     $("q-nombre").textContent = "";
     $("b-saludo").textContent = r.nombre ? `🤖 Hola, ${r.nombre} · banca del bot` : "🤖 Banca del bot";
     apuestas = (r.apuestas || []).map(x => ({
@@ -1980,7 +2035,7 @@ const clave3 = (p, mk, sel) => `${p}|${mk}|${sel}`;
 function veredicto(prob, cuota) {
   if (!(cuota > 1)) return ["", ""];
   const v = prob * cuota - 1;
-  return v >= .03 ? ["ok", `✅ Conviene +${(v * 100).toFixed(1)}%`] : v >= 0 ? ["justo", `⚠️ Justo (+${(v * 100).toFixed(1)}%)`] : ["mal", `❌ No vale (${(v * 100).toFixed(1)}%)`];
+  return v >= .03 ? ["ok", `🟢 Barata · métele (+${(v * 100).toFixed(1)}%)`] : v >= 0 ? ["justo", `🟡 Precio justo · mejor no`] : ["mal", `🔴 Cara · no la metas (${(v * 100).toFixed(1)}%)`];
 }
 async function cargarConviene() {
   clearTimeout(convTimer);
@@ -2172,6 +2227,90 @@ document.querySelectorAll("[data-cf]").forEach(b => b.addEventListener("click", 
 }));
 document.addEventListener("visibilitychange", () => { if (!document.hidden && vista === "conviene" && listo) cargarConviene(); });
 $("ir-conviene").addEventListener("click", () => irA("conviene"));
+
+// ---------------------------------------------------------------- retiros y depósitos (cambian la banca del bot)
+let movs = { neto: 0, lista: [] }, movTipo = "retiro";
+function pintarMovs() {
+  const c = $("movs"); if (!c) return; c.innerHTML = "";
+  if (!(movs.lista || []).length) { c.append(el("p", "hint", "Sin retiros ni depósitos.")); return; }
+  movs.lista.forEach(m => {
+    const r = el("div", "mov"), t = el("div");
+    t.append(el("b", "", m.tipo === "retiro" ? "💸 Retiro" : "➕ Depósito"), el("div", "meta", `${fecha(Date.parse(m.creada))}${m.nota ? " · " + m.nota : ""}`));
+    const x = el("button", "", "Anular"); x.type = "button";
+    x.onclick = async () => {
+      if (x.dataset.ok !== "1") { x.dataset.ok = "1"; x.textContent = "¿Seguro?"; return; }
+      await hacer("mov_anular", { id: m.id }, "No se pudo anular.");
+    };
+    r.append(t, el("span", m.tipo === "retiro" ? "num neg" : "num pos", (m.tipo === "retiro" ? "-" : "+") + fmt(Number(m.monto))), x);
+    c.append(r);
+  });
+}
+function disponibleBot() {
+  const bot = apuestas.filter(b => b.cartera === "bot");
+  return bancaBotActual() - bot.filter(b => b.resultado === "pendiente").reduce((s, b) => s + b.monto, 0);
+}
+function abrirMov(tipo) {
+  movTipo = tipo;
+  $("mov-tit").textContent = tipo === "retiro" ? "💸 ¿Cuánto retiraste a tu tarjeta?" : "➕ ¿Cuánto depositaste?";
+  $("mov-nota").placeholder = tipo === "retiro" ? "A mi tarjeta" : "Recarga";
+  $("mov-form").hidden = false; $("mov-monto").value = ""; prevMov(); setTimeout(() => $("mov-monto").focus(), 50);
+}
+function prevMov() {
+  const m = parseFloat($("mov-monto").value), act = bancaBotActual();
+  if (!(m > 0)) { $("mov-prev").textContent = movTipo === "retiro" ? `Disponible para retirar: ${fmt(disponibleBot())}` : ""; return; }
+  const nueva = movTipo === "retiro" ? act - m : act + m;
+  $("mov-prev").textContent = movTipo === "retiro" && m > disponibleBot() + .001
+    ? `⚠️ Solo tienes ${fmt(disponibleBot())} disponibles (lo demás está en juego).`
+    : `Tu banca del bot pasa de ${fmt(act)} a ${fmt(nueva)}. Los montos sugeridos se ajustan solos.`;
+}
+$("btn-retiro").addEventListener("click", () => abrirMov("retiro"));
+$("btn-dep").addEventListener("click", () => abrirMov("deposito"));
+$("mov-cancel").addEventListener("click", () => { $("mov-form").hidden = true; });
+$("mov-monto").addEventListener("input", prevMov);
+$("mov-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const m = parseFloat($("mov-monto").value);
+  if (!(m > 0)) { estado("Escribe el monto."); return; }
+  $("mov-ok").disabled = true;
+  const ok = await hacer("mov_crear", { tipo: movTipo, monto: m, nota: $("mov-nota").value.trim() }, "No se pudo guardar.");
+  $("mov-ok").disabled = false;
+  if (ok) { $("mov-form").hidden = true; estado(movTipo === "retiro" ? "💸 Retiro guardado." : "➕ Depósito guardado."); setTimeout(() => estado(""), 3000); }
+});
+
+// ---------------------------------------------------------------- checador rápido
+async function checar(texto) {
+  const res = $("ck-res"); res.innerHTML = "";
+  if (!texto.trim()) return;
+  $("ck-btn").disabled = true;
+  try {
+    const r = await api("checar", { texto, casa: $("ck-casa").value });
+    if (!r.ops.length) { res.append(el("p", "empty", "No encontré esa apuesta entre las señales vigentes del bot. Escribe el nombre como sale en la lista de abajo.")); }
+    else if (!r.claro) {
+      res.append(el("p", "hint", "¿Cuál de estas?"));
+      const ops = el("div", "club-ops");
+      r.ops.forEach(o => { const b = el("button", "", `${o.seleccion} · ${o.partido}`); b.type = "button";
+        b.onclick = () => { const t = `${o.seleccion} ${aAmericano(r.cuota)}`; $("ck-texto").value = t; checar(t); }; ops.append(b); });
+      res.append(ops);
+    } else {
+      const o = r.ops[0], c = el("div", "ck-card " + o.nivel);
+      c.append(el("div", "tit", o.titulo), el("div", "sel", `${o.seleccion} · ${DEP(o.deporte)} ${o.partido}`));
+      const kp = el("div", "kp");
+      [["Te dan", aAmericano(r.cuota)], ["Lo justo", aAmericano(o.justa)], ["Probabilidad", (o.prob * 100).toFixed(1) + "%"]]
+        .forEach(([a, b]) => { const d = el("div"); d.append(el("span", "", a), el("b", "", b)); kp.append(d); });
+      c.append(kp, el("div", "", o.detalle), el("small", "", o.necesitas + (r.casa ? ` · Guardado en ¿Conviene? (${r.casa}).` : "")));
+      if (o.nivel === "barata") {
+        const ap = el("button", "", "Lo aposté →"); ap.type = "button"; ap.style.cssText = "justify-self:start;background:#fff;color:#0b5c3e;border:0";
+        ap.onclick = () => llenarApuesta(o.partido, o.seleccion, o.prob, r.cuota, r.casa);
+        c.append(ap);
+        if (navigator.vibrate) navigator.vibrate([10, 40, 10]);
+      }
+      res.append(c);
+      if (r.casa) cargarConviene();
+    }
+  } catch (e) { res.append(el("p", "empty", e.message || "No se pudo checar.")); }
+  $("ck-btn").disabled = false;
+}
+$("ck-form").addEventListener("submit", e => { e.preventDefault(); checar($("ck-texto").value); });
 $("login").addEventListener("submit", async e => {
   e.preventDefault();
   $("l-btn").disabled = true; estado("Entrando…");

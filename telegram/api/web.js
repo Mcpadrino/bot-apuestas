@@ -2,7 +2,7 @@
 // de Telegram) y solo puede ver y cambiar sus propias apuestas.
 
 import { buscarLogo, sugerencias, equipoPorClave, proximos, PRINCIPALES } from "../lib/espn.js";
-import { mas, tg, textoReto, botonesReto, avisarRespuesta, agruparSenales, conv, avisarValor } from "../lib/mas.js";
+import { mas, tg, textoReto, botonesReto, avisarRespuesta, agruparSenales, conv, avisarValor, sacarMomio, buscarSenal, veredicto } from "../lib/mas.js";
 
 // Ligas para la quiniela, en orden: se usa la primera que tenga partidos en los próximos días
 const QUINIELA = ["soccer/mex.1", "soccer/uefa.champions", "soccer/eng.1", "soccer/esp.1"];
@@ -164,6 +164,41 @@ export default async function handler(req, res) {
         const r = await conv("votar", { usuario, evento: txt(d.evento, 80), mercado: txt(d.mercado, 20), seleccion: txt(d.seleccion), voto: d.voto });
         return res.status(r && r.error ? 400 : 200).json(r);
       }
+      case "checar": {
+        // "El casino me ofrece esto": busca la señal y dice si está barata, justa o cara
+        const d = b.datos || {};
+        const [cuota, resto] = sacarMomio(txt(d.texto, 200).replace(/\?/g, " "));
+        if (!cuota) return res.status(400).json({ error: "Escribe también el momio, por ejemplo: Ravens -250" });
+        const ops = buscarSenal(await mas("lineas2", {}), resto);
+        if (!ops.length) return res.status(200).json({ cuota, ops: [] });
+        const casa = ["Caliente", "Draftea"].includes(d.casa) ? d.casa : null;
+        const salida = ops.map((o) => ({ evento: o.evento, mercado: o.mercado, seleccion: o.seleccion, partido: o.partido, deporte: o.deporte,
+          inicio: o.inicio, prob: o.prob, minima: Number(o.minima), pts: o.pts, ...veredicto(o.prob, Number(o.minima), cuota) }));
+        const claro = salida.length === 1 || salida[0].pts - salida[1].pts >= 0.3;
+        if (claro && casa) {
+          const o = salida[0];
+          const r = await conv("cotizar", { usuario, evento: o.evento, mercado: o.mercado, seleccion: o.seleccion, casa, cuota: Math.round(cuota * 1000) / 1000 }).catch(() => null);
+          if (r && r.ventaja >= 0.03 && r.nuevo_mejor)
+            try { await avisarValor(await rpc("bot", "usuarios"), usuario, { ...o, casa, cuota: Math.round(cuota * 1000) / 1000 }, r); } catch (e) { console.error(e); }
+        }
+        return res.status(200).json({ cuota, casa, claro, ops: claro ? salida.slice(0, 1) : salida });
+      }
+      // ---------- retiros y depósitos (cambian la banca del bot)
+      case "movimientos":
+        return res.status(200).json(await mas("movimientos", { usuario }));
+      case "mov_crear": {
+        const d = b.datos || {};
+        const monto = num(d.monto), tipo = d.tipo === "deposito" ? "deposito" : "retiro";
+        if (!(monto > 0)) return res.status(400).json({ error: "Escribe un monto mayor a cero." });
+        if (tipo === "retiro") {
+          const r0 = await rpc("bot", "resumen", { usuario });
+          const disp = Number(r0.banca_inicial) + Number(r0.bot.ganancia) - Number(r0.bot.en_juego);
+          if (monto > disp + 0.001) return res.status(400).json({ error: `Solo tienes $${disp.toFixed(2)} disponibles en la banca del bot.` });
+        }
+        return res.status(200).json(await mas("mov_crear", { usuario, tipo, monto, nota: txt(d.nota, 80) }));
+      }
+      case "mov_anular":
+        return res.status(200).json(await mas("mov_anular", { usuario, id: num((b.datos || {}).id) }));
       case "analisis":
         return res.status(200).json(await conv("analisis", { dias: 90 }));
       case "lineas":

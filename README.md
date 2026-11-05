@@ -110,6 +110,8 @@ gastan. Guarda 15 créditos de reserva y te avisa por Telegram si se acaban.
 
 - **🎯 Señales**: botón en Telegram y sección en la página con lo último que mandó el bot (se lee de la base de datos).
 - **✅ ¿Conviene?**: capturas lo que paga Caliente/Draftea y te dice si conviene; tus amigos votan y les llega aviso si hay valor. Pestaña de análisis con ventaja y margen de cada casa.
+- **🔎 Checador**: escribe lo que te ofrece el casino (`Ravens -250?` en Telegram o en la página) y te dice si está barata, justa o cara.
+- **💸 Retiros y depósitos**: `retiro 50` / `deposito 50` (o en la página) cambian la banca del bot y los montos sugeridos.
 - **📈 Movimiento de líneas**: cómo cambió la probabilidad de Pinnacle entre escaneos.
 - **🏆 Quiniela**: pronósticos de la jornada sin dinero, con tabla entre amigos.
 - **⚔️ Retos 1 vs 1**: retas a un amigo; el bot avisa quién ganó.
