@@ -18,6 +18,22 @@ async function rpc(fn, accion, datos = {}) {
   return j;
 }
 
+const WEB_URL = env("WEB_URL") || "https://bot-apuestas-telegram.vercel.app";
+
+// Avisa por Telegram a los demás que alguien publicó en la comunidad (sin bloquear la respuesta si falla).
+async function avisarComunidad(autorChat, autor, texto) {
+  try {
+    const usuarios = await rpc("bot", "usuarios");
+    const corto = texto ? `: “${texto.slice(0, 120)}${texto.length > 120 ? "…" : ""}”` : "";
+    await Promise.all(usuarios.filter((u) => String(u.chat_id) !== String(autorChat)).map((u) =>
+      fetch(`https://api.telegram.org/bot${env("TELEGRAM_TOKEN")}/sendMessage`, {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ chat_id: u.chat_id, disable_web_page_preview: true,
+          text: `💬 ${autor || "Alguien"} publicó en la comunidad${corto}\n${WEB_URL}/#comunidad` }),
+      })));
+  } catch (e) { console.error("aviso comunidad", e); }
+}
+
 const num = (v) => (v === null || v === undefined || v === "" || !isFinite(Number(v)) ? null : Number(v));
 const txt = (v, max = 120) => String(v ?? "").trim().slice(0, max);
 
@@ -61,6 +77,18 @@ export default async function handler(req, res) {
       }
       case "borrar":
         return res.status(200).json(await rpc("bot", "borrar", { usuario, id: num((b.datos || {}).id) }));
+      case "feed":
+        return res.status(200).json(await rpc("comunidad", "feed", { usuario }));
+      case "publicar": {
+        const d = b.datos || {};
+        const r = await rpc("comunidad", "publicar", { usuario, texto: txt(d.texto, 1000), link: txt(d.link, 500),
+          imagen: typeof d.imagen === "string" ? d.imagen : null, horas: num(d.horas) || 48 });
+        if (r && r.error) return res.status(400).json(r);
+        await avisarComunidad(usuario, r.autor, txt(d.texto, 1000));
+        return res.status(200).json(r);
+      }
+      case "bajar":
+        return res.status(200).json(await rpc("comunidad", "bajar", { usuario, id: num((b.datos || {}).id) }));
       case "banca": {
         const v = num((b.datos || {}).valor);
         if (!(v > 0)) return res.status(400).json({ error: "La banca debe ser mayor a cero." });

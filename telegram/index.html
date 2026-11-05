@@ -44,9 +44,10 @@ h2 { font: 700 1.15rem/1.2 var(--font-display); letter-spacing: .06em; text-tran
 .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .pos { color: var(--win); } .neg { color: var(--loss); }
 
-.tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; background: var(--surface); border: 1px solid var(--line);
+.tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; background: var(--surface); border: 1px solid var(--line);
   border-radius: 10px; padding: 4px; }
-.tab { border: 0; border-radius: 7px; padding: 10px 6px; background: transparent; color: var(--muted); font-size: .88rem; }
+.tab { border: 0; border-radius: 7px; padding: 9px 2px; background: transparent; color: var(--muted); font-size: .8rem; line-height: 1.2; }
+.tab .ico { display: block; font-size: 1.15rem; }
 .tab[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
 .tab[data-v="normal"][aria-selected="true"] { background: var(--normal); color: #fff; }
 
@@ -108,6 +109,33 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
 .tag { font-size: .68rem; letter-spacing: .06em; text-transform: uppercase; font-weight: 600; color: var(--muted); }
 .tag.normal { color: var(--normal); } .tag.bot { color: var(--accent); }
 .res .amt .num { font-size: 1.05rem; font-weight: 600; }
+/* Comunidad */
+.feed { display: grid; gap: 12px; }
+.msg { display: grid; gap: 6px; max-width: 88%; justify-self: start; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 14px 14px 14px 4px; padding: 10px 12px; min-width: 0; }
+.msg.mio { justify-self: end; background: var(--win-bg); border-color: transparent; border-radius: 14px 14px 4px 14px; }
+.msg .quien-pub { font-size: .78rem; color: var(--muted); }
+.msg .quien-pub b { color: var(--fg); }
+.msg p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.msg img { display: block; width: 100%; max-height: 420px; object-fit: contain; border-radius: 10px; background: var(--bg); cursor: zoom-in; }
+.msg a.ir { display: inline-flex; gap: 6px; align-items: center; justify-self: start; padding: 7px 12px; border-radius: 999px;
+  background: var(--accent); color: var(--accent-ink); font-weight: 600; font-size: .85rem; text-decoration: none; }
+.msg .pie { display: flex; justify-content: space-between; gap: 8px; align-items: center; font-size: .72rem; color: var(--muted); }
+.msg .pie button { padding: 4px 9px; font-size: .75rem; }
+.composer { position: sticky; bottom: 0; background: var(--bg); padding-block: 10px calc(10px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--line); display: grid; gap: 8px; }
+.composer textarea { font: 500 1rem var(--font-body); color: var(--fg); background: var(--surface); border: 1px solid var(--line);
+  border-radius: 10px; padding: 10px 11px; width: 100%; min-height: 64px; resize: vertical; }
+.composer .fila { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.composer .fila > * { flex: 1 1 auto; }
+.composer label.foto { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; padding: 10px 12px; border: 1px solid var(--line);
+  border-radius: 8px; background: var(--surface); color: var(--fg); font-weight: 600; cursor: pointer; }
+.composer label.foto input { display: none; }
+.miniatura { display: flex; gap: 8px; align-items: center; font-size: .8rem; color: var(--muted); }
+.miniatura img { width: 56px; height: 56px; object-fit: cover; border-radius: 8px; }
+.visor { position: fixed; inset: 0; background: rgba(0,0,0,.88); display: grid; place-items: center; z-index: 50;
+  padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px)); }
+.visor img { max-width: 100%; max-height: 100%; border-radius: 8px; }
 .totbar { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: .9rem; }
 </style>
 </head>
@@ -135,9 +163,10 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
   </section>
 
   <nav class="tabs" role="tablist" aria-label="Secciones" id="tabs" hidden>
-    <button class="tab" role="tab" data-v="bot" id="t-bot">🤖 Banca bot</button>
-    <button class="tab" role="tab" data-v="normal" id="t-normal">🎲 Apuesta normal</button>
-    <button class="tab" role="tab" data-v="resultados" id="t-res">📜 Resultados</button>
+    <button class="tab" role="tab" data-v="bot" id="t-bot"><span class="ico">🤖</span>Banca bot</button>
+    <button class="tab" role="tab" data-v="normal" id="t-normal"><span class="ico">🎲</span>Normal</button>
+    <button class="tab" role="tab" data-v="resultados" id="t-res"><span class="ico">📜</span>Resultados</button>
+    <button class="tab" role="tab" data-v="comunidad" id="t-com"><span class="ico">💬</span>Comunidad</button>
   </nav>
   <p class="status" id="status" hidden></p>
 
@@ -209,6 +238,29 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
     </details>
   </div>
 
+  <!-- ===================== COMUNIDAD ===================== -->
+  <div id="v-comunidad" class="vista section" hidden>
+    <p class="hint">Comparte tus apuestas, el link para copiarlas, noticias del día o por qué te gusta una jugada. Todo se borra solo a las 48 horas para no ocupar espacio.</p>
+    <div class="feed" id="feed"></div>
+    <form class="composer" id="pub">
+      <textarea id="p-texto" maxlength="1000" placeholder="¿Qué vas a jugar y por qué?"></textarea>
+      <div class="fila">
+        <input id="p-link" type="url" inputmode="url" placeholder="Link de la apuesta (https://…)" autocomplete="off">
+        <label class="foto">📷 Foto<input id="p-foto" type="file" accept="image/*"></label>
+      </div>
+      <div class="miniatura" id="p-mini" hidden><img id="p-mini-img" alt="Vista previa de la foto"><span id="p-mini-txt"></span>
+        <button type="button" id="p-quitar" style="padding:5px 9px;font-size:.8rem">Quitar</button></div>
+      <div class="fila">
+        <select id="p-horas" aria-label="Cuánto dura">
+          <option value="12">Se borra en 12 h</option><option value="24">Se borra en 24 h</option>
+          <option value="48" selected>Se borra en 48 h</option><option value="168">Se borra en 7 días</option>
+        </select>
+        <button class="primary" type="submit" id="p-btn">Publicar</button>
+      </div>
+    </form>
+  </div>
+  <div class="visor" id="visor" hidden><img id="visor-img" alt="Foto ampliada"></div>
+
   <!-- ===================== RESULTADOS ===================== -->
   <div id="v-resultados" class="vista section" hidden>
     <div class="filters" role="group" aria-label="Filtrar">
@@ -258,7 +310,7 @@ async function api(op, datos) {
 }
 function estado(msg) { const s = $("status"); s.textContent = msg || ""; s.hidden = !msg; }
 function mostrarLogin(msg) {
-  ["tabs", "v-bot", "v-normal", "v-reg", "v-resultados", "quien"].forEach(id => $(id).hidden = true);
+  ["tabs", "v-bot", "v-normal", "v-reg", "v-resultados", "v-comunidad", "quien"].forEach(id => $(id).hidden = true);
   $("v-login").hidden = false; estado(msg || "");
 }
 function salirLocal() { token = null; try { localStorage.removeItem(LLAVE); } catch (e) {} }
@@ -288,13 +340,15 @@ async function hacer(op, datos, errorTxt) {
 
 // ---------------------------------------------------------------- vistas
 function irA(v) {
-  vista = ["bot", "normal", "resultados"].includes(v) ? v : "bot";
+  vista = ["bot", "normal", "resultados", "comunidad"].includes(v) ? v : "bot";
   if (!listo) return;
   document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.v === vista)));
   $("v-bot").hidden = vista !== "bot";
   $("v-normal").hidden = vista !== "normal";
   $("v-resultados").hidden = vista !== "resultados";
-  $("v-reg").hidden = vista === "resultados";
+  $("v-comunidad").hidden = vista !== "comunidad";
+  $("v-reg").hidden = vista === "resultados" || vista === "comunidad";
+  if (vista === "comunidad") cargarFeed();
   $("v-reg").classList.toggle("vista-normal", vista === "normal");
   $("f-prob-wrap").hidden = vista !== "bot";
   $("ajustes").hidden = vista !== "bot";
@@ -479,6 +533,103 @@ $("salir").addEventListener("click", async () => {
   try { await fetch("/api/web", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ op: "salir", token }) }); } catch (e) {}
   salirLocal(); listo = false; mostrarLogin("Cerraste sesión en este navegador.");
 });
+
+// ---------------------------------------------------------------- comunidad
+let fotoData = null, feedTimer = null;
+const hace = t => {
+  const m = Math.round((Date.now() - t) / 60000);
+  return m < 1 ? "ahora" : m < 60 ? `hace ${m} min` : m < 1440 ? `hace ${Math.round(m / 60)} h` : `hace ${Math.round(m / 1440)} d`;
+};
+const quedan = t => { const h = Math.max(0, Math.round((t - Date.now()) / 3600000)); return h < 1 ? "se borra pronto" : `se borra en ${h} h`; };
+
+async function cargarFeed() {
+  if (!token) return;
+  try { pintarFeed(await api("feed")); }
+  catch (e) { if (e.auth) mostrarLogin(e.message); else estado(e.message || "No se pudo cargar la comunidad."); }
+  clearTimeout(feedTimer);
+  if (vista === "comunidad" && !document.hidden) feedTimer = setTimeout(cargarFeed, 30000);
+}
+function pintarFeed(lista) {
+  const cont = $("feed"), abajo = window.innerHeight + window.scrollY >= document.body.scrollHeight - 80;
+  cont.innerHTML = "";
+  if (!lista.length) { cont.append(el("p", "empty", "Todavía nadie publica. Sé el primero: sube la foto de tu apuesta con el link para que otros la copien.")); return; }
+  lista.forEach(p => {
+    const m = el("div", "msg" + (p.mio ? " mio" : ""));
+    const q = el("div", "quien-pub"); const b = el("b", "", p.mio ? "Tú" : p.autor);
+    q.append(b, document.createTextNode(" · " + hace(Date.parse(p.creada))));
+    m.append(q);
+    if (p.imagen && /^data:image\/(jpeg|png|webp);base64,/.test(p.imagen)) {
+      const img = el("img"); img.src = p.imagen; img.alt = "Foto de la apuesta de " + (p.mio ? "ti" : p.autor); img.loading = "lazy";
+      img.onclick = () => { $("visor-img").src = p.imagen; $("visor").hidden = false; };
+      m.append(img);
+    }
+    if (p.texto) m.append(el("p", "", p.texto));
+    if (p.link && /^https:\/\//.test(p.link)) {
+      const a = el("a", "ir", "Abrir apuesta ↗"); a.href = p.link; a.target = "_blank"; a.rel = "noopener noreferrer";
+      m.append(a);
+    }
+    const pie = el("div", "pie"); pie.append(el("span", "", quedan(Date.parse(p.expira))));
+    if (p.mio) {
+      const bajar = el("button", "", "Bajar"); bajar.type = "button";
+      bajar.onclick = async () => {
+        if (bajar.dataset.ok !== "1") { bajar.dataset.ok = "1"; bajar.textContent = "¿Seguro? Toca otra vez"; return; }
+        bajar.disabled = true;
+        try { await api("bajar", { id: p.id }); cargarFeed(); } catch (e) { estado(e.message || "No se pudo bajar."); bajar.disabled = false; }
+      };
+      pie.append(bajar);
+    }
+    m.append(pie); cont.append(m);
+  });
+  if (abajo) window.scrollTo(0, document.body.scrollHeight);
+}
+$("visor").addEventListener("click", () => { $("visor").hidden = true; $("visor-img").removeAttribute("src"); });
+
+// Comprime la foto en el celular antes de subirla (máx. 1080 px, JPEG) para que pese poco.
+function comprimir(file) {
+  return new Promise((ok, mal) => {
+    const lector = new FileReader();
+    lector.onerror = () => mal(new Error("No se pudo leer la foto."));
+    lector.onload = () => {
+      const img = new Image();
+      img.onerror = () => mal(new Error("Ese archivo no es una imagen."));
+      img.onload = () => {
+        const esc = Math.min(1, 1080 / Math.max(img.width, img.height));
+        const c = document.createElement("canvas");
+        c.width = Math.round(img.width * esc); c.height = Math.round(img.height * esc);
+        const ctx = c.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        let q = 0.75, data = c.toDataURL("image/jpeg", q);
+        while (data.length > 550000 && q > 0.35) { q -= 0.1; data = c.toDataURL("image/jpeg", q); }
+        data.length > 590000 ? mal(new Error("La foto es muy pesada. Prueba con una captura más pequeña.")) : ok(data);
+      };
+      img.src = lector.result;
+    };
+    lector.readAsDataURL(file);
+  });
+}
+$("p-foto").addEventListener("change", async () => {
+  const f = $("p-foto").files[0]; if (!f) return;
+  try {
+    fotoData = await comprimir(f);
+    $("p-mini-img").src = fotoData; $("p-mini-txt").textContent = Math.round(fotoData.length * 0.75 / 1024) + " KB";
+    $("p-mini").hidden = false;
+  } catch (e) { estado(e.message); fotoData = null; }
+});
+$("p-quitar").addEventListener("click", () => { fotoData = null; $("p-foto").value = ""; $("p-mini").hidden = true; });
+$("pub").addEventListener("submit", async e => {
+  e.preventDefault();
+  const texto = $("p-texto").value.trim(), link = $("p-link").value.trim();
+  if (!texto && !link && !fotoData) { estado("Escribe algo, agrega una foto o un link."); return; }
+  if (link && !/^https:\/\/\S+$/.test(link)) { estado("El link debe empezar con https://"); return; }
+  $("p-btn").disabled = true; estado("Publicando…");
+  try {
+    await api("publicar", { texto, link, imagen: fotoData, horas: Number($("p-horas").value) });
+    $("p-texto").value = ""; $("p-link").value = ""; fotoData = null; $("p-foto").value = ""; $("p-mini").hidden = true;
+    estado(""); await cargarFeed(); window.scrollTo(0, document.body.scrollHeight);
+  } catch (err) { estado(err.message || "No se pudo publicar."); }
+  $("p-btn").disabled = false;
+});
+document.addEventListener("visibilitychange", () => { if (!document.hidden && vista === "comunidad" && listo) cargarFeed(); });
 
 $("login").addEventListener("submit", async e => {
   e.preventDefault();
