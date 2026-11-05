@@ -8,19 +8,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Probar api/lol.js
-        working-directory: telegram
+      - name: Probar el token de Telegram (manda un mensaje al dueño)
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          node --input-type=module -e '
-          import h from "./api/lol.js";
-          const res = { setHeader() {}, status(c) { this.c = c; return this; }, json(d) {
-            console.log("status", this.c, "series para Elo:", d.series_elo, "eventos:", d.eventos?.length, "en vivo:", JSON.stringify(d.enVivo).slice(0, 600));
-            const p = (d.eventos || []).filter(e => e.estado !== "completed").slice(0, 4);
-            console.log(JSON.stringify(p, null, 1).slice(0, 2500));
-            console.log("resultados:", (d.eventos || []).filter(e => e.estado === "completed").slice(-3).map(e => [e.a?.code, e.a?.juegos, e.b?.code, e.b?.juegos, e.prob_a]));
-          } };
-          await h({ query: {} }, res);'
+          curl -s -o /dev/null -w "getMe %{http_code}\n" "https://api.telegram.org/bot${TELEGRAM_TOKEN}/getMe"
+          curl -s -o /dev/null -w "mensaje %{http_code}\n" -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" -d text="✅ Prueba: GitHub ya tiene el token nuevo. Las alertas de las 18:00 sí van a llegar."
+          curl -s -o /dev/null -w "vercel %{http_code}\n" -H "x-bot-token: ${TELEGRAM_TOKEN}" "https://bot-apuestas-telegram.vercel.app/api/telegram?usuarios=1"
