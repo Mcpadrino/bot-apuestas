@@ -148,6 +148,58 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
 .visor { position: fixed; inset: 0; background: rgba(0,0,0,.88); display: grid; place-items: center; z-index: 50;
   padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px)); }
 .visor img { max-width: 100%; max-height: 100%; border-radius: 8px; }
+/* ---------- Portadas (hero) ---------- */
+.summary.hero { position: relative; overflow: hidden; border: 0; color: #f2f7f4;
+  --hl: rgba(255,255,255,.72); --hpos: #8ff0bf; --hneg: #ffa596;
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(255,255,255,.16), transparent 60%),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 42px, transparent 42px 84px),
+    linear-gradient(160deg, #1d7a52 0%, #11523a 55%, #0a3324 100%);
+  box-shadow: 0 10px 30px -12px rgba(9, 50, 34, .55); }
+.summary.hero::before { content: ""; position: absolute; width: 190px; height: 190px; right: -60px; top: -70px;
+  border: 2px solid rgba(255,255,255,.10); border-radius: 50%; pointer-events: none; }
+.summary.hero::after { content: ""; position: absolute; top: 0; bottom: 0; right: 34px; width: 2px;
+  background: rgba(255,255,255,.07); pointer-events: none; }
+.summary.hero > * { position: relative; z-index: 1; }
+.summary.hero .label, .summary.hero .verdict { color: var(--hl); }
+.summary.hero .verdict { border-top-color: rgba(255,255,255,.18); }
+.summary.hero .pos { color: var(--hpos); } .summary.hero .neg { color: var(--hneg); }
+.summary.hero .stats > div { background: rgba(0,0,0,.18); border-radius: 10px; padding: 8px 10px; }
+.summary.hero.morado { background:
+    radial-gradient(120% 80% at 50% -10%, rgba(255,255,255,.14), transparent 60%),
+    repeating-linear-gradient(135deg, rgba(255,255,255,.035) 0 18px, transparent 18px 36px),
+    linear-gradient(160deg, #5b40a8 0%, #3a2878 55%, #221650 100%);
+  box-shadow: 0 10px 30px -12px rgba(40, 24, 90, .6); }
+.hero-saludo { font: 600 .95rem var(--font-body); color: var(--hl); }
+.marca { display: flex; gap: 10px; align-items: center; min-width: 0; }
+.marca img { width: 38px; height: 38px; border-radius: 10px; }
+.marca h1 { font-size: clamp(1.35rem, 6vw, 1.9rem); line-height: 1.05; }
+.bet-top .fila-sel { flex: 1 1 auto; }
+.bet-top .amt { flex: 0 0 auto; }
+
+/* ---------- Escudos (logo del equipo) ---------- */
+.escudo { position: relative; width: 46px; height: 46px; flex: 0 0 46px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--bg); border: 1px solid var(--line); }
+.escudo img { width: 34px; height: 34px; object-fit: contain; }
+.escudo .ini { font: 700 1.1rem var(--font-display); color: var(--muted); }
+.escudo .badge { position: absolute; right: -4px; bottom: -4px; width: 22px; height: 22px; border-radius: 50%; display: grid;
+  place-items: center; font: 700 .8rem/1 var(--font-body); border: 2px solid var(--surface); }
+.badge.gana { background: var(--win); color: var(--accent-ink); }
+.badge.pierde { background: var(--loss); color: #fff; }
+.badge.nula { background: var(--line); color: var(--muted); }
+.res.gana .escudo .badge { border-color: var(--win-bg); } .res.pierde .escudo .badge { border-color: var(--loss-bg); }
+.fila-sel { display: flex; gap: 12px; align-items: center; min-width: 0; }
+.fila-sel > div { min-width: 0; }
+.chip-liga { display: inline-flex; gap: 5px; align-items: center; font-size: .7rem; letter-spacing: .05em; text-transform: uppercase;
+  font-weight: 600; color: var(--muted); }
+.chip-liga img { width: 14px; height: 14px; object-fit: contain; }
+.res { grid-template-columns: 1fr auto; }
+
+/* ---------- Avatares de la comunidad ---------- */
+.msg .cabeza { display: flex; gap: 8px; align-items: center; }
+.avatar { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; flex: 0 0 30px;
+  font: 700 .85rem var(--font-body); color: #fff; }
+
 .sel-logo { display: flex; gap: 8px; align-items: center; min-width: 0; }
 .sel-logo img { width: 26px; height: 26px; object-fit: contain; flex: 0 0 auto; }
 .marcador { font-size: .82rem; font-family: var(--font-mono); color: var(--fg); }
@@ -158,7 +210,7 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
 
 <div class="wrap">
   <header>
-    <h1>Bitácora de Apuestas</h1>
+    <div class="marca"><img src="/icon-192.png" alt=""><h1>Bitácora de Apuestas</h1></div>
     <div class="quien" id="quien" hidden><span id="q-nombre"></span><button type="button" id="refrescar">Actualizar</button></div>
   </header>
   <div class="instalar" id="instalar" hidden>
@@ -191,7 +243,8 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
 
   <!-- ===================== BANCA BOT ===================== -->
   <div id="v-bot" class="vista" hidden>
-    <section class="summary" aria-label="Banca del bot">
+    <section class="summary hero" aria-label="Banca del bot">
+      <div class="hero-saludo" id="b-saludo">🤖 Banca del bot</div>
       <div class="bank">
         <div><div class="label">Banca actual</div><div class="big num" id="b-banca">$200.00</div></div>
         <div style="text-align:right"><div class="label">Ganancia real</div><div class="num" id="b-gan" style="font-size:1.3rem">$0.00</div></div>
@@ -209,7 +262,8 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
 
   <!-- ===================== APUESTA NORMAL ===================== -->
   <div id="v-normal" class="vista vista-normal" hidden>
-    <section class="summary" aria-label="Apuestas normales">
+    <section class="summary hero morado" aria-label="Apuestas normales">
+      <div class="hero-saludo">🎲 Tus apuestas por tu cuenta</div>
       <div class="bank">
         <div><div class="label">Ganancia / pérdida</div><div class="big num" id="n-res">$0.00</div></div>
         <div style="text-align:right"><div class="label">Total apostado</div><div class="num" id="n-apos" style="font-size:1.3rem">$0.00</div></div>
@@ -340,12 +394,14 @@ async function cargar() {
     const r = await api("todas");
     bancaInicial = Number(r.banca) || 200;
     $("cfg-banca").value = bancaInicial;
-    $("q-nombre").textContent = r.nombre ? "Hola, " + r.nombre : "";
+    $("q-nombre").textContent = "";
+    $("b-saludo").textContent = r.nombre ? `🤖 Hola, ${r.nombre} · banca del bot` : "🤖 Banca del bot";
     apuestas = (r.apuestas || []).map(x => ({
       id: String(x.id), partido: String(x.partido || ""), seleccion: String(x.seleccion || ""), casa: String(x.casa || ""),
       cuota: Number(x.cuota) || 2, prob: x.prob ? Number(x.prob) : null, monto: Number(x.monto) || 0,
       cartera: x.cartera === "libre" ? "normal" : "bot",
       marcador: x.marcador ? String(x.marcador) : "", logo: /^https:\/\//.test(x.logo || "") ? x.logo : "",
+      liga: x.liga ? String(x.liga) : "", ligaLogo: /^https:\/\//.test(x.liga_logo || "") ? x.liga_logo : "",
       resultado: String(x.resultado || "pendiente"), creada: Date.parse(x.creada) || 0,
       cerrada: x.cerrada ? Date.parse(x.cerrada) : null }));
     listo = true; estado("");
@@ -448,9 +504,9 @@ function dibujarBanca(cerradas) {
   const base = 52 - (bancaInicial - mn) / r * 46, ns = "http://www.w3.org/2000/svg";
   const mk = (tag, at) => { const e = document.createElementNS(ns, tag); Object.entries(at).forEach(([k, v]) => e.setAttribute(k, v)); return e; };
   svg.append(
-    mk("line", { x1: 0, x2: 300, y1: base, y2: base, stroke: "var(--line)", "stroke-dasharray": "3 3", "vector-effect": "non-scaling-stroke" }),
-    mk("path", { d: "M" + xy.map(p => p.join(",")).join(" L") + " L298,56 L2,56 Z", fill: "var(--accent)", opacity: ".12" }),
-    mk("polyline", { points: xy.map(p => p.join(",")).join(" "), fill: "none", stroke: "var(--accent)", "stroke-width": 2, "vector-effect": "non-scaling-stroke" }));
+    mk("line", { x1: 0, x2: 300, y1: base, y2: base, stroke: "rgba(255,255,255,.35)", "stroke-dasharray": "3 3", "vector-effect": "non-scaling-stroke" }),
+    mk("path", { d: "M" + xy.map(p => p.join(",")).join(" L") + " L298,56 L2,56 Z", fill: "#ffffff", opacity: ".14" }),
+    mk("polyline", { points: xy.map(p => p.join(",")).join(" "), fill: "none", stroke: "#ffffff", "stroke-width": 2.5, "vector-effect": "non-scaling-stroke" }));
 }
 
 function meta(b) {
@@ -458,6 +514,26 @@ function meta(b) {
     .filter(Boolean).join(" · ");
 }
 
+function imagen(src, cls = "") {
+  const im = el("img", cls); im.src = src; im.alt = ""; im.loading = "lazy"; im.decoding = "async";
+  im.onerror = () => im.remove(); return im;
+}
+function escudo(b, badge) {
+  const e = el("div", "escudo");
+  if (b.logo) e.append(imagen(b.logo));
+  else e.append(el("span", "ini", (b.seleccion.trim()[0] || "?").toUpperCase()));
+  if (badge) {
+    const s = el("span", "badge " + badge, badge === "gana" ? "✓" : badge === "pierde" ? "✗" : "–");
+    s.setAttribute("aria-label", { gana: "Ganada", pierde: "Perdida", nula: "Nula" }[badge]); e.append(s);
+  }
+  return e;
+}
+function chipLiga(b, extra = "") {
+  const c = el("span", "chip-liga");
+  if (b.ligaLogo) c.append(imagen(b.ligaLogo));
+  c.append(document.createTextNode([b.liga, extra].filter(Boolean).join(" · ")));
+  return c;
+}
 function selConLogo(b, prefijo = "") {
   const caja = el("div", "sel-logo");
   if (b.logo) { const im = el("img"); im.src = b.logo; im.alt = ""; im.loading = "lazy"; im.onerror = () => im.remove(); caja.append(im); }
@@ -475,9 +551,12 @@ function pintarPendientes(lista) {
   }
   lista.forEach(b => {
     const card = el("div", "bet");
-    const top = el("div", "bet-top"), izq = el("div"), der = el("div", "amt");
-    izq.append(selConLogo(b), el("div", "meta", meta(b)));
-    if (b.marcador) izq.append(el("div", "marcador", "🏁 " + b.marcador + " · confírmalo abajo"));
+    const top = el("div", "bet-top"), izq = el("div", "fila-sel"), der = el("div", "amt");
+    const txt = el("div");
+    if (b.liga) txt.append(chipLiga(b));
+    txt.append(el("div", "sel", b.seleccion), el("div", "meta", meta(b)));
+    izq.append(escudo(b), txt);
+    if (b.marcador) txt.append(el("div", "marcador", "🏁 " + b.marcador + " · confírmalo abajo"));
     der.append(el("div", "num", fmt(b.monto)), el("div", "meta", "cobra " + fmt(b.monto * b.cuota)));
     top.append(izq, der); card.append(top);
     const act = el("div", "actions");
@@ -501,18 +580,18 @@ function pintarResultados(lista) {
   if (!lista.length) { cont.append(el("p", "empty", "Aquí aparecen tus apuestas ya cerradas: ✓ las ganadas y ✗ las perdidas.")); return; }
   lista.forEach(b => {
     const row = el("div", "res " + b.resultado);
-    const icon = el("div", "icon", b.resultado === "gana" ? "✓" : b.resultado === "pierde" ? "✗" : "–");
-    icon.setAttribute("aria-label", { gana: "Ganada", pierde: "Perdida", nula: "Nula" }[b.resultado]);
-    const mid = el("div");
-    mid.append(el("div", "tag " + b.cartera, (b.cartera === "bot" ? "🤖 Bot" : "🎲 Normal") + " · " + fecha(b.cerrada)),
-      selConLogo(b), el("div", "meta", meta(b)));
-    if (b.marcador) mid.append(el("div", "marcador", "🏁 " + b.marcador));
+    const mid = el("div", "fila-sel"), txt = el("div");
+    txt.append(el("div", "tag " + b.cartera, (b.cartera === "bot" ? "🤖 Bot" : "🎲 Normal") + " · " + fecha(b.cerrada)));
+    if (b.liga) txt.append(chipLiga(b));
+    txt.append(el("div", "sel", b.seleccion), el("div", "meta", meta(b)));
+    mid.append(escudo(b, b.resultado), txt);
+    if (b.marcador) txt.append(el("div", "marcador", "🏁 " + b.marcador));
     const g = ganancia(b), der = el("div", "amt");
     der.append(el("div", clase(g), b.resultado === "nula" ? "Nula" : sign(g)), el("div", "meta", "apostó " + fmt(b.monto)));
     const re = el("button", "", "Reabrir"); re.type = "button"; re.style.cssText = "padding:4px 8px;font-size:.75rem;margin-top:4px";
     re.onclick = () => cerrar(b.id, "pendiente");
     der.append(re);
-    row.append(icon, mid, der); cont.append(row);
+    row.append(mid, der); cont.append(row);
   });
 }
 
@@ -607,9 +686,13 @@ function pintarFeed(lista) {
   if (!lista.length) { cont.append(el("p", "empty", "Todavía nadie publica. Sé el primero: sube la foto de tu apuesta con el link para que otros la copien.")); return; }
   lista.forEach(p => {
     const m = el("div", "msg" + (p.mio ? " mio" : ""));
+    const cab = el("div", "cabeza");
+    const av = el("span", "avatar", (p.autor || "?").trim()[0].toUpperCase());
+    let h = 0; for (const ch of p.autor || "") h = (h * 31 + ch.charCodeAt(0)) % 360;
+    av.style.background = `hsl(${h} 55% 42%)`;
     const q = el("div", "quien-pub"); const b = el("b", "", p.mio ? "Tú" : p.autor);
     q.append(b, document.createTextNode(" · " + hace(Date.parse(p.creada))));
-    m.append(q);
+    cab.append(av, q); m.append(cab);
     if (p.imagen && /^data:image\/(jpeg|png|webp);base64,/.test(p.imagen)) {
       const img = el("img"); img.src = p.imagen; img.alt = "Foto de la apuesta de " + (p.mio ? "ti" : p.autor); img.loading = "lazy";
       img.onclick = () => { $("visor-img").src = p.imagen; $("visor").hidden = false; };

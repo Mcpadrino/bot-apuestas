@@ -3,6 +3,8 @@
 // Variables de entorno: TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, WEBHOOK_SECRET,
 // SUPABASE_URL, SUPABASE_KEY (publishable/anon), BOT_CLAVE (clave de la función bot en la BD).
 
+import { buscarLogo } from "../lib/espn.js";
+
 const env = (k) => (process.env[k] || "").replace(/\s/g, "");
 const TG = () => `https://api.telegram.org/bot${env("TELEGRAM_TOKEN")}`;
 
@@ -258,6 +260,10 @@ async function atenderTexto(chat, texto, esDueno, msgId) {
     return enviar("El % debe estar entre 0 y 100.");
 
   const a = await dbu("registrar", ap);
+  try {                                   // logo del equipo y de la liga (ESPN); si falla, se guarda sin logo
+    const l = await buscarLogo(`${ap.seleccion} ${ap.partido || ""}`);
+    if (l) await rpcResultados("logo", { id: a.id, ...l });
+  } catch (e) { console.error("logo", e); }
   const gan = ap.monto * (ap.cuota - 1);
   let extra = `\nSi gana cobras ${money(ap.monto * ap.cuota)} (${signed(gan)})`;
   if (ap.cartera === "libre") extra += "\n🎲 Va a tus apuestas libres: no toca la banca del bot.";

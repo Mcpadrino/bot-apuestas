@@ -1,6 +1,8 @@
 // API de la página web. Cada quien entra con su usuario y contraseña (los crea desde el bot
 // de Telegram) y solo puede ver y cambiar sus propias apuestas.
 
+import { buscarLogo } from "../lib/espn.js";
+
 const env = (k) => (process.env[k] || "").replace(/\s/g, "");
 
 async function rpc(fn, accion, datos = {}) {
@@ -65,10 +67,15 @@ export default async function handler(req, res) {
         if (!(cuota > 1) || !(monto > 0) || !txt(d.seleccion))
           return res.status(400).json({ error: "Faltan la selección, el momio o el monto." });
         if (prob !== null && !(prob > 0 && prob < 1)) return res.status(400).json({ error: "El % debe estar entre 0 y 100." });
-        return res.status(200).json(await rpc("bot", "registrar", {
+        const a = await rpc("bot", "registrar", {
           usuario, cartera: d.cartera === "libre" ? "libre" : "bot", partido: txt(d.partido),
           seleccion: txt(d.seleccion), casa: txt(d.casa, 40), cuota, monto, prob,
-        }));
+        });
+        try {
+          const l = await buscarLogo(`${txt(d.seleccion)} ${txt(d.partido)}`);
+          if (l) await rpc("resultados", "logo", { id: a.id, ...l });
+        } catch (e) { console.error("logo", e); }
+        return res.status(200).json(a);
       }
       case "cerrar": {
         const d = b.datos || {};
