@@ -1009,7 +1009,7 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
   <!-- ===================== LoL ===================== -->
   <div id="v-lol" class="vista section" hidden>
     <section class="lol-hero">
-      <div class="lol-player" id="lol-player"><button type="button" class="lol-play" id="lol-play">▶ Ver en vivo</button>
+      <div class="lol-player" id="lol-player"><button type="button" class="lol-play" id="lol-play">▶ Ver a Ibai en vivo</button>
         <small id="lol-estado-tx">Toca para cargar el video (así no gasta datos si no lo ves).</small></div>
       <div class="lol-canales" id="lol-canales"></div>
     </section>
@@ -3256,6 +3256,7 @@ document.querySelectorAll("[data-juego]").forEach(b => b.addEventListener("click
 
 // ---------------------------------------------------------------- 🐉 LoL Worlds
 let lolDatos = null, lolFiltro = "prox", lolTimer = null, lolCanal = null, lolPicks = { picks: [], res: {}, tabla: [] };
+const IBAI_EXTRA = { nombre: "📺 Ibai Extra (YouTube)", provider: "youtube-canal", parametro: "UCcUrgGVXA6yQVCjK5FfCHkA" };
 const CANALES_FIJOS = [
   { nombre: "LoL Esports (YouTube)", provider: "youtube-canal", parametro: "UCvqRdlKsE5Q8mf8YXbdIJLw" },
   { nombre: "Ibai (Twitch)", provider: "twitch", parametro: "ibai" },
@@ -3283,7 +3284,7 @@ function canalesLol() {
   }));
   // primero los oficiales en español
   oficiales.sort((a, b) => (/es/i.test(b.nombre) ? 1 : 0) - (/es/i.test(a.nombre) ? 1 : 0));
-  return [...oficiales.slice(0, 3), ...CANALES_FIJOS];
+  return [IBAI_EXTRA, ...oficiales.slice(0, 2), ...CANALES_FIJOS];       // Ibai Extra siempre primero
 }
 async function cargarLol() {
   clearTimeout(lolTimer);
