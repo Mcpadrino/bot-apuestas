@@ -327,15 +327,50 @@ def usuarios_alertas():
     return [(DUENO, BANCA, "")]
 
 
-def telegram(texto, chat=None):
+def guardar_senales(tabla):
+    """Guarda las señales en el bot de Telegram para el botón "Lo aposté". Devuelve {partido: id} o {}."""
+    token = "".join(os.getenv("TELEGRAM_TOKEN", "").split())
+    if not (requests and token and tabla):
+        return {}
+    lote = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%d%H%M%S")
+    filas = [{"evento": str(f["evento"]), "partido": f["partido"], "deporte": f["deporte"],
+              "inicio": f["inicio"].isoformat(), "mercado": f["mk"], "seleccion": f["seleccion"],
+              "prob": round(f["prob"], 4), "minima": round(f["minima"], 3)} for f in tabla]
+    try:
+        r = requests.post(f"{BOT_URL}/api/telegram", params={"senales": "1"}, headers={"x-bot-token": token},
+                          json={"lote": lote, "filas": filas}, timeout=20)
+        r.raise_for_status()
+        ids = {}
+        for g in r.json():
+            ids.setdefault(g["evento"], g["id"])          # primer id de cada partido
+        return {f["partido"]: ids[str(f["evento"])] for f in tabla if str(f["evento"]) in ids}
+    except (requests.RequestException, ValueError, KeyError) as e:
+        print(f"No se pudieron guardar las señales: {type(e).__name__}", file=sys.stderr)
+        return {}
+
+
+def teclado_lo_aposte(tabla, ids):
+    partidos = []
+    for f in sorted(tabla, key=lambda x: x["inicio"]):
+        if f["partido"] in ids and f["partido"] not in [p for p, _ in partidos]:
+            partidos.append((f["partido"], ids[f["partido"]]))
+    if not partidos:
+        return None
+    return {"inline_keyboard": [[{"text": f"✅ Lo aposté · {p}"[:60], "callback_data": f"p:{i}"}] for p, i in partidos[:40]]}
+
+
+def telegram(texto, chat=None, botones=None):
     token = "".join(os.getenv("TELEGRAM_TOKEN", "").split())
     chat = chat or DUENO
     if not (token and chat and requests):
         return
     try:
-        for i in range(0, len(texto), 4000):          # límite de Telegram por mensaje
-            requests.post(f"https://api.telegram.org/bot{token}/sendMessage",
-                          data={"chat_id": chat, "text": texto[i:i + 4000]}, timeout=10)
+        trozos = [texto[i:i + 4000] for i in range(0, len(texto), 4000)]   # límite de Telegram por mensaje
+        for n, t in enumerate(trozos):
+            datos = {"chat_id": chat, "text": t}
+            if botones and n == len(trozos) - 1:          # los botones van en el último trozo
+                datos["reply_markup"] = json.dumps(botones)
+            requests.post(f"https://api.telegram.org/bot{token}/sendMessage", data=datos, timeout=10)
     except requests.RequestException as e:
         print(f"No se pudo enviar a Telegram: {type(e).__name__}", file=sys.stderr)
 
@@ -546,7 +581,7 @@ def escanear(args):
                         "fuente": fuente, "monto": monto_sugerido(p, minima),
                         "mov": (p - antes) if antes is not None else 0.0,
                         "inicio": inicio, "deporte": sport, "mk": mk,
-                        "local": ev["home_team"], "visita": ev["away_team"],
+                        "local": ev["home_team"], "visita": ev["away_team"], "evento": ev.get("id", partido),
                     }
                     tabla.append(fila)
                     c[3] += 1
@@ -591,6 +626,7 @@ def escanear(args):
         global BANCA
         banca_original = BANCA
         imagen = cartelera(tabla)
+        botones = teclado_lo_aposte(tabla, guardar_senales(tabla))
         for chat, banca, _nombre in usuarios_alertas():
             telegram_foto(imagen, chat)
             BANCA = banca                     # el monto sugerido depende de la banca de cada quien
@@ -600,7 +636,9 @@ def escanear(args):
             msg.append(f"\n📋 {con_senal}")
             if nota_creditos and chat == DUENO:
                 msg.append(nota_creditos.split(" · ")[0])
-            telegram("\n".join(msg), chat)
+            if botones:
+                msg.append("\n👇 ¿Apostaste alguna? Toca el partido y te pregunto el momio.")
+            telegram("\n".join(msg), chat, botones)
         BANCA = banca_original
 
     if valor:

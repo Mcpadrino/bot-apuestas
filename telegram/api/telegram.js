@@ -251,6 +251,28 @@ async function atenderTexto(chat, texto, esDueno, msgId) {
     return enviar(`Banca inicial: ${money(parseFloat(args[0]))}\n\n` + await resumen(dbu));
   }
 
+  // ¿Está contestando a un "Lo aposté"? (le pedimos momio y monto)
+  const pendiente = await rpcSenal("espera", { usuario: chat });
+  if (pendiente) {
+    if (["cancelar", "no", "salir"].includes(cmd)) {
+      await rpcSenal("fin", { usuario: chat });
+      return enviar("Ok, no registré nada.");
+    }
+    const r = parseearSeguro(limpio);
+    if (r.cuota && r.monto && r.seleccion) await rpcSenal("fin", { usuario: chat });   // escribió otra apuesta completa
+    else if (r.cuota && r.monto) {
+      await rpcSenal("fin", { usuario: chat });
+      const nombreMercado = { h2h: "Ganador", totals: "Total", spreads: "Hándicap" }[pendiente.mercado] || "";
+      const sel = pendiente.mercado === "h2h" ? pendiente.seleccion : `${pendiente.seleccion} (${nombreMercado})`;
+      return registrarYConfirmar(chat, dbu, enviar, {
+        seleccion: sel, partido: pendiente.partido, cuota: r.cuota, monto: r.monto,
+        prob: pendiente.prob ? Number(pendiente.prob) : null, casa: r.casa || "Caliente", cartera: "bot",
+        minima: pendiente.minima ? Number(pendiente.minima) : null,
+      });
+    }
+    else return enviar(`Para *${pendiente.seleccion}* escribe el momio que tomaste y el monto, por ejemplo \`-380 5\`.\nSi fue en Draftea: \`-380 5 draftea\`. Escribe *cancelar* para salir.`);
+  }
+
   // Cualquier otro texto: intentar registrarlo como apuesta
   const cuerpo = ["apuesta", "a", "registrar"].includes(cmd) ? args.join(" ") : limpio;
   const ap = parseearSeguro(cuerpo);
@@ -259,6 +281,10 @@ async function atenderTexto(chat, texto, esDueno, msgId) {
   if (ap.prob !== null && !(ap.prob > 0 && ap.prob < 1))
     return enviar("El % debe estar entre 0 y 100.");
 
+  return registrarYConfirmar(chat, dbu, enviar, ap);
+}
+
+async function registrarYConfirmar(chat, dbu, enviar, ap) {
   const a = await dbu("registrar", ap);
   try {                                   // logo del equipo y de la liga (ESPN); si falla, se guarda sin logo
     const l = await buscarLogo(`${ap.seleccion} ${ap.partido || ""}`);
@@ -266,12 +292,25 @@ async function atenderTexto(chat, texto, esDueno, msgId) {
   } catch (e) { console.error("logo", e); }
   const gan = ap.monto * (ap.cuota - 1);
   let extra = `\nSi gana cobras ${money(ap.monto * ap.cuota)} (${signed(gan)})`;
+  if (ap.minima && ap.cuota < ap.minima)
+    extra += `\n⚠️ Tomaste ${amer(ap.cuota)} y el mínimo era ${amer(ap.minima)}: esta apuesta no tiene valor.`;
   if (ap.cartera === "libre") extra += "\n🎲 Va a tus apuestas libres: no toca la banca del bot.";
   else if (ap.prob) {
     const ev = ap.prob * ap.cuota - 1;
     extra += `\nValor: ${ev >= 0 ? "+" : ""}${(ev * 100).toFixed(1)}%` + (ev < 0.03 ? " ⚠️ por debajo del mínimo del bot" : " 👍");
   }
   return enviar(`✅ Guardada\n${lineaApuesta(a)}${extra}\n\nCuando termine, toca el resultado:`, { reply_markup: botones(a.id) });
+}
+
+async function rpcSenal(accion, datos) {
+  const r = await fetch(`${env("SUPABASE_URL")}/rest/v1/rpc/senal`, {
+    method: "POST",
+    headers: { "content-type": "application/json", apikey: env("SUPABASE_KEY"), authorization: `Bearer ${env("SUPABASE_KEY")}` },
+    body: JSON.stringify({ p_clave: env("BOT_CLAVE"), p_accion: accion, p_datos: datos }),
+  });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.message || "error de base de datos");
+  return j;
 }
 
 function parseearSeguro(t) { try { return parsearApuesta(t); } catch { return {}; } }
@@ -304,6 +343,23 @@ async function atenderBoton(q) {
     if (res === "pendiente")
       await tg("editMessageReplyMarkup", { chat_id: chat, message_id: msgId, reply_markup: botones(id) });
     await tg("answerCallbackQuery", { callback_query_id: q.id, text: ETIQUETA[res] });
+  } else if (tipo === "p") {
+    // Eligió un partido de la alerta: mostrar sus opciones
+    const h = await rpcSenal("hermanas", { id: Number(id) });
+    if (!h) { await tg("answerCallbackQuery", { callback_query_id: q.id, text: "Esa alerta ya no está disponible" }); return; }
+    const NM = { h2h: "Ganador", totals: "Total", spreads: "Hándicap" };
+    await tg("sendMessage", { chat_id: chat, parse_mode: "Markdown",
+      text: `*${h.partido.replace(/[_*\x60[\]]/g, "")}*\n¿Qué apostaste?`,
+      reply_markup: { inline_keyboard: h.opciones.map((o) => [{
+        text: `${o.seleccion} · ${NM[o.mercado] || ""} · ${o.prob ? Math.round(o.prob * 100) + "%" : ""}${o.minima ? " · mín " + amer(Number(o.minima)) : ""}`.slice(0, 64),
+        callback_data: `s:${o.id}` }]) } });
+    await tg("answerCallbackQuery", { callback_query_id: q.id });
+  } else if (tipo === "s") {
+    const o = await rpcSenal("esperar", { usuario: String(chat), id: Number(id) });
+    if (!o) { await tg("answerCallbackQuery", { callback_query_id: q.id, text: "Esa opción ya no está disponible" }); return; }
+    await tg("sendMessage", { chat_id: chat, parse_mode: "Markdown",
+      text: `👍 *${o.seleccion.replace(/[_*\x60[\]]/g, "")}*${o.minima ? ` (mínimo ${amer(Number(o.minima))})` : ""}\n\n¿A qué momio y cuánto? Ejemplo: \`-380 5\`\nSi fue en Draftea: \`-380 5 draftea\` · *cancelar* para salir.` });
+    await tg("answerCallbackQuery", { callback_query_id: q.id });
   } else if (tipo === "n") {
     await rpcResultados("descartar", { id: Number(id), usuario: String(chat) });
     await editar(`👍 Ok, no era ese partido. Marca la apuesta #${id} tú cuando termine (📋 Pendientes).`);
@@ -335,6 +391,11 @@ export default async function handler(req, res) {
   if (req.query.pendientes !== undefined) {
     if (!tokenOk()) return res.status(401).json({ error: "no" });
     return res.status(200).json(await rpcResultados("pendientes", {}));
+  }
+  if (req.query.senales !== undefined && req.method === "POST") {
+    if (!tokenOk()) return res.status(401).json({ error: "no" });
+    const b = req.body || {};
+    return res.status(200).json(await rpcSenal("guardar", { lote: String(b.lote || ""), filas: Array.isArray(b.filas) ? b.filas.slice(0, 300) : [] }));
   }
   if (req.query.proponer !== undefined && req.method === "POST") {
     if (!tokenOk()) return res.status(401).json({ error: "no" });

@@ -69,3 +69,27 @@ export async function buscarLogo(texto) {
   // Si dos equipos empatan (p. ej. "Atlético") mejor no adivinar
   return puntos >= 0.8 && !empate && mejor?.logo ? mejor : null;
 }
+
+// Partidos de un día (fecha AAAAMMDD) en todas las ligas, con logos y marcador en vivo.
+export async function partidosDelDia(fecha) {
+  const ligas = await Promise.all(Object.entries(LIGAS).map(async ([ruta, nombre]) => {
+    const j = await json(`${BASE}${ruta}/scoreboard?dates=${fecha}&limit=200`, 4000);
+    const ligaLogo = j?.leagues?.[0]?.logos?.[0]?.href || null;
+    return (j?.events || []).map((ev) => {
+      const comp = ev.competitions?.[0] || {};
+      const lado = (h) => {
+        const c = (comp.competitors || []).find((x) => x.homeAway === h) || {};
+        return { nombre: c.team?.shortDisplayName || c.team?.displayName || "", logo: c.team?.logo || null,
+                 marcador: c.score ?? null, ganador: Boolean(c.winner) };
+      };
+      const st = ev.status?.type || {};
+      return {
+        id: ev.id, liga: nombre, ligaLogo, inicio: ev.date,
+        estado: st.state || "pre",                 // pre | in | post
+        detalle: st.shortDetail || st.detail || "",
+        local: lado("home"), visita: lado("away"),
+      };
+    });
+  }));
+  return ligas.flat().sort((a, b) => (a.inicio || "").localeCompare(b.inicio || ""));
+}

@@ -51,9 +51,9 @@ h2 { font: 700 1.15rem/1.2 var(--font-display); letter-spacing: .06em; text-tran
 .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .pos { color: var(--win); } .neg { color: var(--loss); }
 
-.tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; background: var(--surface); border: 1px solid var(--line);
+.tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; background: var(--surface); border: 1px solid var(--line);
   border-radius: 10px; padding: 4px; }
-.tab { border: 0; border-radius: 7px; padding: 9px 2px; background: transparent; color: var(--muted); font-size: .8rem; line-height: 1.2; }
+.tab { border: 0; border-radius: 7px; padding: 9px 1px; background: transparent; color: var(--muted); font-size: .72rem; line-height: 1.2; }
 .tab .ico { display: block; font-size: 1.15rem; }
 .tab[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
 .tab[data-v="normal"][aria-selected="true"] { background: var(--normal); color: #fff; }
@@ -195,6 +195,41 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
 .chip-liga img { width: 14px; height: 14px; object-fit: contain; }
 .res { grid-template-columns: 1fr auto; }
 
+/* ---------- Estadísticas ---------- */
+.stats-sec { display: grid; gap: 8px; }
+.stat-fila { display: grid; grid-template-columns: 28px 1fr auto auto; gap: 10px; align-items: center; background: var(--surface);
+  border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; font-size: .9rem; }
+.stat-fila img, .stat-fila .ini-liga { width: 26px; height: 26px; object-fit: contain; }
+.stat-fila .ini-liga { display: grid; place-items: center; border-radius: 50%; background: var(--bg); font-size: .9rem; }
+.stat-fila .nombre { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stat-fila .rec { color: var(--muted); font-size: .8rem; }
+.stat-fila .neto { text-align: right; min-width: 82px; }
+.stat-fila .neto small { display: block; color: var(--muted); font-size: .72rem; }
+.barra { height: 4px; border-radius: 2px; background: var(--line); grid-column: 2 / -1; overflow: hidden; }
+.barra i { display: block; height: 100%; background: var(--win); }
+
+/* ---------- Hoy ---------- */
+.dia { display: flex; gap: 6px; }
+.dia button { padding: 6px 12px; font-size: .82rem; border-radius: 999px; }
+.dia button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.liga-cab { display: flex; gap: 8px; align-items: center; font: 700 .95rem var(--font-display); letter-spacing: .06em;
+  text-transform: uppercase; color: var(--muted); margin-top: 6px; }
+.liga-cab img { width: 22px; height: 22px; object-fit: contain; }
+.juego { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: grid; gap: 6px; }
+.juego.mio { border: 2px solid var(--accent); }
+.juego .eq { display: grid; grid-template-columns: 30px 1fr auto; gap: 10px; align-items: center; }
+.juego .eq img { width: 28px; height: 28px; object-fit: contain; }
+.juego .eq .n { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.juego .eq.gano .n, .juego .eq.gano .num { color: var(--fg); }
+.juego .eq.perdio .n, .juego .eq.perdio .num { color: var(--muted); font-weight: 500; }
+.juego .eq .num { font-size: 1.15rem; font-weight: 600; }
+.juego .estado { display: flex; justify-content: space-between; gap: 8px; font-size: .75rem; color: var(--muted); }
+.vivo { color: var(--loss); font-weight: 700; display: inline-flex; gap: 6px; align-items: center; }
+.vivo::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--loss); }
+@media (prefers-reduced-motion: no-preference) { .vivo::before { animation: latido 1.2s infinite; } }
+@keyframes latido { 50% { opacity: .25; } }
+.tu-apuesta { font-size: .8rem; background: var(--win-bg); color: var(--fg); border-radius: 8px; padding: 6px 8px; }
+
 /* ---------- Avatares de la comunidad ---------- */
 .msg .cabeza { display: flex; gap: 8px; align-items: center; }
 .avatar { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; flex: 0 0 30px;
@@ -234,9 +269,10 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
   </section>
 
   <nav class="tabs" role="tablist" aria-label="Secciones" id="tabs" hidden>
-    <button class="tab" role="tab" data-v="bot" id="t-bot"><span class="ico">🤖</span>Banca bot</button>
+    <button class="tab" role="tab" data-v="bot" id="t-bot"><span class="ico">🤖</span>Bot</button>
     <button class="tab" role="tab" data-v="normal" id="t-normal"><span class="ico">🎲</span>Normal</button>
     <button class="tab" role="tab" data-v="resultados" id="t-res"><span class="ico">📜</span>Resultados</button>
+    <button class="tab" role="tab" data-v="hoy" id="t-hoy"><span class="ico">📺</span>Hoy</button>
     <button class="tab" role="tab" data-v="comunidad" id="t-com"><span class="ico">💬</span>Comunidad</button>
   </nav>
   <p class="status" id="status" hidden></p>
@@ -345,7 +381,27 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
       <span><span class="pos">✓ <b class="num" id="r-w">0</b></span> · <span class="neg">✗ <b class="num" id="r-l">0</b></span></span>
       <span>Neto: <b class="num" id="r-net">$0.00</b></span>
     </div>
+    <div class="stats-sec" id="por-liga-sec" hidden><h2>Por liga</h2><div class="stats-sec" id="por-liga"></div></div>
+    <div class="stats-sec" id="por-casa-sec" hidden><h2>Por casa</h2><div class="stats-sec" id="por-casa"></div></div>
+    <h2>Apuestas cerradas</h2>
     <div class="list" id="res"></div>
+  </div>
+
+  <!-- ===================== HOY ===================== -->
+  <div id="v-hoy" class="vista section" hidden>
+    <div class="head">
+      <div class="dia" role="group" aria-label="Día">
+        <button type="button" data-d="-1" aria-pressed="false">Ayer</button>
+        <button type="button" data-d="0" aria-pressed="true">Hoy</button>
+        <button type="button" data-d="1" aria-pressed="false">Mañana</button>
+      </div>
+      <div class="filters" role="group" aria-label="Mostrar">
+        <button type="button" data-h="todos" aria-pressed="true">Todos</button>
+        <button type="button" data-h="mios" aria-pressed="false">Mis apuestas</button>
+      </div>
+    </div>
+    <p class="hint" id="hoy-act"></p>
+    <div class="list" id="hoy"></div>
   </div>
 </div>
 
@@ -383,7 +439,7 @@ async function api(op, datos) {
 }
 function estado(msg) { const s = $("status"); s.textContent = msg || ""; s.hidden = !msg; }
 function mostrarLogin(msg) {
-  ["tabs", "v-bot", "v-normal", "v-reg", "v-resultados", "v-comunidad", "quien"].forEach(id => $(id).hidden = true);
+  ["tabs", "v-bot", "v-normal", "v-reg", "v-resultados", "v-comunidad", "v-hoy", "quien"].forEach(id => $(id).hidden = true);
   $("v-login").hidden = false; estado(msg || "");
 }
 function salirLocal() { token = null; try { localStorage.removeItem(LLAVE); } catch (e) {} }
@@ -416,14 +472,16 @@ async function hacer(op, datos, errorTxt) {
 
 // ---------------------------------------------------------------- vistas
 function irA(v) {
-  vista = ["bot", "normal", "resultados", "comunidad"].includes(v) ? v : "bot";
+  vista = ["bot", "normal", "resultados", "hoy", "comunidad"].includes(v) ? v : "bot";
   if (!listo) return;
   document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.v === vista)));
   $("v-bot").hidden = vista !== "bot";
   $("v-normal").hidden = vista !== "normal";
   $("v-resultados").hidden = vista !== "resultados";
   $("v-comunidad").hidden = vista !== "comunidad";
-  $("v-reg").hidden = vista === "resultados" || vista === "comunidad";
+  $("v-hoy").hidden = vista !== "hoy";
+  $("v-reg").hidden = ["resultados", "comunidad", "hoy"].includes(vista);
+  if (vista === "hoy") cargarHoy();
   if (vista === "comunidad") cargarFeed();
   $("v-reg").classList.toggle("vista-normal", vista === "normal");
   $("f-prob-wrap").hidden = vista !== "bot";
@@ -436,9 +494,9 @@ function irA(v) {
 }
 document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => irA(t.dataset.v)));
 window.addEventListener("hashchange", () => irA(location.hash.slice(1)));
-document.querySelectorAll(".filters button").forEach(b => b.addEventListener("click", () => {
+document.querySelectorAll("[data-f]").forEach(b => b.addEventListener("click", () => {
   filtro = b.dataset.f;
-  document.querySelectorAll(".filters button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  document.querySelectorAll("[data-f]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
   render();
 }));
 
@@ -491,6 +549,7 @@ function render() {
   const rn = suma(todas, ganancia);
   $("r-net").textContent = sign(rn); $("r-net").className = clase(rn);
   pintarResultados(todas);
+  pintarStats(todas);
 }
 
 function dibujarBanca(cerradas) {
@@ -572,6 +631,39 @@ function pintarPendientes(lista) {
       act.append(del);
     }
     card.append(act); cont.append(card);
+  });
+}
+
+function agrupar(lista, clave) {
+  const g = new Map();
+  lista.filter(b => b.resultado !== "nula").forEach(b => {
+    const k = clave(b) || "Sin dato";
+    const x = g.get(k) || { nombre: k, logo: "", w: 0, l: 0, apostado: 0, neto: 0 };
+    if (!x.logo && b.ligaLogo && clave === porLiga) x.logo = b.ligaLogo;
+    if (b.resultado === "gana") x.w++; else x.l++;
+    x.apostado += b.monto; x.neto += ganancia(b);
+    g.set(k, x);
+  });
+  return [...g.values()].sort((a, b) => b.neto - a.neto);
+}
+const porLiga = b => b.liga, porCasa = b => b.casa;
+function pintarStats(lista) {
+  [["por-liga", porLiga], ["por-casa", porCasa]].forEach(([id, f]) => {
+    const grupos = agrupar(lista, f), cont = $(id);
+    cont.innerHTML = "";
+    $(id + "-sec").hidden = grupos.length < 1 || lista.length < 2;
+    grupos.forEach(x => {
+      const fila = el("div", "stat-fila");
+      if (x.logo) fila.append(imagen(x.logo)); else fila.append(el("span", "ini-liga", id === "por-casa" ? "🏦" : "🏟️"));
+      fila.append(el("span", "nombre", x.nombre), el("span", "rec num", `${x.w}–${x.l}`));
+      const neto = el("span", "neto " + clase(x.neto), sign(x.neto));
+      neto.append(el("small", "", x.apostado ? "ROI " + (x.neto / x.apostado * 100).toFixed(0) + "%" : ""));
+      fila.append(neto);
+      const barra = el("span", "barra"), i = el("i");
+      i.style.width = (x.w + x.l ? Math.round(x.w / (x.w + x.l) * 100) : 0) + "%";
+      barra.title = "Porcentaje de ganadas"; barra.append(i); fila.append(barra);
+      cont.append(fila);
+    });
   });
 }
 
@@ -664,6 +756,73 @@ $("inst-si").addEventListener("click", async () => {
 });
 $("inst-no").addEventListener("click", () => { $("instalar").hidden = true; try { localStorage.setItem("inst-no", "1"); } catch (e) {} });
 window.addEventListener("appinstalled", () => { $("instalar").hidden = true; });
+
+// ---------------------------------------------------------------- hoy (marcadores en vivo)
+let hoyDia = 0, hoyFiltro = "todos", hoyTimer = null, hoyDatos = [];
+// Llave del logo para reconocer equipos aunque ESPN use otra ruta (p. ej. .../nfl/500/scoreboard/ari.png)
+const llaveLogo = u => { const m = String(u || "").match(/teamlogos\/([a-z]+)\/.*?([^/]+)\.png/i); return m ? m[1] + "/" + m[2].toLowerCase() : ""; };
+function fechaDia(d) {
+  const f = new Date(Date.now() + d * 86400000);
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Mexico_City", year: "numeric", month: "2-digit", day: "2-digit" })
+    .format(f).replace(/-/g, "");
+}
+async function cargarHoy() {
+  clearTimeout(hoyTimer);
+  try {
+    const r = await fetch("/api/hoy?fecha=" + fechaDia(hoyDia));
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error);
+    hoyDatos = j.partidos || [];
+    $("hoy-act").textContent = "Marcadores de ESPN · actualizado " + new Date().toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
+    pintarHoy();
+  } catch (e) { $("hoy-act").textContent = "No se pudieron leer los marcadores. Se reintenta en un minuto."; }
+  if (vista === "hoy" && !document.hidden) hoyTimer = setTimeout(cargarHoy, 60000);
+}
+function pintarHoy() {
+  const cont = $("hoy"); cont.innerHTML = "";
+  const mias = apuestas.filter(b => b.resultado === "pendiente" && b.logo);
+  const mio = p => mias.filter(b => [p.local.logo, p.visita.logo].some(l => l && llaveLogo(l) === llaveLogo(b.logo)));
+  const lista = hoyDatos.filter(p => hoyFiltro === "todos" || mio(p).length);
+  if (!lista.length) {
+    cont.append(el("p", "empty", hoyFiltro === "mios" ? "Ninguna de tus apuestas pendientes juega este día." : "No hay partidos de tus ligas este día."));
+    return;
+  }
+  let liga = null;
+  lista.forEach(p => {
+    if (p.liga !== liga) {
+      liga = p.liga;
+      const cab = el("div", "liga-cab");
+      if (p.ligaLogo) cab.append(imagen(p.ligaLogo));
+      cab.append(document.createTextNode(p.liga)); cont.append(cab);
+    }
+    const yo = mio(p), card = el("div", "juego" + (yo.length ? " mio" : ""));
+    [p.visita, p.local].forEach(t => {
+      const res = p.estado === "post" ? (t.ganador ? " gano" : " perdio") : "";
+      const fila = el("div", "eq" + res);
+      fila.append(t.logo ? imagen(t.logo) : el("span", "ini-liga", "•"), el("span", "n", t.nombre),
+        el("span", "num", p.estado === "pre" ? "" : String(t.marcador ?? "")));
+      card.append(fila);
+    });
+    const est = el("div", "estado");
+    if (p.estado === "in") est.append(el("span", "vivo", "EN VIVO · " + p.detalle));
+    else if (p.estado === "post") est.append(el("span", "", "Final"));
+    else est.append(el("span", "", new Date(p.inicio).toLocaleString("es-MX", { weekday: "short", hour: "2-digit", minute: "2-digit" })));
+    card.append(est);
+    yo.forEach(b => card.append(el("div", "tu-apuesta", `🎯 Tu apuesta: ${b.seleccion} ${aAmericano(b.cuota)} · ${fmt(b.monto)}`)));
+    cont.append(card);
+  });
+}
+document.querySelectorAll(".dia button").forEach(bt => bt.addEventListener("click", () => {
+  hoyDia = Number(bt.dataset.d);
+  document.querySelectorAll(".dia button").forEach(x => x.setAttribute("aria-pressed", String(x === bt)));
+  $("hoy").innerHTML = ""; $("hoy-act").textContent = "Cargando…"; cargarHoy();
+}));
+document.querySelectorAll("[data-h]").forEach(bt => bt.addEventListener("click", () => {
+  hoyFiltro = bt.dataset.h;
+  document.querySelectorAll("[data-h]").forEach(x => x.setAttribute("aria-pressed", String(x === bt)));
+  pintarHoy();
+}));
+document.addEventListener("visibilitychange", () => { if (!document.hidden && vista === "hoy" && listo) cargarHoy(); });
 
 // ---------------------------------------------------------------- comunidad
 let fotoData = null, feedTimer = null;
