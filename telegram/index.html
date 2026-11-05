@@ -465,6 +465,17 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
 .momio-pregunta div { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .momio-pregunta button { padding: 12px 8px; border-radius: 14px; font-weight: 700; display: grid; gap: 2px; }
 .momio-pregunta small { font-weight: 400; color: var(--muted); }
+.tor-panel { display: grid; gap: 10px; }
+.tor-reloj { display: flex; justify-content: space-between; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; }
+.tor-reloj b { font-size: 1.05rem; } .tor-reloj small { color: var(--muted); display: block; }
+.tor-tabla { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 10px 12px; display: grid; gap: 2px; }
+.tor-fila { display: grid; grid-template-columns: 30px 1fr auto auto; gap: 8px; align-items: center; padding: 7px 4px; border-radius: 10px; font-size: .9rem; }
+.tor-fila.yo { background: color-mix(in srgb, #d48a16 22%, transparent); font-weight: 700; }
+.tor-fila .pos { font-size: 1.1rem; text-align: center; }
+.tor-fila small { color: var(--muted); font-size: .72rem; }
+.tor-podio { display: grid; grid-template-columns: 1fr 1.15fr 1fr; gap: 6px; align-items: end; text-align: center; }
+.tor-podio div { background: var(--surface); border: 1px solid var(--line); border-radius: 14px 14px 4px 4px; padding: 8px 4px; display: grid; gap: 2px; font-size: .8rem; }
+.tor-podio .p1 { padding-top: 18px; border-color: #d48a16; } .tor-podio b { font-size: 1.4rem; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip-op { display: grid; gap: 1px; padding: 7px 11px; border-radius: 12px; font-size: .8rem; text-align: left; min-width: 0;
   transition: background .2s, color .2s, transform .15s cubic-bezier(.3,1.6,.5,1); }
@@ -1311,19 +1322,24 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
 
   <!-- ===================== PRÁCTICA ===================== -->
   <div id="v-practica" class="vista section" hidden>
+    <div class="seg" role="group" aria-label="Modo" id="pr-modo">
+      <button type="button" data-m="libre" aria-selected="true">🎮 Práctica libre</button>
+      <button type="button" data-m="torneo" aria-selected="false">🏆 Torneo semanal</button>
+    </div>
     <section class="summary hero dorado" aria-label="Modo práctica">
-      <div class="hero-saludo">🎮 Modo práctica · dinero de mentira</div>
-      <div class="bank"><div><div class="label">Banca de práctica</div><div class="big num" id="pr-banca">$1,000</div></div>
+      <div class="hero-saludo" id="pr-saludo">🎮 Modo práctica · dinero de mentira</div>
+      <div class="bank"><div><div class="label" id="pr-banca-lbl">Banca de práctica</div><div class="big num" id="pr-banca">$1,000</div></div>
         <div style="text-align:right"><div class="label">En juego</div><div class="num" id="pr-juego" style="font-size:1.3rem">$0</div></div></div>
       <div class="stats"><div><span class="label">Ganancia</span><span class="num" id="pr-gan">$0</span></div>
         <div><span class="label">Récord</span><span class="num" id="pr-rec">0–0</span></div>
         <div><span class="label">Parlays</span><span class="num" id="pr-par">0</span></div>
         <div><span class="label">Simples</span><span class="num" id="pr-sim">0</span></div></div>
-      <p class="verdict">Usa los momios mínimos del bot. Toca una opción para una apuesta simple o varias para armar un parlay. Las apuestas cerradas se borran solas a los 7 días.</p>
+      <p class="verdict" id="pr-verdict">Usa los momios mínimos del bot. Toca una opción para una apuesta simple o varias para armar un parlay. Las apuestas cerradas se borran solas a los 7 días.</p>
     </section>
+    <div id="tor-panel" class="tor-panel" hidden></div>
     <h2>Arma tu jugada</h2>
     <div class="list" id="pr-opciones"><p class="empty">Cargando…</p></div>
-    <h2>Mis apuestas de práctica</h2>
+    <h2 id="pr-mis-tit">Mis apuestas de práctica</h2>
     <div class="list" id="pr-lista"></div>
     <button type="button" id="pr-reset">🔄 Empezar de cero ($1,000)</button>
     <div class="boleto" id="boleto" hidden>
@@ -2534,13 +2550,23 @@ function chatPropio() { return perfil && perfil.chat_id ? perfil.chat_id : (reto
 // ---------------------------------------------------------------- modo práctica
 let practica = null, boleto = new Map();      // evento -> opción
 const fmt0 = n => (n < 0 ? "-$" : "$") + Math.abs(n).toLocaleString("es-MX", { maximumFractionDigits: 2 });
+let prModo = "libre", torneoDatos = null;
 async function cargarPractica() {
+  if (prModo === "torneo") return cargarTorneo();
   try { practica = await api("practica"); pintarPractica(); }
   catch (e) { $("pr-opciones").innerHTML = ""; $("pr-opciones").append(el("p", "empty", e.message || "No se pudo cargar.")); }
 }
 function pintarPractica() {
-  const p = practica, pf = p.perfil || {};
-  const banca = Number(pf.practica_banca) || 0, juego = Number(pf.practica_en_juego) || 0;
+  const T = prModo === "torneo" ? torneoDatos : null;
+  const p = T ? { ...practica, apuestas: T.mias, opciones: (practica.opciones || []).filter(o => Date.parse(o.inicio) < Date.parse(T.termina)) } : practica;
+  const pf = p.perfil || {};
+  const banca = T ? Number(T.banca) : Number(pf.practica_banca) || 0, juego = T ? Number(T.en_juego) : Number(pf.practica_en_juego) || 0;
+  $("tor-panel").hidden = !T; $("pr-reset").hidden = !!T;
+  $("pr-saludo").textContent = T ? "🏆 Torneo semanal · todos empiezan con $1,000" : "🎮 Modo práctica · dinero de mentira";
+  $("pr-mis-tit").textContent = T ? "Mis apuestas del torneo" : "Mis apuestas de práctica";
+  $("pr-banca-lbl").textContent = T ? "Banca del torneo (disponible)" : "Banca de práctica";
+  if (!$("pr-verdict").dataset.orig) $("pr-verdict").dataset.orig = $("pr-verdict").textContent;
+  $("pr-verdict").textContent = T ? "Misma mecánica que la práctica, pero contra todos: cada lunes la banca vuelve a $1,000 y gana quien termine el domingo con más dinero." : $("pr-verdict").dataset.orig;
   $("pr-banca").textContent = fmt0(banca - juego); $("pr-juego").textContent = fmt0(juego);
   const cerr = (p.apuestas || []).filter(a => a.estado !== "pendiente");
   const gan = banca - 1000; $("pr-gan").textContent = (gan > 0 ? "+" : "") + fmt0(gan); $("pr-gan").className = clase(gan);
@@ -2610,8 +2636,8 @@ $("bo-btn").addEventListener("click", async () => {
   if (!(m > 0)) { estado("Pon un monto."); return; }
   $("bo-btn").disabled = true;
   try {
-    await api("practica_crear", { senales: [...boleto.values()].map(o => o.id), monto: m });
-    boleto.clear(); estado("🎮 ¡Apuesta de práctica hecha! Te aviso por Telegram cuando se cierre."); setTimeout(() => estado(""), 3500);
+    await api(prModo === "torneo" ? "torneo_crear" : "practica_crear", { senales: [...boleto.values()].map(o => o.id), monto: m });
+    boleto.clear(); estado(prModo === "torneo" ? "🏆 ¡Jugada del torneo hecha! Revisa la tabla en vivo." : "🎮 ¡Apuesta de práctica hecha! Te aviso por Telegram cuando se cierre."); setTimeout(() => estado(""), 3500);
     if (navigator.vibrate) navigator.vibrate([10, 40, 10]);
     await cargarPractica();
   } catch (e) { estado(e.message || "No se pudo apostar."); }
@@ -3755,6 +3781,7 @@ $("festejo-ok").addEventListener("click", () => { $("festejo").hidden = true; $(
 
 // ---------------------------------------------------------------- 🏅 logros
 const LOGROS = {
+  torneo_campeon: ["🏆", "Campeón semanal", "Gana el torneo semanal de práctica"],
   primera_ganada: ["🥇", "Primera ganada", "Gana tu primera apuesta"], cinco_ganadas: ["🖐️", "Cinco de cinco", "5 apuestas ganadas"],
   veinte_ganadas: ["💪", "Veterano", "20 apuestas ganadas"], clv_10: ["📏", "Le ganas al cierre", "10 apuestas con CLV positivo"],
   quiniela_5: ["⚽", "Profeta", "5 aciertos en la quiniela"], lol_5: ["🐉", "Analista de LoL", "5 aciertos en el pick'em"],
@@ -4574,6 +4601,41 @@ function preguntaMomio() {
   q.innerHTML = `<b>🔢 ¿Cómo prefieres ver los momios?</b><span class="hint" style="margin:0">Lo puedes cambiar cuando quieras en Mi diseño.</span>
     <div><button type="button" data-momio="americano">Americano<small>+150 · -200</small></button><button type="button" data-momio="decimal">Decimal<small>2.50 · 1.50</small></button></div>`;
   $("inicio").before(q);
+}
+
+// ---------------------------------------------------------------- 🏆 Torneo semanal
+document.querySelectorAll("#pr-modo button").forEach(b => b.onclick = () => {
+  prModo = b.dataset.m; document.querySelectorAll("#pr-modo button").forEach(x => x.setAttribute("aria-selected", x === b));
+  boleto.clear(); pintarBoleto && pintarBoleto(); cargarPractica();
+});
+async function cargarTorneo() {
+  try {
+    const [t, pr] = await Promise.all([api("torneo"), practica ? Promise.resolve(practica) : api("practica")]);
+    torneoDatos = t; practica = pr; pintarTorneo(); pintarPractica();
+  } catch (e) { $("tor-panel").hidden = false; $("tor-panel").innerHTML = `<p class="empty">${admEsc(e.message || "No se pudo cargar el torneo.")}</p>`; }
+}
+function pintarTorneo() {
+  const t = torneoDatos, panel = $("tor-panel");
+  const ms = Date.parse(t.termina) - Date.now(), d = Math.floor(ms / 864e5), h = Math.floor(ms % 864e5 / 36e5);
+  const yo = (t.tabla || []).findIndex(x => x.yo);
+  let html = `<div class="tor-reloj"><div><b>⏳ Cierra el domingo a medianoche</b><small>Faltan ${d ? d + " d " : ""}${h} h · solo cuentan partidos que se juegan esta semana · mínimo 3 jugadas para entrar al podio</small></div>
+    <div style="text-align:right"><b class="num">${yo >= 0 ? (yo + 1) + "°" : "—"}</b><small>tu lugar</small></div></div>`;
+  html += `<div class="tor-tabla"><b style="padding:2px 4px 6px">📊 Tabla en vivo</b>`;
+  if (!(t.tabla || []).length) html += `<p class="hint" style="margin:4px">Nadie ha jugado esta semana. ¡Sé el primero!</p>`;
+  (t.tabla || []).forEach((x, i) => {
+    const neto = x.banca - 1000;
+    html += `<div class="tor-fila${x.yo ? " yo" : ""}"><span class="pos">${["🥇", "🥈", "🥉"][i] || i + 1}</span>
+      <span>${admEsc(x.nombre)}<small> · ${x.n} jugadas${x.en_juego ? " · $" + Math.round(x.en_juego) + " en juego" : ""}${x.n < 3 ? " · le faltan " + (3 - x.n) : ""}</small></span>
+      <span class="num ${neto > 0 ? "pos" : neto < 0 ? "neg" : ""}">${neto > 0 ? "+" : ""}${fmt0(neto)}</span><b class="num">${fmt0(x.banca)}</b></div>`;
+  });
+  html += `</div>`;
+  const ant = t.anterior || [];
+  if (ant.length) {
+    const p = [ant[1], ant[0], ant[2]];
+    html += `<div class="tor-tabla"><b style="padding:2px 4px 8px">🏆 Podio de la semana pasada</b><div class="tor-podio">${p.map((x, i) => x ? `<div class="${i === 1 ? "p1" : ""}"><b>${["🥈", "🥇", "🥉"][i]}</b>${admEsc(x.nombre)}<span class="num">${fmt0(x.banca)}</span></div>` : "<span></span>").join("")}</div></div>`;
+  }
+  html += `<p class="hint" style="margin:0">Premios para la mascota: 🥇 $500 · 🥈 $300 · 🥉 $150 (dinero virtual). El campeón gana la insignia 🏆.${t.campeonatos ? ` Llevas ${t.campeonatos} campeonato(s).` : ""}</p>`;
+  panel.innerHTML = html;
 }
 </script>
 </body>

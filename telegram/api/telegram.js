@@ -4,7 +4,7 @@
 // SUPABASE_URL, SUPABASE_KEY (publishable/anon), BOT_CLAVE (clave de la función bot en la BD).
 
 import { buscarLogo, sugerencias, equipoPorClave } from "../lib/espn.js";
-import { amer, momioDoble, setFormato, jugar, admin, opinion, avisarOpinion, avisarAutor, botonesOpinion, ESTADO_OP, TIPO_OP } from "../lib/mas.js";
+import { torneo, amer, momioDoble, setFormato, jugar, admin, opinion, avisarOpinion, avisarAutor, botonesOpinion, ESTADO_OP, TIPO_OP } from "../lib/mas.js";
 import { mas, avisarRespuesta, textoSenales, botonesSenales, sacarMomio, casaDe, buscarSenal, veredicto, conv, guru } from "../lib/mas.js";
 
 const env = (k) => (process.env[k] || "").replace(/\s/g, "");
@@ -659,6 +659,7 @@ export default async function handler(req, res) {
     const b = req.body || {};
     const PERMITIDAS = ["favoritos", "aviso", "quiniela_pendientes", "quiniela_res", "retos_abiertos", "reto_cerrar",
       "practica_pendientes", "practica_pierna", "respaldo", "lineas2", "clv_pendientes", "clv_set"];
+    if (b.accion === "torneo_premiar") return res.status(200).json(await torneo("premiar"));
     if (!PERMITIDAS.includes(b.accion)) return res.status(400).json({ error: "acción" });
     return res.status(200).json(await mas(b.accion, b.datos || {}));
   }

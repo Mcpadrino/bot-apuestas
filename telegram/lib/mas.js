@@ -286,3 +286,15 @@ export async function admin(accion, datos = {}) {
   if (!r.ok) throw new Error(j.message || "error de base de datos");
   return j;
 }
+
+// ---------------------------------------------------------------- 🏆 Torneo semanal (modo práctica)
+export async function torneo(accion, datos = {}) {
+  const r = await fetch(`${env("SUPABASE_URL")}/rest/v1/rpc/torneo`, {
+    method: "POST",
+    headers: { "content-type": "application/json", apikey: env("SUPABASE_KEY"), authorization: `Bearer ${env("SUPABASE_KEY")}` },
+    body: JSON.stringify({ p_clave: env("BOT_CLAVE"), p_accion: accion, p_datos: datos }),
+  });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.message || "error de base de datos");
+  return j;
+}

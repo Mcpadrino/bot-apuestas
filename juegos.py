@@ -200,7 +200,24 @@ def practica():
             g = float(a.get("ganancia") or 0)
             lineas.append(f"{icono} {'Parlay' if a['tipo'] == 'parlay' else 'Simple'} de ${float(a['monto']):.0f} → "
                           f"{'+' if g > 0 else ''}{g:.2f}")
-        telegram(chat, "🎮 *Modo práctica* (dinero de mentira)\n" + "\n".join(lineas) + f"\n{WEB_URL}/#practica")
+        torneo = any(a.get("torneo") for a in lista)
+        titulo = "🏆 *Torneo semanal*" if torneo else "🎮 *Modo práctica*"
+        telegram(chat, f"{titulo} (dinero de mentira)\n" + "\n".join(lineas) + f"\n{WEB_URL}/#practica")
+
+
+def torneo():
+    """Cuando cierra la semana (y ya se calificó todo), premia el podio del torneo y les avisa a todos."""
+    r = None if PRUEBA else api("torneo_premiar")
+    if not isinstance(r, dict) or not r.get("tabla"):
+        return
+    tabla = r["tabla"]
+    medallas = {1: "🥇", 2: "🥈", 3: "🥉"}
+    podio = "\n".join(f"{medallas.get(t['pos'], str(t['pos']) + '.')} {limpio(t['nombre'])} · ${float(t['banca']):,.0f}"
+                      + (f" (+${float(t['premio']):,.0f} para su mascota)" if t["premio"] else "") for t in tabla[:5])
+    for t in tabla:
+        extra = (f"\n\n🎉 ¡Quedaste {t['pos']}° y tu mascota recibe ${float(t['premio']):,.0f}!" if t["premio"]
+                 else f"\n\nQuedaste {t['pos']}° de {len(tabla)}.")
+        telegram(t["usuario"], f"🏆 *Resultados del torneo semanal*\n\n{podio}{extra}\n\nYa empezó el nuevo: todos con $1,000.\n{WEB_URL}/#practica")
 
 
 # ---------------------------------------------------------------- equipo favorito
@@ -285,7 +302,7 @@ def clv():
 def main():
     if not TOKEN:
         sys.exit("Falta TELEGRAM_TOKEN")
-    for paso in (quiniela, retos, practica, favoritos, clv, hambre):
+    for paso in (quiniela, retos, practica, torneo, favoritos, clv, hambre):
         try:
             paso()
         except Exception as e:           # un paso que falle no detiene a los demás

@@ -3,7 +3,7 @@
 
 import { buscarLogo, sugerencias, equipoPorClave, proximos, PRINCIPALES, equiposDe, LIGAS_JUEGO } from "../lib/espn.js";
 import { datosLol } from "../lib/lol.js";
-import { opinion, avisarOpinion, avisarAutor, admin, setFormato } from "../lib/mas.js";
+import { opinion, avisarOpinion, avisarAutor, admin, setFormato, torneo } from "../lib/mas.js";
 import { mas, tg, textoReto, botonesReto, avisarRespuesta, agruparSenales, conv, avisarValor, sacarMomio, buscarSenal, veredicto, guru, jugar } from "../lib/mas.js";
 
 // Ligas para la quiniela, en orden: se usa la primera que tenga partidos en los próximos días
@@ -316,6 +316,17 @@ export default async function handler(req, res) {
       }
       case "practica_reiniciar":
         return res.status(200).json(await mas("practica_reiniciar", { usuario }));
+      case "torneo":
+        return res.status(200).json(await torneo("estado", { usuario }));
+      case "torneo_crear": {
+        const d = b.datos || {};
+        const ids = Array.isArray(d.senales) ? d.senales.map(Number).filter((x) => x > 0).slice(0, 8) : [];
+        const monto = num(d.monto);
+        if (!ids.length || !(monto > 0)) return res.status(400).json({ error: "Elige al menos una opción y un monto." });
+        const r = await torneo("crear", { usuario, senales: ids, monto });
+        if (r.error) return res.status(400).json(r);
+        return res.status(200).json(r);
+      }
       case "yo": {
         const av = await admin("avisos_get", { usuario }).catch(() => ({}));
         return res.status(200).json({ dueno: String(usuario) === env("TELEGRAM_CHAT_ID"), solo_web: String(usuario).startsWith("w"), momio: av.momio || null });
