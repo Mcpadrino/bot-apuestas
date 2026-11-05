@@ -320,6 +320,44 @@ def telegram(texto):
         print(f"No se pudo enviar a Telegram: {type(e).__name__}", file=sys.stderr)
 
 
+EMOJI = {"soccer": "⚽", "americanfootball": "🏈", "basketball": "🏀", "baseball": "⚾"}
+UNIDAD = {"soccer": "goles", "americanfootball": "pts", "basketball": "pts", "baseball": "carreras"}
+TITULO_MERCADO = {"h2h": "🏆 Ganador", "totals": "📊 Total", "spreads": "↔️ Hándicap"}
+
+
+def mensaje_telegram(tabla):
+    """Un bloque por partido, agrupado por mercado. ⭐ = lo más probable del mercado."""
+    msg = [f"🎯 SEÑALES · banca ${BANCA:,.0f}",
+           "⭐ = lo más probable · % = probabilidad real",
+           "Apuesta solo si tu casa paga IGUAL o MEJOR.",
+           "En total y hándicap, la línea tiene que ser la misma."]
+    partidos = {}
+    for f in sorted(tabla, key=lambda x: (x["inicio"], x["partido"])):
+        partidos.setdefault((f["hora"], f["partido"], f["deporte"]), {}) \
+                .setdefault(f["mk"], []).append(f)
+    for (hora, partido, deporte), mercados in partidos.items():
+        tipo = deporte.split("_")[0]
+        liga = NOMBRE_LIGA.get(deporte, deporte)
+        msg += ["", "━━━━━━━━━━━━━━",
+                f"{EMOJI.get(tipo, '🎯')} {liga} · {hora}", partido]
+        for mk in ("h2h", "totals", "spreads"):
+            filas = mercados.get(mk)
+            if not filas:
+                continue
+            msg.append("")
+            msg.append(TITULO_MERCADO[mk])
+            mejor = max(filas, key=lambda x: x["prob"])
+            for f in sorted(filas, key=lambda x: -x["prob"]):
+                marca = "⭐" if f is mejor and len(filas) > 1 else "▫️"
+                rayo = " ⚡" if abs(f["mov"]) >= MOVIMIENTO else ""
+                sel = f["seleccion"]
+                if mk == "totals":
+                    sel += f" {UNIDAD.get(tipo, '')}"
+                msg.append(f"{marca} {sel} · {f['prob']:.1%}{rayo}")
+                msg.append(f"      paga {a_americano(f['minima'])} o mejor → ${f['monto']:,.0f}")
+    return msg
+
+
 def cargar_estado():
     try:
         return json.loads(ESTADO.read_text(encoding="utf-8"))
@@ -407,6 +445,7 @@ def escanear(args):
                         "seleccion": sel, "prob": p, "justa": justa, "minima": minima,
                         "fuente": fuente, "monto": monto_sugerido(p, minima),
                         "mov": (p - antes) if antes is not None else 0.0,
+                        "inicio": inicio, "deporte": sport, "mk": mk,
                     }
                     tabla.append(fila)
                     c[3] += 1
@@ -436,25 +475,21 @@ def escanear(args):
           f"(ventaja ≥ {EDGE_MIN:.0%}, cuotas {CUOTA_MIN}–{CUOTA_MAX}) — {args.deporte.upper()} ===")
     print("Si tu casa paga IGUAL O MÁS que 'mínima', apuesta el monto indicado.")
     print("⚡ = la línea de Pinnacle se movió desde el escaneo anterior: revisa primero esas.\n")
-    actual, msg = None, [
-        f"🎯 Señales (banca ${BANCA:,.0f})",
-        "% = probabilidad real de que pase. Apuesta SOLO si tu casa paga igual o mejor "
-        "que la cuota indicada. En hándicap y total la línea debe ser la misma.",
-    ]
-    for f in sorted(tabla, key=lambda x: (x["hora"], x["partido"])):
+    actual = None
+    for f in sorted(tabla, key=lambda x: (x["inicio"], x["partido"])):
         if f["partido"] != actual:
             actual = f["partido"]
             print(f"{f['hora']}  {actual}   [{f['fuente']}]")
-            msg.append(f"\n🕐 {f['hora']}  {actual}")
-        rayo = "⚡" if abs(f["mov"]) >= MOVIMIENTO else ""
-        print(f" {rayo or ' '} {f['mercado']:<9} {f['seleccion']:<28} prob {f['prob']:5.1%}  "
+        rayo = "⚡" if abs(f["mov"]) >= MOVIMIENTO else " "
+        print(f" {rayo} {f['mercado']:<9} {f['seleccion']:<28} prob {f['prob']:5.1%}  "
               f"justa {f['justa']:5.2f}  mínima {f['minima']:5.2f} ({a_americano(f['minima'])})"
               f"  → ${f['monto']:,.0f}")
-        msg.append(f"{rayo or '• '}{f['seleccion']} ({f['mercado']}) {f['prob']:.0%} → "
-                   f"{a_americano(f['minima'])} o mejor · ${f['monto']:,.0f}")
-    msg.append(f"\n📋 Señales por liga: {resumen_ligas}")
+
+    msg = mensaje_telegram(tabla)
+    con_senal = " · ".join(f"{NOMBRE_LIGA.get(k, k)} {v[3]}" for k, v in conteo.items() if v[3])
+    msg.append(f"\n📋 {con_senal}")
     if nota_creditos:
-        msg.append(nota_creditos)
+        msg.append(nota_creditos.split(" · ")[0])
     if args.telegram:
         telegram("\n".join(msg))
 
