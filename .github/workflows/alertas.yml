@@ -1,0 +1,36 @@
+name: Alertas de apuestas
+
+on:
+  schedule:
+    # Horas en UTC. 16:00 UTC = 10:00 CDMX · 23:00 UTC = 17:00 CDMX
+    - cron: "0 16 * * *"
+    - cron: "0 23 * * *"
+  workflow_dispatch:        # botón "Run workflow" para correrlo cuando quieras
+
+jobs:
+  escanear:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements.txt
+
+      # Guarda las líneas del escaneo anterior para detectar movimientos (⚡)
+      - uses: actions/cache@v4
+        with:
+          path: estado_lineas.json
+          key: estado-${{ github.run_id }}
+          restore-keys: estado-
+
+      - name: Escanear y enviar a Telegram
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          BANCA: ${{ vars.BANCA || '200' }}
+        run: python bot_apuestas.py escanear --deporte todos --horas 30 --telegram
