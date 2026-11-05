@@ -10,7 +10,22 @@ jobs:
     steps:
       - name: LoL Esports API
         run: |
-          K="0TvQnueqKa5mxJntVWt0w4LpLfEkrV1Ta8rQBb9Z"
-          curl -s -H "x-api-key: $K" "https://esports-api.lolesports.com/persisted/gw/getLeagues?hl=es-MX" | head -c 1500; echo
-          curl -s -H "x-api-key: $K" "https://esports-api.lolesports.com/persisted/gw/getSchedule?hl=es-MX&leagueId=98767975604431411" | head -c 2500; echo
-          curl -s -H "x-api-key: $K" "https://esports-api.lolesports.com/persisted/gw/getLive?hl=es-MX" | head -c 2500; echo
+          python3 - <<'PY'
+          import json, urllib.request
+          K = "0TvQnueqKa5mxJntVWt0w4LpLfEkrV1Ta8rQBb9Z"
+          def g(p):
+              r = urllib.request.Request("https://esports-api.lolesports.com/persisted/gw/" + p, headers={"x-api-key": K})
+              return json.load(urllib.request.urlopen(r, timeout=20))
+          L = g("getLeagues?hl=es-MX")["data"]["leagues"]
+          print("ligas:", [(l["slug"], l["id"]) for l in L][:40])
+          s = g("getSchedule?hl=es-MX&leagueId=98767975604431411")["data"]["schedule"]
+          ev = s["events"]
+          print("worlds pages", s["pages"], len(ev), "primero", ev[0]["startTime"], "ultimo", ev[-1]["startTime"], ev[-1]["state"])
+          s2 = g("getSchedule?hl=es-MX")["data"]["schedule"]
+          ev2 = s2["events"]
+          print("todas pages", s2["pages"], len(ev2), "primero", ev2[0]["startTime"], "ultimo", ev2[-1]["startTime"])
+          print("ligas en todas:", sorted({e["league"]["slug"] for e in ev2}))
+          print("ultimos:", [(e["startTime"], e["league"]["slug"], e["state"], [t["code"] for t in e.get("match", {}).get("teams", [])]) for e in ev2[-6:]])
+          t = g("getTournamentsForLeague?hl=es-MX&leagueId=98767975604431411")["data"]["leagues"][0]["tournaments"]
+          print("torneos worlds:", [(x["slug"], x["startDate"], x["endDate"]) for x in t[:4]])
+          PY
