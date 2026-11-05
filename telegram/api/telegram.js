@@ -278,6 +278,12 @@ async function atenderBoton(q) {
 export default async function handler(req, res) {
   // Registro del webhook (una sola vez): GET /api/telegram?setup=<WEBHOOK_SECRET>
   if (req.method === "GET") {
+    // Para las alertas de GitHub: lista de usuarios con su banca (requiere el token del bot)
+    if (req.query.usuarios !== undefined) {
+      if ((req.headers["x-bot-token"] || "").replace(/\s/g, "") !== env("TELEGRAM_TOKEN"))
+        return res.status(401).json({ error: "no" });
+      return res.status(200).json(await db("usuarios"));
+    }
     if (req.query.setup && req.query.setup === env("WEBHOOK_SECRET")) {
       const url = `https://${req.headers.host}/api/telegram`;
       const r = await tg("setWebhook", { url, secret_token: env("WEBHOOK_SECRET"),

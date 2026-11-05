@@ -307,9 +307,29 @@ def monto_sugerido(p, cuota):
 
 
 # ---------------------------------------------------------------- alertas
-def telegram(texto):
+DUENO = "".join(os.getenv("TELEGRAM_CHAT_ID", "").split())
+BOT_URL = os.getenv("BOT_URL", "https://bot-apuestas-telegram.vercel.app")
+
+
+def usuarios_alertas():
+    """Quién recibe las alertas y con qué banca (la actual de cada uno, según su bitácora).
+    Si el bot de Telegram no responde, solo el dueño con BANCA."""
     token = "".join(os.getenv("TELEGRAM_TOKEN", "").split())
-    chat = "".join(os.getenv("TELEGRAM_CHAT_ID", "").split())
+    if requests and token:
+        try:
+            r = requests.get(f"{BOT_URL}/api/telegram", params={"usuarios": "1"},
+                             headers={"x-bot-token": token}, timeout=15)
+            if r.ok and isinstance(r.json(), list) and r.json():
+                return [(str(u["chat_id"]), float(u["banca_actual"]), u.get("nombre", "")) for u in r.json()]
+        except (requests.RequestException, ValueError, KeyError, TypeError):
+            pass
+        print("No se pudo leer la lista de usuarios; envío solo al dueño.", file=sys.stderr)
+    return [(DUENO, BANCA, "")]
+
+
+def telegram(texto, chat=None):
+    token = "".join(os.getenv("TELEGRAM_TOKEN", "").split())
+    chat = chat or DUENO
     if not (token and chat and requests):
         return
     try:
@@ -485,13 +505,20 @@ def escanear(args):
               f"justa {f['justa']:5.2f}  mínima {f['minima']:5.2f} ({a_americano(f['minima'])})"
               f"  → ${f['monto']:,.0f}")
 
-    msg = mensaje_telegram(tabla)
     con_senal = " · ".join(f"{NOMBRE_LIGA.get(k, k)} {v[3]}" for k, v in conteo.items() if v[3])
-    msg.append(f"\n📋 {con_senal}")
-    if nota_creditos:
-        msg.append(nota_creditos.split(" · ")[0])
     if args.telegram:
-        telegram("\n".join(msg))
+        global BANCA
+        banca_original = BANCA
+        for chat, banca, _nombre in usuarios_alertas():
+            BANCA = banca                     # el monto sugerido depende de la banca de cada quien
+            for f in tabla:
+                f["monto"] = monto_sugerido(f["prob"], f["minima"])
+            msg = mensaje_telegram(tabla)
+            msg.append(f"\n📋 {con_senal}")
+            if nota_creditos and chat == DUENO:
+                msg.append(nota_creditos.split(" · ")[0])
+            telegram("\n".join(msg), chat)
+        BANCA = banca_original
 
     if valor:
         print("\n=== VALOR ENCONTRADO en casas del feed ===")
