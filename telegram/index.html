@@ -2616,12 +2616,12 @@ function pintarGuru() {
   };
   let lista = (guruDatos.lista || []).filter(p => Date.parse(p.inicio) > ahora - 3 * 3600e3 && !p.res && ((p.modelo === "xG") === esXg));
   if (esXg) {
-    const nota = el("p", "explica", "🧪 Gurú xG (experimental, va aparte): usa los goles esperados de Understat en las 5 grandes ligas en lugar de los goles reales. Tiene su propio marcador contra Pinnacle y no se mezcla con el Gurú normal.");
+    const nota = el("p", "explica", "🧪 Gurú xG (experimental, va aparte): en lugar de los goles, mide qué tan peligroso es cada equipo con sus tiros (a puerta, bloqueados y desviados, de ESPN) del último año. Liga MX y las 5 grandes. Tiene su propio marcador contra Pinnacle y no se mezcla con el Gurú normal.");
     cont.append(nota);
   }
   if (guruFiltro === "valor") lista = lista.filter(p => (dif(p) || { d: 0 }).d >= .04);
   else if (guruFiltro !== "todos" && !esXg) lista = lista.filter(p => p.deporte === guruFiltro);
-  if (!lista.length) cont.append(el("p", "empty", esXg ? "Sin pronósticos xG por ahora (solo Premier, LaLiga, Serie A, Bundesliga y Ligue 1)." : guruFiltro === "valor" ? "Ningún partido donde el gurú y Pinnacle difieran 4 puntos o más."
+  if (!lista.length) cont.append(el("p", "empty", esXg ? "Sin pronósticos xG por ahora (Liga MX, Premier, LaLiga, Serie A, Bundesliga y Ligue 1)." : guruFiltro === "valor" ? "Ningún partido donde el gurú y Pinnacle difieran 4 puntos o más."
     : "Sin pronósticos por ahora. Se calculan después de cada escaneo (7:25 y 18:25)."));
   let liga = null;
   lista.forEach(p => {

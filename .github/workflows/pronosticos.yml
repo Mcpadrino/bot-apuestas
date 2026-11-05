@@ -20,6 +20,11 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt penaltyblog pandas
+      - uses: actions/cache@v4             # tiros de partidos ya consultados (para no pedirlos otra vez a ESPN)
+        with:
+          path: cache_tiros.json
+          key: tiros-${{ github.run_id }}
+          restore-keys: tiros-
       - name: Calcular pronósticos y calificar los terminados
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
