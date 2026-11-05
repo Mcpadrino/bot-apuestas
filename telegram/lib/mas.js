@@ -52,7 +52,12 @@ export function montoSugerido(p, cuota, banca) {
   const kelly = (p * cuota - 1) / (cuota - 1);
   return Math.max(Math.round(Math.min(kelly * 0.25, 0.025) * banca), 2);
 }
-const amer = (d) => (d >= 2 ? "+" + Math.round((d - 1) * 100) : "-" + Math.round(100 / (d - 1)));
+const americano = (d) => (d >= 2 ? "+" + Math.round((d - 1) * 100) : "-" + Math.round(100 / (d - 1)));
+// Formato de momio de quien recibe el mensaje (americano +150 / decimal 2.50); se fija al empezar cada petición
+let FORMATO = "americano";
+export const setFormato = (f) => { FORMATO = f === "decimal" ? "decimal" : "americano"; };
+export const amer = (d) => (FORMATO === "decimal" ? Number(d).toFixed(2) : americano(d));
+export const momioDoble = (d) => (FORMATO === "decimal" ? `${Number(d).toFixed(2)} (${americano(d)})` : `${americano(d)} (${Number(d).toFixed(2)})`);
 const EMO = (d) => (/nfl/.test(d) ? "🏈" : /nba/.test(d) ? "🏀" : /mlb/.test(d) ? "⚾" : "⚽");
 const TIT = { h2h: "Ganador", totals: "Total", spreads: "Hándicap" };
 
@@ -268,4 +273,16 @@ export async function avisarAutor(o, cambio) {
     : `📝 Tu ${TIPO_OP[o.tipo]?.slice(2).toLowerCase() || "opinión"} “${corto}” ahora está: *${ESTADO_OP[o.estado]}*` +
       (o.estado === "hecha" ? "\n¡Gracias por ayudar a mejorar el bot! 🙌" : "");
   await tg("sendMessage", { chat_id: o.usuario, parse_mode: "Markdown", text: txt });
+}
+
+// ---------------------------------------------------------------- 🛠 Panel de administrador, uso, avisos, registro sin Telegram
+export async function admin(accion, datos = {}) {
+  const r = await fetch(`${env("SUPABASE_URL")}/rest/v1/rpc/admin`, {
+    method: "POST",
+    headers: { "content-type": "application/json", apikey: env("SUPABASE_KEY"), authorization: `Bearer ${env("SUPABASE_KEY")}` },
+    body: JSON.stringify({ p_clave: env("BOT_CLAVE"), p_accion: accion, p_datos: datos }),
+  });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.message || "error de base de datos");
+  return j;
 }

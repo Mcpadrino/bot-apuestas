@@ -312,6 +312,57 @@ DUENO = "".join(os.getenv("TELEGRAM_CHAT_ID", "").split())
 BOT_URL = os.getenv("BOT_URL", "https://bot-apuestas-telegram.vercel.app")
 
 
+AVISOS = {}          # chat_id -> preferencias de avisos de cada usuario (ligas, % mínimo, horas de silencio)
+
+
+FORMATO = "americano"     # cómo ve los momios el usuario al que se le está escribiendo
+
+
+def momio_usuario(d):
+    return f"{d:.2f}" if FORMATO == "decimal" else a_americano(d)
+
+
+def grupo_liga(deporte):
+    """Grupo de liga que el usuario puede elegir en 'Mis avisos' de la página."""
+    if deporte == "soccer_mexico_ligamx":
+        return "ligamx"
+    if deporte in ("soccer_uefa_champs_league", "soccer_uefa_europa_league"):
+        return "champions"
+    if deporte.startswith("soccer"):
+        return "europa"
+    return {"americanfootball_nfl": "nfl", "basketball_nba": "nba", "baseball_mlb": "mlb"}.get(deporte, "otras")
+
+
+def filtrar_para(chat, tabla):
+    """Aplica las preferencias del usuario: ligas, probabilidad mínima. [] si no quiere ninguna."""
+    a = AVISOS.get(chat) or {}
+    ligas = a.get("ligas")
+    pmin = float(a.get("prob_min") or 0)
+    return [f for f in tabla if (not ligas or grupo_liga(f["deporte"]) in ligas) and f["prob"] >= pmin]
+
+
+def en_silencio(chat):
+    """True si ahora (hora del centro de México) está dentro de sus horas de silencio."""
+    s = (AVISOS.get(chat) or {}).get("silencio")
+    if not s or s.get("de") is None or s.get("a") is None:
+        return False
+    h = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=6)).hour
+    de, a = int(s["de"]), int(s["a"])
+    return (de <= h < a) if de < a else (h >= de or h < a)
+
+
+def guardar_estado(clave, valor):
+    """Deja constancia para el panel de administrador (créditos, último escaneo)."""
+    token = "".join(os.getenv("TELEGRAM_TOKEN", "").split())
+    if not (requests and token):
+        return
+    try:
+        requests.post(f"{BOT_URL}/api/telegram", params={"estado": "1"}, headers={"x-bot-token": token},
+                      json={"clave": clave, "valor": valor}, timeout=10)
+    except requests.RequestException:
+        pass
+
+
 def usuarios_alertas():
     """Quién recibe las alertas y con qué banca (la actual de cada uno, según su bitácora).
     Si el bot de Telegram no responde, solo el dueño con BANCA."""
@@ -321,6 +372,7 @@ def usuarios_alertas():
             r = requests.get(f"{BOT_URL}/api/telegram", params={"usuarios": "1"},
                              headers={"x-bot-token": token}, timeout=15)
             if r.ok and isinstance(r.json(), list) and r.json():
+                AVISOS.update({str(u["chat_id"]): (u.get("avisos") or {}) for u in r.json()})
                 return [(str(u["chat_id"]), float(u["banca_actual"]), u.get("nombre", "")) for u in r.json()]
         except (requests.RequestException, ValueError, KeyError, TypeError):
             pass
@@ -490,7 +542,7 @@ def mensaje_telegram(tabla):
                 if mk == "totals":
                     sel += f" {UNIDAD.get(tipo, '')}"
                 msg.append(f"{marca} {sel} · {f['prob']:.1%}{rayo}")
-                msg.append(f"      paga {a_americano(f['minima'])} o mejor → ${f['monto']:,.0f}")
+                msg.append(f"      paga {momio_usuario(f['minima'])} o mejor → ${f['monto']:,.0f}")
     return msg
 
 
@@ -526,6 +578,8 @@ def escanear(args):
     plan, nota_creditos = {lg: list(args.mercados) for lg in ligas}, ""
     if args.presupuesto and not args.demo:
         restantes, activas = estado_api()
+        if args.telegram:
+            guardar_estado("creditos", {"restantes": restantes})
         ligas = [lg for lg in ligas if lg in activas]          # fuera de temporada: no gastar
         ligas = ligas_con_partidos(ligas, ahora, limite, args.deporte == "auto")
         if not ligas:
@@ -627,19 +681,31 @@ def escanear(args):
         global BANCA
         banca_original = BANCA
         imagen = cartelera(tabla)
-        botones = teclado_lo_aposte(tabla, guardar_senales(tabla))
+        ids = guardar_senales(tabla)
+        enviados = 0
         for chat, banca, _nombre in usuarios_alertas():
-            telegram_foto(imagen, chat)
+            suya = filtrar_para(chat, tabla)
+            if not suya or en_silencio(chat):
+                continue                      # no quiere esas ligas o está en sus horas de silencio (lo ve en la página)
+            enviados += 1
+            global FORMATO
+            FORMATO = (AVISOS.get(chat) or {}).get("momio") or "americano"
+            telegram_foto(imagen if len(suya) == len(tabla) else cartelera(suya), chat)
             BANCA = banca                     # el monto sugerido depende de la banca de cada quien
-            for f in tabla:
+            for f in suya:
                 f["monto"] = monto_sugerido(f["prob"], f["minima"])
-            msg = mensaje_telegram(tabla)
+            msg = mensaje_telegram(suya)
             msg.append(f"\n📋 {con_senal}")
             if nota_creditos and chat == DUENO:
                 msg.append(nota_creditos.split(" · ")[0])
+            botones = teclado_lo_aposte(suya, ids)
             if botones:
                 msg.append("\n👇 ¿Apostaste alguna? Toca el partido y te pregunto el momio.")
+            if (AVISOS.get(chat) or {}).get("ligas") or (AVISOS.get(chat) or {}).get("prob_min"):
+                msg.append("🔧 Filtrado según tus avisos (cámbialos en la página: menú > Mis avisos).")
             telegram("\n".join(msg), chat, botones)
+        FORMATO = "americano"
+        guardar_estado("escaneo", {"senales": len(tabla), "partidos": len({f["partido"] for f in tabla}), "enviados": enviados})
         BANCA = banca_original
         # ⚡ Movimientos fuertes de Pinnacle desde el escaneo anterior: el dinero de los profesionales
         fuertes = sorted([f for f in tabla if abs(f["mov"]) >= MOVIMIENTO_FUERTE], key=lambda x: -abs(x["mov"]))[:8]
@@ -650,7 +716,15 @@ def escanear(args):
                 txt.append(f"{f['partido']}\n   {f['seleccion']}: {flecha} {abs(f['mov']) * 100:.1f} pts → {f['prob']:.1%}")
             txt.append("\nSi subió mucho, el dinero fuerte le está entrando. Revisa si tu casa todavía paga lo mínimo.")
             for chat, _b, _n in usuarios_alertas():
-                telegram("\n".join(txt), chat)
+                a = AVISOS.get(chat) or {}
+                suyos = [f for f in fuertes if f in filtrar_para(chat, fuertes)]
+                if a.get("movimientos") is False or en_silencio(chat) or not suyos:
+                    continue
+                if len(suyos) == len(fuertes):
+                    telegram("\n".join(txt), chat)
+                else:
+                    t2 = txt[:2] + [l for f in suyos for l in [f"{f['partido']}\n   {f['seleccion']}: {'🟢 subió' if f['mov'] > 0 else '🔴 bajó'} {abs(f['mov']) * 100:.1f} pts → {f['prob']:.1%}"]] + txt[-1:]
+                    telegram("\n".join(t2), chat)
 
     if valor:
         print("\n=== VALOR ENCONTRADO en casas del feed ===")

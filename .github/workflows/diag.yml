@@ -4,6 +4,13 @@ jobs:
   d:
     runs-on: ubuntu-latest
     steps:
-      - name: Probar LoL
+      - name: Mandar folleto, guía y manual al dueño
+        env:
+          T: ${{ secrets.TELEGRAM_TOKEN }}
+          C: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          for i in 1 2 3; do curl -s -m 60 -o /tmp/l.json -w "HTTP %{http_code} %{time_total}s\n" https://bot-apuestas-telegram.vercel.app/api/lol; python3 -c "import json;d=json.load(open('/tmp/l.json'));print(len(d.get('eventos',[])),'eventos',d.get('series_elo'),'elo',d.get('error'),d.get('viejo'))"; sleep 5; done
+          B=https://bot-apuestas-telegram.vercel.app/docs
+          curl -s -o /dev/null -w "%{http_code} folleto-url\n" $B/folleto.pdf
+          for f in "folleto.pdf|📄 Folleto: qué es el bot y todo lo que incluye." "guia-usuario.pdf|📘 Guía del usuario (explicada desde cero)." "manual-completo.pdf|🛠 Manual completo con la parte de administrador. Tip: escribe guía al bot cuando quieras volver a recibirlos."; do
+            curl -s -X POST "https://api.telegram.org/bot$T/sendDocument" -d chat_id="$C" --data-urlencode document="$B/${f%%|*}?v=4" --data-urlencode caption="${f#*|}" | head -c 80; echo
+          done

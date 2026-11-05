@@ -3,7 +3,7 @@
 
 import { buscarLogo, sugerencias, equipoPorClave, proximos, PRINCIPALES, equiposDe, LIGAS_JUEGO } from "../lib/espn.js";
 import { datosLol } from "../lib/lol.js";
-import { opinion, avisarOpinion, avisarAutor } from "../lib/mas.js";
+import { opinion, avisarOpinion, avisarAutor, admin, setFormato } from "../lib/mas.js";
 import { mas, tg, textoReto, botonesReto, avisarRespuesta, agruparSenales, conv, avisarValor, sacarMomio, buscarSenal, veredicto, guru, jugar } from "../lib/mas.js";
 
 // Ligas para la quiniela, en orden: se usa la primera que tenga partidos en los próximos días
@@ -47,6 +47,7 @@ const txt = (v, max = 120) => String(v ?? "").trim().slice(0, max);
 
 export default async function handler(req, res) {
   res.setHeader("cache-control", "no-store");
+  setFormato("americano");
   if (req.method !== "POST") return res.status(405).json({ error: "Usa POST" });
   const b = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
 
@@ -55,6 +56,19 @@ export default async function handler(req, res) {
       const r = await rpc("web", "login", { nombre_web: txt(b.usuario, 40), pass: String(b.pass ?? "").slice(0, 200) });
       if (!r || !r.token) return res.status(401).json({ error: (r && r.error) || "Usuario o contraseña incorrectos." });
       return res.status(200).json({ token: r.token });
+    }
+    if (b.op === "registro") {
+      // Cuenta solo de página (sin Telegram) con un código de invitación del dueño
+      const d = b.datos || {};
+      const r = await admin("registro", { codigo: txt(d.codigo, 12), nombre: txt(d.nombre, 40), nombre_web: txt(d.usuario, 40),
+        pass: String(d.pass ?? "").slice(0, 200), v: txt(d.v, 20) });
+      if (r.error) return res.status(400).json({ error: r.error });
+      const l = await rpc("web", "login", { nombre_web: txt(d.usuario, 40), pass: String(d.pass ?? "").slice(0, 200) });
+      try {
+        await tg("sendMessage", { chat_id: env("TELEGRAM_CHAT_ID"), parse_mode: "Markdown",
+          text: `🆕 *${txt(d.nombre, 40).replace(/[_*\x60[\]]/g, "")}* se registró en la página con el código \`${txt(d.codigo, 12).toUpperCase()}\` (cuenta sin Telegram).` });
+      } catch (e) { console.error(e); }
+      return res.status(200).json({ token: l.token });
     }
     if (b.op === "salir") {
       await rpc("web", "salir", { token: txt(b.token, 100) });
@@ -169,6 +183,7 @@ export default async function handler(req, res) {
       case "checar": {
         // "El casino me ofrece esto": busca la señal y dice si está barata, justa o cara
         const d = b.datos || {};
+        try { setFormato((await admin("avisos_get", { usuario }))?.momio); } catch (e) { setFormato("americano"); }
         const [cuota, resto] = sacarMomio(txt(d.texto, 200).replace(/\?/g, " "));
         if (!cuota) return res.status(400).json({ error: "Escribe también el momio, por ejemplo: Ravens -250" });
         const ops = buscarSenal(await mas("lineas2", {}), resto);
@@ -301,6 +316,47 @@ export default async function handler(req, res) {
       }
       case "practica_reiniciar":
         return res.status(200).json(await mas("practica_reiniciar", { usuario }));
+      case "yo": {
+        const av = await admin("avisos_get", { usuario }).catch(() => ({}));
+        return res.status(200).json({ dueno: String(usuario) === env("TELEGRAM_CHAT_ID"), solo_web: String(usuario).startsWith("w"), momio: av.momio || null });
+      }
+      case "momio_set":
+        return res.status(200).json(await admin("momio_set", { usuario, momio: (b.datos || {}).momio === "decimal" ? "decimal" : "americano" }));
+      case "uso":
+        await admin("uso", { usuario, seccion: txt((b.datos || {}).seccion, 30) });
+        return res.status(200).json({ ok: true });
+      case "avisos_get":
+        return res.status(200).json(await admin("avisos_get", { usuario }));
+      case "avisos_set": {
+        const a = (b.datos || {}).avisos || {};
+        const GR = ["ligamx", "europa", "champions", "nfl", "nba", "mlb"];
+        const ligas = Array.isArray(a.ligas) ? a.ligas.filter((x) => GR.includes(x)) : null;
+        const pm = num(a.prob_min);
+        const hora = (h) => (Number.isInteger(h) && h >= 0 && h <= 23 ? h : null);
+        const sil = a.silencio && hora(a.silencio.de) !== null && hora(a.silencio.a) !== null ? { de: a.silencio.de, a: a.silencio.a } : null;
+        const limpio = { ligas: ligas && ligas.length && ligas.length < GR.length ? ligas : null,
+          prob_min: pm > 0 && pm < 1 ? Math.round(pm * 100) / 100 : null, silencio: sil, movimientos: a.movimientos !== false };
+        return res.status(200).json(await admin("avisos_set", { usuario, avisos: limpio }));
+      }
+      case "admin_panel": case "admin_invitar": case "admin_invitacion_cerrar": case "admin_usuario": case "admin_aceptar": {
+        if (String(usuario) !== env("TELEGRAM_CHAT_ID")) return res.status(403).json({ error: "Solo el administrador." });
+        const d = b.datos || {};
+        if (b.op === "admin_panel") return res.status(200).json(await admin("panel"));
+        if (b.op === "admin_invitar") return res.status(200).json(await admin("invitar", { usos: num(d.usos), dias: num(d.dias), nota: txt(d.nota, 60) }));
+        if (b.op === "admin_invitacion_cerrar") return res.status(200).json(await admin("invitacion_cerrar", { codigo: txt(d.codigo, 12) }));
+        if (b.op === "admin_usuario") {
+          if (String(d.chat_id) === String(usuario)) return res.status(400).json({ error: "No puedes quitarte a ti mismo." });
+          return res.status(200).json(await admin("usuario_activo", { chat_id: txt(d.chat_id, 30), activo: !!d.activo }));
+        }
+        // aceptar una solicitud de Telegram desde el panel
+        const id = txt(d.chat_id, 30);
+        if (!/^-?\d+$/.test(id)) return res.status(400).json({ error: "ID inválido" });
+        await rpc("bot", "agregar", { usuario: id, nombre: txt(d.nombre, 40) || "Amigo" });
+        await tg("sendMessage", { chat_id: id, parse_mode: "Markdown",
+          reply_markup: { keyboard: [[{ text: "🎯 Señales" }, { text: "💰 Saldo" }, { text: "📋 Pendientes" }], [{ text: "🌐 Mi página" }, { text: "📘 Guía" }, { text: "📝 Opinar" }, { text: "❓ Ayuda" }]], resize_keyboard: true, is_persistent: true },
+          text: "🎉 *¡Ya tienes acceso al bot!*\n\nToca ❓ Ayuda para ver cómo funciona, 📘 Guía para recibir el manual, o 🌐 Mi página para crear tu usuario de la página web." });
+        return res.status(200).json({ ok: true });
+      }
       case "terminos":
         return res.status(200).json(await rpc("terminos", "estado", { usuario }));
       case "aceptar_terminos":

@@ -4,7 +4,7 @@
 // SUPABASE_URL, SUPABASE_KEY (publishable/anon), BOT_CLAVE (clave de la función bot en la BD).
 
 import { buscarLogo, sugerencias, equipoPorClave } from "../lib/espn.js";
-import { jugar, opinion, avisarOpinion, avisarAutor, botonesOpinion, ESTADO_OP, TIPO_OP } from "../lib/mas.js";
+import { amer, momioDoble, setFormato, jugar, admin, opinion, avisarOpinion, avisarAutor, botonesOpinion, ESTADO_OP, TIPO_OP } from "../lib/mas.js";
 import { mas, avisarRespuesta, textoSenales, botonesSenales, sacarMomio, casaDe, buscarSenal, veredicto, conv, guru } from "../lib/mas.js";
 
 const env = (k) => (process.env[k] || "").replace(/\s/g, "");
@@ -37,7 +37,6 @@ async function db(accion, datos = {}) {
 // ---------------------------------------------------------------- utilidades
 const money = (n) => (n < 0 ? "-$" : "$") + Math.abs(Number(n)).toFixed(2);
 const signed = (n) => (n > 0 ? "+" : "") + money(n);
-const amer = (d) => (d >= 2 ? "+" + Math.round((d - 1) * 100) : "-" + Math.round(100 / (d - 1)));
 const LIBRE = new Set(["libre", "aparte", "personal", "fuera"]);
 const CASAS = { caliente: "Caliente", draftea: "Draftea", codere: "Codere", bet365: "Bet365" };
 const WEB_URL = env("WEB_URL") || "https://bot-apuestas-telegram.vercel.app";
@@ -125,6 +124,7 @@ const AYUDA = [
   "🌐 *Mi página* — la dirección de tu bitácora web",
   "📘 *Guía* — te mando el folleto y la guía en PDF",
   "⚖️ `terminos` — términos, responsabilidad y privacidad",
+  "🔢 `momio decimal` / `momio americano` — cómo quieres ver los momios",
   "📝 `idea ...` · `error ...` · `opinion ... 5` — mándame ideas, fallas o tu calificación",
   "`cuenta usuario contraseña` — crea o cambia tu acceso a la página",
   "",
@@ -177,7 +177,7 @@ async function resumen(dbu) {
 
 function lineaApuesta(a) {
   const c = Number(a.cuota), m = Number(a.monto);
-  return `${a.cartera === "libre" ? "🎲 " : ""}#${a.id} *${String(a.seleccion).replace(/[_*\x60[\]]/g, "")}* · ${amer(c)} (${c.toFixed(2)}) · ${money(m)}` +
+  return `${a.cartera === "libre" ? "🎲 " : ""}#${a.id} *${String(a.seleccion).replace(/[_*\x60[\]]/g, "")}* · ${momioDoble(c)} · ${money(m)}` +
     (a.casa ? ` · ${a.casa}` : "") + (a.prob ? ` · ${(a.prob * 100).toFixed(1)}%` : "");
 }
 
@@ -222,12 +222,18 @@ async function atenderTexto(chat, texto, esDueno, msgId) {
     ];
     if (esDueno) docs.push(["manual-completo.pdf", "🛠 *Manual completo* (con la parte de administrador)."]);
     for (const [f, cap] of docs) {
-      const r = await tg("sendDocument", { chat_id: chat, document: base + f + "?v=3", caption: cap, parse_mode: "Markdown" });
+      const r = await tg("sendDocument", { chat_id: chat, document: base + f + "?v=4", caption: cap, parse_mode: "Markdown" });
       if (!r.ok) await enviar(`${cap}\n${base}${f}`);
     }
     return;
   }
 
+  if (cmd === "momio" || cmd === "momios") {
+    const f = (args[0] || "").toLowerCase().startsWith("dec") ? "decimal" : (args[0] || "").toLowerCase().startsWith("ame") ? "americano" : null;
+    if (!f) return enviar("¿Cómo quieres ver los momios?\n`momio americano` → +150 / -200\n`momio decimal` → 2.50 / 1.50\n\nTambién lo cambias en la página: menú > Mi diseño.");
+    await admin("momio_set", { usuario: chat, momio: f }); setFormato(f);
+    return enviar(`✅ Listo, te muestro los momios en *${f}* (ej. ${amer(2.5)} y ${amer(1.5)}). Puedes escribirlos como quieras, yo entiendo los dos.`);
+  }
   if (["terminos", "condiciones", "privacidad", "aviso"].includes(cmd))
     return enviar("⚖️ *Términos y condiciones (resumen)*\n\n• Es una herramienta de información y estadística, no una casa de apuestas ni asesoría financiera. No recibe ni mueve dinero real.\n" +
       "• Los porcentajes y señales salen de modelos predictivos: pueden fallar y no garantizan ganancias.\n• Tú decides y eres responsable de lo que apuestas; el creador no responde por pérdidas.\n" +
@@ -679,6 +685,12 @@ export default async function handler(req, res) {
     const b = req.body || {};
     return res.status(200).json(await rpcSenal("guardar", { lote: String(b.lote || ""), filas: Array.isArray(b.filas) ? b.filas.slice(0, 300) : [] }));
   }
+  if (req.query.estado !== undefined && req.method === "POST") {
+    if (!tokenOk()) return res.status(401).json({ error: "no" });
+    const b = req.body || {};
+    if (!["creditos", "escaneo", "resultados", "guru"].includes(b.clave)) return res.status(400).json({ error: "clave" });
+    return res.status(200).json(await admin("estado_set", { clave: b.clave, valor: b.valor ?? null }));
+  }
   if (req.query.proponer !== undefined && req.method === "POST") {
     if (!tokenOk()) return res.status(401).json({ error: "no" });
     const b = req.body || {};
@@ -717,12 +729,14 @@ export default async function handler(req, res) {
   const chatId = String(u.message?.chat?.id ?? u.callback_query?.message?.chat?.id ?? "");
   if (!chatId) return res.status(200).send("ok");
   const esDueno = chatId === env("TELEGRAM_CHAT_ID");
+  setFormato("americano");
 
   try {
     if (!esDueno && !(await db("usuario", { usuario: chatId }))) {
       await pedirAcceso(u, chatId);
       return res.status(200).send("ok");
     }
+    try { setFormato((await admin("avisos_get", { usuario: chatId }))?.momio); } catch (e) { /* americano */ }
     if (u.callback_query) await atenderBoton(u.callback_query);
     else if (u.message?.text) await atenderTexto(chatId, u.message.text, esDueno, u.message.message_id);
   } catch (e) {
