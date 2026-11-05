@@ -51,21 +51,35 @@ LIBROS = os.getenv("LIBROS", "pinnacle")                # 1 crédito API por mer
 MOVIMIENTO = float(os.getenv("MOVIMIENTO", 0.02))       # avisa si la prob. se movió ≥ 2 pts
 # ======================
 
+LIGAS_TOP = [
+    "soccer_mexico_ligamx",
+    "soccer_epl",
+    "soccer_spain_la_liga",
+    "soccer_italy_serie_a",
+    "soccer_germany_bundesliga",
+    "soccer_france_ligue_one",
+]
 DEPORTES = {
-    "futbol": [
-        "soccer_mexico_ligamx",
-        "soccer_epl",
-        "soccer_spain_la_liga",
-        "soccer_uefa_champs_league",
-    ],
+    "futbol": LIGAS_TOP + ["soccer_uefa_champs_league"],
     "nfl": ["americanfootball_nfl"],
     "mlb": ["baseball_mlb"],
     "nba": ["basketball_nba"],
 }
 DEPORTES["todos"] = [s for lista in DEPORTES.values() for s in lista]
+
+# ===== CALENDARIO para --deporte auto (0 = lunes ... 6 = domingo) =====
+# Solo se buscan y se muestran los partidos de cada liga en estos días.
+CALENDARIO = {
+    "americanfootball_nfl": {0, 3, 6},          # lunes, jueves, domingo
+    "soccer_uefa_champs_league": {1, 2},        # martes, miércoles
+    **{liga: {4, 5, 6} for liga in LIGAS_TOP},  # viernes, sábado, domingo
+}
+# ======================================================================
 NOMBRE_LIGA = {
     "soccer_mexico_ligamx": "Liga MX", "soccer_epl": "Premier", "soccer_spain_la_liga": "LaLiga",
     "soccer_uefa_champs_league": "Champions", "americanfootball_nfl": "NFL",
+    "soccer_italy_serie_a": "Serie A", "soccer_germany_bundesliga": "Bundesliga",
+    "soccer_france_ligue_one": "Ligue 1",
     "baseball_mlb": "MLB", "basketball_nba": "NBA",
 }
 DIAS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
@@ -250,12 +264,25 @@ def escanear(args):
     previo, nuevo_estado = cargar_estado(), {}
     conteo = {}   # liga -> [partidos en la API, en el horario, con línea Pinnacle, señales]
 
-    for sport in DEPORTES[args.deporte]:
+    if args.deporte == "auto":
+        # días (en hora de México) que cubre la ventana de este escaneo
+        dias, d = set(), ahora.astimezone(ZONA).date()
+        while d <= limite.astimezone(ZONA).date():
+            dias.add(d.weekday())
+            d += dt.timedelta(days=1)
+        ligas = [lg for lg, ds in CALENDARIO.items() if ds & dias]
+    else:
+        ligas = DEPORTES[args.deporte]
+
+    for sport in ligas:
         eventos = obtener_momios(sport, args.mercados, args.demo)
         c = conteo.setdefault(sport, [len(eventos), 0, 0, 0])
         for ev in eventos:
             inicio = dt.datetime.fromisoformat(ev["commence_time"].replace("Z", "+00:00"))
             if not args.demo and not (ahora < inicio <= limite):
+                continue
+            if args.deporte == "auto" and \
+                    inicio.astimezone(ZONA).weekday() not in CALENDARIO[sport]:
                 continue
             c[1] += 1
             if any(b["key"] == CASA_SHARP for b in ev["bookmakers"]):
@@ -423,7 +450,8 @@ def main():
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     e = sub.add_parser("escanear", help="busca cuotas justas y valor")
-    e.add_argument("--deporte", choices=DEPORTES, required=True)
+    e.add_argument("--deporte", choices=list(DEPORTES) + ["auto"], required=True,
+                   help="auto = según el CALENDARIO de días por liga")
     e.add_argument("--mercados", nargs="+", default=["h2h"], choices=list(NOMBRE_MERCADO),
                    help="h2h (ganador), spreads (hándicap), totals (altas/bajas)")
     e.add_argument("--horas", type=int, default=36, help="solo partidos en las próximas N horas")
