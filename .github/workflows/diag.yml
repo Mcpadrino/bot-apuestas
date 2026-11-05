@@ -6,25 +6,55 @@ on:
 jobs:
   diag:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 4
     steps:
-      - name: Estadios (ESPN + Wikipedia)
+      - name: ESPN endpoints
         run: |
           python3 - <<'PY'
-          import json, urllib.request, urllib.parse
-          def g(u, h=None):
-              r = urllib.request.Request(u, headers={"user-agent": "bitacora-apuestas/1.0 (contacto: github Mcpadrino)", **(h or {})})
-              return json.load(urllib.request.urlopen(r, timeout=20))
-          for ruta, eid in [("soccer/mex.1", "227"), ("soccer/eng.1", "359"), ("football/nfl", "12"), ("basketball/nba", "13")]:
+          import json, urllib.request
+          def g(u):
               try:
-                  t = g(f"https://site.api.espn.com/apis/site/v2/sports/{ruta}/teams/{eid}")["team"]
-                  v = t.get("venue") or (t.get("franchise") or {}).get("venue") or {}
-                  print(ruta, t.get("displayName"), "| venue:", v.get("fullName"), v.get("address"), "imgs:", [i.get("href") for i in v.get("images", [])][:2])
-                  nombre = v.get("fullName")
-                  if nombre:
-                      w = g("https://en.wikipedia.org/w/api.php?" + urllib.parse.urlencode({"action": "query", "prop": "pageimages", "titles": nombre,
-                            "pithumbsize": 1200, "redirects": 1, "format": "json", "piprop": "thumbnail|name"}))
-                      print("   wiki:", [(p.get("title"), (p.get("thumbnail") or {}).get("source")) for p in w["query"]["pages"].values()])
+                  r = urllib.request.Request(u, headers={"user-agent": "Mozilla/5.0"})
+                  return json.load(urllib.request.urlopen(r, timeout=20))
               except Exception as e:
-                  print(ruta, "error", e)
+                  return {"__error": str(e)}
+          B = "https://site.api.espn.com/apis/site/v2/sports/"
+          s = g("https://site.api.espn.com/apis/v2/sports/soccer/mex.1/standings")
+          ch = s.get("children") or []
+          print("standings mex keys", list(s)[:8], "children", len(ch), [c.get("name") for c in ch][:3])
+          if ch:
+              e = ch[0]["standings"]["entries"][0]
+              print("  entry", e["team"]["displayName"], [(x.get("name"), x.get("displayValue")) for x in e["stats"]][:14], "note", e.get("note"))
+          s2 = g("https://site.api.espn.com/apis/v2/sports/football/nfl/standings")
+          print("standings nfl children", [c.get("name") for c in s2.get("children") or []][:4])
+          st = g(B + "soccer/mex.1/statistics")
+          print("statistics keys", list(st)[:8], str(st)[:600])
+          sc = g(B + "soccer/mex.1/teams/227/schedule")
+          evs = sc.get("events") or []
+          print("schedule mex 227", list(sc)[:8], len(evs), json.dumps(evs[-1] if evs else {})[:900])
+          sc2 = g(B + "soccer/mex.1/teams/227/schedule?fixture=true")
+          print("fixture", len(sc2.get("events") or []), [(e.get("date"), e.get("name")) for e in (sc2.get("events") or [])[:3]])
+          n = g(B + "soccer/mex.1/news?team=227&lang=es&region=mx&limit=3")
+          print("news team", [a.get("headline") for a in n.get("articles", [])][:3])
+          # un partido terminado para ver summary
+          for d in ["20261101", "20261102", "20261031", "20261025"]:
+              sb = g(B + f"soccer/eng.1/scoreboard?dates={d}")
+              if sb.get("events"):
+                  eid = sb["events"][0]["id"]; break
+          su = g(B + f"soccer/eng.1/summary?event={eid}")
+          print("summary keys", list(su))
+          print("keyEvents", json.dumps((su.get("keyEvents") or [])[:2])[:900])
+          r = su.get("rosters") or []
+          print("rosters", len(r), json.dumps(r[0] if r else {})[:900])
+          print("gameInfo", json.dumps(su.get("gameInfo"))[:400])
+          for d in ["20261102", "20261101", "20261026"]:
+              sb = g(B + f"football/nfl/scoreboard?dates={d}")
+              if sb.get("events"):
+                  eid = sb["events"][0]["id"]; break
+          su = g(B + f"football/nfl/summary?event={eid}")
+          print("nfl summary keys", list(su))
+          print("nfl scoringPlays", json.dumps((su.get("scoringPlays") or [])[:1])[:500])
+          print("nfl boxscore teams stats", json.dumps(((su.get("boxscore") or {}).get("teams") or [{}])[0].get("statistics", [])[:6])[:600])
+          print("nfl leaders", json.dumps((su.get("leaders") or [])[:1])[:500])
+          print("nfl gameInfo", json.dumps(su.get("gameInfo"))[:400])
           PY
