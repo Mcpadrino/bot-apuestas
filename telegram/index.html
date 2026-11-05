@@ -148,6 +148,9 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
 .visor { position: fixed; inset: 0; background: rgba(0,0,0,.88); display: grid; place-items: center; z-index: 50;
   padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px)); }
 .visor img { max-width: 100%; max-height: 100%; border-radius: 8px; }
+.sel-logo { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.sel-logo img { width: 26px; height: 26px; object-fit: contain; flex: 0 0 auto; }
+.marcador { font-size: .82rem; font-family: var(--font-mono); color: var(--fg); }
 .totbar { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: .9rem; }
 </style>
 </head>
@@ -342,6 +345,7 @@ async function cargar() {
       id: String(x.id), partido: String(x.partido || ""), seleccion: String(x.seleccion || ""), casa: String(x.casa || ""),
       cuota: Number(x.cuota) || 2, prob: x.prob ? Number(x.prob) : null, monto: Number(x.monto) || 0,
       cartera: x.cartera === "libre" ? "normal" : "bot",
+      marcador: x.marcador ? String(x.marcador) : "", logo: /^https:\/\//.test(x.logo || "") ? x.logo : "",
       resultado: String(x.resultado || "pendiente"), creada: Date.parse(x.creada) || 0,
       cerrada: x.cerrada ? Date.parse(x.cerrada) : null }));
     listo = true; estado("");
@@ -454,6 +458,13 @@ function meta(b) {
     .filter(Boolean).join(" · ");
 }
 
+function selConLogo(b, prefijo = "") {
+  const caja = el("div", "sel-logo");
+  if (b.logo) { const im = el("img"); im.src = b.logo; im.alt = ""; im.loading = "lazy"; im.onerror = () => im.remove(); caja.append(im); }
+  caja.append(el("div", "sel", prefijo + b.seleccion));
+  return caja;
+}
+
 function pintarPendientes(lista) {
   const cont = $("pend"); cont.innerHTML = "";
   if (!lista.length) {
@@ -465,7 +476,8 @@ function pintarPendientes(lista) {
   lista.forEach(b => {
     const card = el("div", "bet");
     const top = el("div", "bet-top"), izq = el("div"), der = el("div", "amt");
-    izq.append(el("div", "sel", b.seleccion), el("div", "meta", meta(b)));
+    izq.append(selConLogo(b), el("div", "meta", meta(b)));
+    if (b.marcador) izq.append(el("div", "marcador", "🏁 " + b.marcador + " · confírmalo abajo"));
     der.append(el("div", "num", fmt(b.monto)), el("div", "meta", "cobra " + fmt(b.monto * b.cuota)));
     top.append(izq, der); card.append(top);
     const act = el("div", "actions");
@@ -493,7 +505,8 @@ function pintarResultados(lista) {
     icon.setAttribute("aria-label", { gana: "Ganada", pierde: "Perdida", nula: "Nula" }[b.resultado]);
     const mid = el("div");
     mid.append(el("div", "tag " + b.cartera, (b.cartera === "bot" ? "🤖 Bot" : "🎲 Normal") + " · " + fecha(b.cerrada)),
-      el("div", "sel", b.seleccion), el("div", "meta", meta(b)));
+      selConLogo(b), el("div", "meta", meta(b)));
+    if (b.marcador) mid.append(el("div", "marcador", "🏁 " + b.marcador));
     const g = ganancia(b), der = el("div", "amt");
     der.append(el("div", clase(g), b.resultado === "nula" ? "Nula" : sign(g)), el("div", "meta", "apostó " + fmt(b.monto)));
     const re = el("button", "", "Reabrir"); re.type = "button"; re.style.cssText = "padding:4px 8px;font-size:.75rem;margin-top:4px";

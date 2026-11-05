@@ -270,17 +270,38 @@ async function atenderTexto(chat, texto, esDueno, msgId) {
 
 function parseearSeguro(t) { try { return parsearApuesta(t); } catch { return {}; } }
 
+async function rpcResultados(accion, datos) {
+  const r = await fetch(`${env("SUPABASE_URL")}/rest/v1/rpc/resultados`, {
+    method: "POST",
+    headers: { "content-type": "application/json", apikey: env("SUPABASE_KEY"), authorization: `Bearer ${env("SUPABASE_KEY")}` },
+    body: JSON.stringify({ p_clave: env("BOT_CLAVE"), p_accion: accion, p_datos: datos }),
+  });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.message || "error de base de datos");
+  return j;
+}
+
 async function atenderBoton(q) {
   const chat = q.message.chat.id, msgId = q.message.message_id;
   const dbu = (accion, datos = {}) => db(accion, { ...datos, usuario: String(chat) });
   const [tipo, id, res] = q.data.split(":");
+  const conFoto = Boolean(q.message.photo);
+  // Los mensajes con foto (propuestas de resultado) se editan en su pie de foto
+  const editar = (texto, extra = {}) => conFoto
+    ? tg("editMessageCaption", { chat_id: chat, message_id: msgId, caption: texto, parse_mode: "Markdown", ...extra })
+    : tg("editMessageText", { chat_id: chat, message_id: msgId, text: texto, parse_mode: "Markdown", ...extra });
   if (tipo === "c") {
-    const { texto } = await cerrar(dbu, Number(id), res);
-    await tg("editMessageText", { chat_id: chat, message_id: msgId, text: texto, parse_mode: "Markdown",
-      reply_markup: { inline_keyboard: [[{ text: "↩️ Reabrir", callback_data: `c:${id}:pendiente` }]] } });
+    const { texto, a } = await cerrar(dbu, Number(id), res);
+    const marcador = a && a.marcador && res !== "pendiente" ? `\n🏁 ${a.marcador}` : "";
+    await editar(texto + marcador,
+      { reply_markup: { inline_keyboard: [[{ text: "↩️ Reabrir", callback_data: `c:${id}:pendiente` }]] } });
     if (res === "pendiente")
       await tg("editMessageReplyMarkup", { chat_id: chat, message_id: msgId, reply_markup: botones(id) });
     await tg("answerCallbackQuery", { callback_query_id: q.id, text: ETIQUETA[res] });
+  } else if (tipo === "n") {
+    await rpcResultados("descartar", { id: Number(id), usuario: String(chat) });
+    await editar(`👍 Ok, no era ese partido. Marca la apuesta #${id} tú cuando termine (📋 Pendientes).`);
+    await tg("answerCallbackQuery", { callback_query_id: q.id, text: "Descartado" });
   } else if (tipo === "b") {
     await tg("editMessageText", { chat_id: chat, message_id: msgId, text: `¿Borrar la apuesta #${id}?`,
       reply_markup: { inline_keyboard: [[
@@ -303,6 +324,19 @@ async function atenderBoton(q) {
 // ---------------------------------------------------------------- entrada HTTP
 export default async function handler(req, res) {
   // Registro del webhook (una sola vez): GET /api/telegram?setup=<WEBHOOK_SECRET>
+  const tokenOk = () => (req.headers["x-bot-token"] || "").replace(/\s/g, "") === env("TELEGRAM_TOKEN");
+  // Para el revisor de resultados de GitHub: apuestas pendientes de todos y guardar propuestas
+  if (req.query.pendientes !== undefined) {
+    if (!tokenOk()) return res.status(401).json({ error: "no" });
+    return res.status(200).json(await rpcResultados("pendientes", {}));
+  }
+  if (req.query.proponer !== undefined && req.method === "POST") {
+    if (!tokenOk()) return res.status(401).json({ error: "no" });
+    const b = req.body || {};
+    return res.status(200).json(await rpcResultados("proponer", {
+      id: Number(b.id), evento: String(b.evento || ""), marcador: String(b.marcador || ""),
+      logo: /^https:\/\//.test(b.logo || "") ? b.logo : null }));
+  }
   if (req.method === "GET") {
     // Para las alertas de GitHub: lista de usuarios con su banca (requiere el token del bot)
     if (req.query.usuarios !== undefined) {

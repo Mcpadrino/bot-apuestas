@@ -340,6 +340,86 @@ def telegram(texto, chat=None):
         print(f"No se pudo enviar a Telegram: {type(e).__name__}", file=sys.stderr)
 
 
+def telegram_foto(png, chat=None, caption=""):
+    token = "".join(os.getenv("TELEGRAM_TOKEN", "").split())
+    chat = chat or DUENO
+    if not (token and chat and requests and png):
+        return
+    try:
+        requests.post(f"https://api.telegram.org/bot{token}/sendPhoto",
+                      data={"chat_id": chat, "caption": caption[:1000]},
+                      files={"photo": ("cartelera.png", png, "image/png")}, timeout=20)
+    except requests.RequestException as e:
+        print(f"No se pudo enviar la cartelera: {type(e).__name__}", file=sys.stderr)
+
+
+def cartelera(tabla, maximo=10):
+    """Imagen con los partidos de la alerta y los logos de los equipos (ESPN). None si no se puede."""
+    try:
+        import io
+        from PIL import Image, ImageDraw, ImageFont
+        import espn
+    except ImportError:
+        return None
+    partidos, vistos = [], set()
+    for f in sorted(tabla, key=lambda x: x["inicio"]):
+        if f["partido"] not in vistos:
+            vistos.add(f["partido"]); partidos.append(f)
+    if not partidos:
+        return None
+    extra = len(partidos) - maximo
+    partidos = partidos[:maximo]
+
+    def fuente(tam, negrita=False):
+        for ruta in (f"/usr/share/fonts/truetype/dejavu/DejaVuSans{'-Bold' if negrita else ''}.ttf",):
+            try:
+                return ImageFont.truetype(ruta, tam)
+            except OSError:
+                pass
+        return ImageFont.load_default(size=tam)
+
+    def bajar_logo(url, tam):
+        if not url:
+            return None
+        try:
+            r = requests.get(url, timeout=10)
+            im = Image.open(io.BytesIO(r.content)).convert("RGBA")
+            im.thumbnail((tam, tam), Image.LANCZOS)
+            return im
+        except Exception:
+            return None
+
+    W, FILA, CAB = 1080, 128, 120
+    alto = CAB + FILA * len(partidos) + (70 if extra > 0 else 30)
+    img = Image.new("RGB", (W, alto), "#0d1411")
+    d = ImageDraw.Draw(img)
+    d.text((40, 36), "SEÑALES DE HOY", font=fuente(46, True), fill="#e4ece7")
+    d.text((W - 40, 52), dt.datetime.now(ZONA).strftime("%d/%m"), font=fuente(30), fill="#92a59a", anchor="ra")
+    f_eq, f_info = fuente(32, True), fuente(24)
+    for i, f in enumerate(partidos):
+        y = CAB + i * FILA
+        d.rounded_rectangle([24, y + 6, W - 24, y + FILA - 6], radius=18, fill="#151f1a", outline="#26342d", width=2)
+        tipo = f["deporte"].split("_")[0]
+        izq, der = (f["local"], f["visita"]) if tipo == "soccer" else (f["visita"], f["local"])
+        sep = "vs" if tipo == "soccer" else "@"
+        eqs = [espn.buscar_equipo(n, f["deporte"]) for n in (izq, der)]
+        cortos = [(e["corto"] if e and e["corto"] else (n if len(n) <= 14 else n.split()[-1]))[:16] for n, e in zip((izq, der), eqs)]
+        for nombre, x, e in ((izq, 48, eqs[0]), (der, W - 48 - 84, eqs[1])):
+            lg = bajar_logo(e["logo"] if e else None, 84)
+            if lg:
+                img.paste(lg, (x + (84 - lg.width) // 2, y + 22 + (84 - lg.height) // 2), lg)
+            else:
+                d.ellipse([x + 10, y + 32, x + 74, y + 96], fill="#26342d")
+                d.text((x + 42, y + 64), nombre[:1], font=f_eq, fill="#e4ece7", anchor="mm")
+        d.text((W // 2, y + 46), f"{cortos[0]}  {sep}  {cortos[1]}", font=f_eq, fill="#e4ece7", anchor="mm")
+        d.text((W // 2, y + 90), f"{NOMBRE_LIGA.get(f['deporte'], '')} · {f['hora']}", font=f_info, fill="#39c08c", anchor="mm")
+    if extra > 0:
+        d.text((W // 2, alto - 38), f"+ {extra} partido(s) más en el mensaje", font=f_info, fill="#92a59a", anchor="mm")
+    buf = io.BytesIO()
+    img.save(buf, "PNG", optimize=True)
+    return buf.getvalue()
+
+
 EMOJI = {"soccer": "⚽", "americanfootball": "🏈", "basketball": "🏀", "baseball": "⚾"}
 UNIDAD = {"soccer": "goles", "americanfootball": "pts", "basketball": "pts", "baseball": "carreras"}
 TITULO_MERCADO = {"h2h": "🏆 Ganador", "totals": "📊 Total", "spreads": "↔️ Hándicap"}
@@ -466,6 +546,7 @@ def escanear(args):
                         "fuente": fuente, "monto": monto_sugerido(p, minima),
                         "mov": (p - antes) if antes is not None else 0.0,
                         "inicio": inicio, "deporte": sport, "mk": mk,
+                        "local": ev["home_team"], "visita": ev["away_team"],
                     }
                     tabla.append(fila)
                     c[3] += 1
@@ -509,7 +590,9 @@ def escanear(args):
     if args.telegram:
         global BANCA
         banca_original = BANCA
+        imagen = cartelera(tabla)
         for chat, banca, _nombre in usuarios_alertas():
+            telegram_foto(imagen, chat)
             BANCA = banca                     # el monto sugerido depende de la banca de cada quien
             for f in tabla:
                 f["monto"] = monto_sugerido(f["prob"], f["minima"])

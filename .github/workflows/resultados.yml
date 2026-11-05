@@ -1,0 +1,31 @@
+name: Revisar resultados
+
+on:
+  schedule:
+    - cron: "17 * * * *"      # cada hora (no gasta créditos de cuotas: usa marcadores de ESPN)
+  workflow_dispatch:
+    inputs:
+      prueba:
+        description: "Solo mostrar qué propondría (no manda nada)"
+        type: boolean
+        default: false
+
+jobs:
+  revisar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Probar ESPN (logos y marcadores)
+        if: ${{ inputs.prueba }}
+        run: |
+          python espn.py americanfootball_nfl $(date -u -d '3 days ago' +%Y%m%d)
+          python espn.py soccer_mexico_ligamx $(date -u -d '4 days ago' +%Y%m%d)
+      - name: Revisar marcadores y proponer resultados
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+        run: python resultados.py ${{ inputs.prueba && '--prueba' || '' }}
