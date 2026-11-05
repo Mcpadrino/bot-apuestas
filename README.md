@@ -5,7 +5,7 @@
    Liga MX, Premier, LaLiga, Champions, NFL, NBA y MLB.
 2. Les quita el margen con el **método power**, que corrige el sesgo de las
    cuotas altas, y obtiene la probabilidad real de cada resultado.
-3. Te manda a **Telegram**, 3 veces al día (7:00, 12:00 y 18:00), la **cuota mínima** que debes
+3. Te manda a **Telegram**, 2 veces al día (7:00 y 18:00), la **cuota mínima** que debes
    encontrar en Caliente o Draftea y **cuánto apostar** (Kelly fraccional).
 4. Marca con ⚡ las líneas que se movieron desde el escaneo anterior: ahí es
    más probable que Caliente se haya quedado atrás.
@@ -43,7 +43,7 @@ Copia tu clave.
 5. Pruébalo: pestaña *Actions → Alertas de apuestas → Run workflow*.
    En un minuto te llega el mensaje a Telegram.
 
-Desde ahí corre solo a las **7:00, 12:00 y 18:00** (hora CDMX), según el calendario: NFL lun/jue/dom, Champions mar/mié, Liga MX + 5 grandes ligas vie/sáb/dom. También puedes
+Desde ahí corre solo a las **7:00 y 18:00** (hora CDMX), según el calendario: NFL lun/jue/dom, Champions mar/mié, Europa League jue, Liga MX + 5 grandes ligas vie/sáb/dom, NBA y MLB lun–jue. También puedes
 correrlo cuando quieras desde la app de GitHub en el celular.
 
 > Nunca pegues tus claves dentro del código si el repositorio es público.
@@ -91,7 +91,7 @@ Se cambian al inicio de `bot_apuestas.py`, o como *variables* en GitHub
 El bot reparte solo los 500 créditos del mes: cada corrida revisa cuántos
 quedan y cuántos días faltan. Siempre busca el ganador (h2h); si sobra
 presupuesto agrega hándicap y totales en este orden: NFL, Liga MX, Champions,
-Premier, LaLiga, Serie A, Bundesliga, Ligue 1. Las ligas fuera de temporada no
+Europa League, Premier, LaLiga, Serie A, Bundesliga, Ligue 1, NBA y MLB. Las ligas fuera de temporada no
 gastan. Guarda 15 créditos de reserva y te avisa por Telegram si se acaban.
 
 ## Que no se apague

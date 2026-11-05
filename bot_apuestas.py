@@ -60,7 +60,7 @@ LIGAS_TOP = [
     "soccer_france_ligue_one",
 ]
 DEPORTES = {
-    "futbol": LIGAS_TOP + ["soccer_uefa_champs_league"],
+    "futbol": LIGAS_TOP + ["soccer_uefa_champs_league", "soccer_uefa_europa_league"],
     "nfl": ["americanfootball_nfl"],
     "mlb": ["baseball_mlb"],
     "nba": ["basketball_nba"],
@@ -72,28 +72,33 @@ DEPORTES["todos"] = [s for lista in DEPORTES.values() for s in lista]
 CALENDARIO = {
     "americanfootball_nfl": {0, 3, 6},          # lunes, jueves, domingo
     "soccer_uefa_champs_league": {1, 2},        # martes, miércoles
+    "soccer_uefa_europa_league": {3},           # jueves
     **{liga: {4, 5, 6} for liga in LIGAS_TOP},  # viernes, sábado, domingo
+    "basketball_nba": {0, 1, 2, 3},             # lunes a jueves
+    "baseball_mlb": {0, 1, 2, 3},               # lunes a jueves (abril–octubre)
 }
 # ======================================================================
 
 # ===== PRESUPUESTO de créditos (--presupuesto) =====
-CORRIDAS_DIA = int(os.getenv("CORRIDAS_DIA", 3))   # cuántas veces corre al día en GitHub
+CORRIDAS_DIA = int(os.getenv("CORRIDAS_DIA", 2))   # cuántas veces corre al día en GitHub
 RESERVA = int(os.getenv("RESERVA", 15))            # créditos que nunca se gastan
 # Mercados extra en orden de prioridad: se agregan mientras alcance el presupuesto.
 EXTRAS = [
     ("americanfootball_nfl", "spreads"), ("americanfootball_nfl", "totals"),
     ("soccer_mexico_ligamx", "totals"), ("soccer_uefa_champs_league", "totals"),
+    ("soccer_uefa_europa_league", "totals"),
     ("soccer_epl", "totals"), ("soccer_spain_la_liga", "totals"),
     ("soccer_italy_serie_a", "totals"), ("soccer_germany_bundesliga", "totals"),
     ("soccer_france_ligue_one", "totals"),
     ("basketball_nba", "totals"), ("basketball_nba", "spreads"),
+    ("baseball_mlb", "totals"),
 ]
 # ===================================================
 NOMBRE_LIGA = {
     "soccer_mexico_ligamx": "Liga MX", "soccer_epl": "Premier", "soccer_spain_la_liga": "LaLiga",
     "soccer_uefa_champs_league": "Champions", "americanfootball_nfl": "NFL",
     "soccer_italy_serie_a": "Serie A", "soccer_germany_bundesliga": "Bundesliga",
-    "soccer_france_ligue_one": "Ligue 1",
+    "soccer_france_ligue_one": "Ligue 1", "soccer_uefa_europa_league": "Europa League",
     "baseball_mlb": "MLB", "basketball_nba": "NBA",
 }
 DIAS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
