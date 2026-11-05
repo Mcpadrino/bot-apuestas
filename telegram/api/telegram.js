@@ -217,7 +217,7 @@ async function atenderTexto(chat, texto, esDueno, msgId) {
     ];
     if (esDueno) docs.push(["manual-completo.pdf", "🛠 *Manual completo* (con la parte de administrador)."]);
     for (const [f, cap] of docs) {
-      const r = await tg("sendDocument", { chat_id: chat, document: base + f + "?v=1", caption: cap, parse_mode: "Markdown" });
+      const r = await tg("sendDocument", { chat_id: chat, document: base + f + "?v=2", caption: cap, parse_mode: "Markdown" });
       if (!r.ok) await enviar(`${cap}\n${base}${f}`);
     }
     return;

@@ -12,5 +12,5 @@ jobs:
           B=https://bot-apuestas-telegram.vercel.app/docs
           curl -s -o /dev/null -w "%{http_code} folleto-url\n" $B/folleto.pdf
           for f in "folleto.pdf|📄 Folleto: qué es el bot y todo lo que incluye." "guia-usuario.pdf|📘 Guía del usuario (explicada desde cero)." "manual-completo.pdf|🛠 Manual completo con la parte de administrador. Tip: escribe guía al bot cuando quieras volver a recibirlos."; do
-            curl -s -X POST "https://api.telegram.org/bot$T/sendDocument" -d chat_id="$C" --data-urlencode document="$B/${f%%|*}?v=1" --data-urlencode caption="${f#*|}" | head -c 80; echo
+            curl -s -X POST "https://api.telegram.org/bot$T/sendDocument" -d chat_id="$C" --data-urlencode document="$B/${f%%|*}?v=2" --data-urlencode caption="${f#*|}" | head -c 80; echo
           done
