@@ -151,6 +151,27 @@ def estado_api():
     return restantes, activas
 
 
+def ligas_con_partidos(ligas, ahora, limite, usar_calendario):
+    """Revisa GRATIS (endpoint /events) qué ligas tienen partidos en la ventana y,
+    con --deporte auto, en un día de su calendario. Solo esas gastan créditos."""
+    clave = "".join(ODDS_API_KEY.split())
+    fmt = "%Y-%m-%dT%H:%M:%SZ"
+    con_partidos = []
+    for lg in ligas:
+        r = requests.get(f"https://api.the-odds-api.com/v4/sports/{lg}/events",
+                         params={"apiKey": clave,
+                                 "commenceTimeFrom": ahora.strftime(fmt),
+                                 "commenceTimeTo": limite.strftime(fmt)}, timeout=20)
+        if not r.ok:
+            continue
+        for ev in r.json():
+            inicio = dt.datetime.fromisoformat(ev["commence_time"].replace("Z", "+00:00"))
+            if not usar_calendario or inicio.astimezone(ZONA).weekday() in CALENDARIO[lg]:
+                con_partidos.append(lg)
+                break
+    return con_partidos
+
+
 def planear_mercados(ligas, restantes):
     """Reparte los créditos que quedan entre los días que faltan del mes."""
     hoy = dt.datetime.now(ZONA).date()
@@ -327,6 +348,11 @@ def escanear(args):
     if args.presupuesto and not args.demo:
         restantes, activas = estado_api()
         ligas = [lg for lg in ligas if lg in activas]          # fuera de temporada: no gastar
+        ligas = ligas_con_partidos(ligas, ahora, limite, args.deporte == "auto")
+        if not ligas:
+            print(f"Sin partidos del calendario en las próximas {args.horas} h. "
+                  f"No se gastó ningún crédito ({restantes} restantes).")
+            return
         plan, por_corrida, costo = planear_mercados(ligas, restantes)
         if not plan:
             telegram("⚠️ Se acabaron los créditos de the-odds-api de este mes.")
