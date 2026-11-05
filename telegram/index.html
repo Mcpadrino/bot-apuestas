@@ -686,6 +686,9 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
 .serie .info { display: flex; justify-content: space-between; font-size: .72rem; color: var(--muted); }
 .serie .g-barra { height: 18px; line-height: 18px; font-size: .68rem; }
 .serie .g-barra .l { background: #3a7bd5; } .serie .g-barra .v { background: #c0392b; }
+.especies { display: flex; flex-wrap: wrap; gap: 6px; }
+.especies button { padding: 7px 12px; border-radius: 999px; font-size: .85rem; transition: transform .15s cubic-bezier(.3,1.6,.5,1); }
+.especies button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); transform: scale(1.05); }
 </style>
 </head>
 <body>
@@ -943,6 +946,8 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
           <span class="estado-pet" id="estado-pet"></span>
         </div>
       </section>
+      <div class="especies" id="especies" role="group" aria-label="Elige tu animal"></div>
+      <p class="hint" id="playera-txt"></p>
       <div class="cartera">
         <div><span class="label">💰 Cartera virtual</span><b class="num" id="w-saldo">$0</b></div>
         <div class="w-det"><small id="w-det"></small><small>No es dinero real ni sale de tu banca.</small></div>
@@ -2759,42 +2764,110 @@ function avisoRacha() {
   $("toast").hidden = false;
   $("toast-x").onclick = () => { $("toast").hidden = true; try { localStorage.setItem(llave, "1"); } catch (e) {} };
 }
+// ---- animales (dibujos SVG propios) con la playera del equipo favorito
+const ESPECIES = { gato: "🐱 Gato", perro: "🐶 Perro", lagarto: "🦎 Lagarto", tigre: "🐯 Tigre", pinguino: "🐧 Pingüino", jirafa: "🦒 Jirafa" };
+// dónde va cada accesorio según el animal (x %, y %, tamaño rem)
+const POS_ESPECIE = {
+  jirafa: { cabeza: [58, 4, 2.2], ojos: [58, 17, 1.8], cuello: [52, 50, 1.9] },
+  pinguino: { cabeza: [50, 14, 2.4], ojos: [50, 33, 2.1], cuello: [50, 52, 1.9] },
+  lagarto: { cabeza: [50, 22, 2.4], ojos: [50, 36, 2.2], cuello: [50, 56, 1.9] },
+};
+function posAcc(especie, tipo) {
+  const base = { cabeza: [50, 10, 2.5], ojos: [50, 36, 2.2], cuello: [50, 58, 2], mano: [88, 70, 2.1], pies: [50, 98, 1.7] };
+  return (POS_ESPECIE[especie] || {})[tipo] || base[tipo];
+}
+function animalSVG(especie, estado, c1, c2) {
+  const flaco = estado === "huesos", tx = flaco ? .74 : 1;
+  const ojosY = { jirafa: 46, pinguino: 70, lagarto: 78 }[especie] || 76;
+  const P = {   // colores de cada animal
+    gato: ["#f2a65a", "#d9823b", "#fff4e6"], perro: ["#c98d55", "#8a5a33", "#f4e2cc"], lagarto: ["#6dbb45", "#3f8a2a", "#d8f0b8"],
+    tigre: ["#f28c28", "#1f1f1f", "#fff6ea"], pinguino: ["#26303a", "#11171d", "#ffffff"], jirafa: ["#f4c752", "#a8621f", "#fff3cf"],
+  }[especie] || ["#c98d55", "#8a5a33", "#f4e2cc"];
+  const [piel, osc, claro] = P;
+  let h = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" aria-label="Tu ${ESPECIES[especie] || "mascota"} (${estado})">`;
+  h += `<ellipse cx="100" cy="192" rx="${58 * tx}" ry="7" fill="rgba(0,0,0,.18)"/>`;
+  // cola / extras detrás del cuerpo
+  if (especie === "gato" || especie === "tigre") h += `<path d="M140 168 C 175 160, 178 120, 160 110" stroke="${piel}" stroke-width="12" fill="none" stroke-linecap="round"/>` +
+    (especie === "tigre" ? `<path d="M168 140 l8 -3 M171 126 l8 0" stroke="${osc}" stroke-width="4" stroke-linecap="round"/>` : "");
+  if (especie === "perro") h += `<path d="M140 165 C 165 160, 168 140, 160 128" stroke="${piel}" stroke-width="11" fill="none" stroke-linecap="round"/>`;
+  if (especie === "lagarto") h += `<path d="M135 175 C 175 182, 192 160, 186 140 C 184 132, 176 134, 178 142" stroke="${piel}" stroke-width="13" fill="none" stroke-linecap="round"/>`;
+  // patas
+  const patas = especie === "pinguino" ? "#f39c12" : osc;
+  h += `<ellipse cx="${100 - 22 * tx}" cy="186" rx="15" ry="8" fill="${patas}"/><ellipse cx="${100 + 22 * tx}" cy="186" rx="15" ry="8" fill="${patas}"/>`;
+  // cuello de la jirafa
+  if (especie === "jirafa") {
+    h += `<rect x="${100 - 13 * tx}" y="50" width="${26 * tx}" height="90" rx="12" fill="${piel}"/>`;
+    [[96, 70], [104, 92], [95, 112]].forEach(([x, y]) => h += `<ellipse cx="${x}" cy="${y}" rx="6" ry="5" fill="${osc}" opacity=".85"/>`);
+  }
+  // cuerpo
+  const cy = 150, rx = 48 * tx, ry = 40;
+  h += `<ellipse cx="100" cy="${cy}" rx="${rx}" ry="${ry}" fill="${piel}"/>`;
+  if (especie === "pinguino") h += `<ellipse cx="${100 - rx + 4}" cy="${cy - 2}" rx="10" ry="26" fill="${osc}" transform="rotate(18 ${100 - rx + 4} ${cy})"/>
+    <ellipse cx="${100 + rx - 4}" cy="${cy - 2}" rx="10" ry="26" fill="${osc}" transform="rotate(-18 ${100 + rx - 4} ${cy})"/>`;
+  // playera del equipo (siempre puesta)
+  const ch = c1 || "#c0392b", c2b = c2 || "#ffffff";
+  h += `<path d="M${100 - rx * .86} ${cy - 22} L ${100 - rx * .58} ${cy - 34} Q 100 ${cy - 24} ${100 + rx * .58} ${cy - 34} L ${100 + rx * .86} ${cy - 22}
+          L ${100 + rx * 1.02} ${cy - 6} L ${100 + rx * .78} ${cy + 2} L ${100 + rx * .72} ${cy + 30} Q 100 ${cy + 40} ${100 - rx * .72} ${cy + 30}
+          L ${100 - rx * .78} ${cy + 2} L ${100 - rx * 1.02} ${cy - 6} Z" fill="${ch}" stroke="rgba(0,0,0,.15)" stroke-width="1.5"/>
+        <path d="M${100 - rx * .58} ${cy - 34} Q 100 ${cy - 20} ${100 + rx * .58} ${cy - 34}" fill="none" stroke="${c2b}" stroke-width="4"/>
+        <rect x="${100 - rx * .72}" y="${cy + 12}" width="${rx * 1.44}" height="5" fill="${c2b}" opacity=".85"/>
+        <text x="100" y="${cy + 8}" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="24" fill="${c2b}" text-anchor="middle">10</text>`;
+  if (flaco) h += `<path d="M${100 - rx * .5} ${cy - 30} q 0 -6 4 -8 M${100 + rx * .5} ${cy - 30} q 0 -6 -4 -8" stroke="${osc}" stroke-width="2" fill="none"/>`;
+  // cabeza
+  const hy = especie === "jirafa" ? 42 : especie === "pinguino" ? 72 : 78, hr = especie === "jirafa" ? 24 : 40;
+  if (especie === "gato" || especie === "tigre") h += `<path d="M${100 - 34} ${hy - 18} L ${100 - 30} ${hy - 52} L ${100 - 8} ${hy - 34} Z" fill="${piel}"/>
+      <path d="M${100 + 34} ${hy - 18} L ${100 + 30} ${hy - 52} L ${100 + 8} ${hy - 34} Z" fill="${piel}"/>
+      <path d="M${100 - 28} ${hy - 26} L ${100 - 27} ${hy - 42} L ${100 - 15} ${hy - 32} Z" fill="#f7b6c2"/><path d="M${100 + 28} ${hy - 26} L ${100 + 27} ${hy - 42} L ${100 + 15} ${hy - 32} Z" fill="#f7b6c2"/>`;
+  if (especie === "perro") h += `<ellipse cx="${100 - 38}" cy="${hy + 2}" rx="13" ry="28" fill="${osc}" transform="rotate(14 ${100 - 38} ${hy})"/>
+      <ellipse cx="${100 + 38}" cy="${hy + 2}" rx="13" ry="28" fill="${osc}" transform="rotate(-14 ${100 + 38} ${hy})"/>`;
+  if (especie === "jirafa") h += `<rect x="86" y="8" width="5" height="16" rx="2" fill="${osc}"/><rect x="109" y="8" width="5" height="16" rx="2" fill="${osc}"/>
+      <circle cx="88.5" cy="8" r="5" fill="${osc}"/><circle cx="111.5" cy="8" r="5" fill="${osc}"/>
+      <ellipse cx="72" cy="${hy - 6}" rx="10" ry="5" fill="${piel}" transform="rotate(-20 72 ${hy - 6})"/><ellipse cx="128" cy="${hy - 6}" rx="10" ry="5" fill="${piel}" transform="rotate(20 128 ${hy - 6})"/>`;
+  if (especie === "lagarto") h += `<path d="M70 ${hy - 26} l6 -12 l6 12 M88 ${hy - 30} l6 -13 l6 13 M106 ${hy - 30} l6 -13 l6 13" fill="${osc}"/>
+      <path d="M44 ${hy + 4} Q 46 ${hy - 26} 100 ${hy - 28} Q 156 ${hy - 26} 158 ${hy + 4} Q 150 ${hy + 24} 100 ${hy + 22} Q 50 ${hy + 24} 44 ${hy + 4} Z" fill="${piel}"/>
+      <circle cx="78" cy="${hy - 22}" r="12" fill="${piel}"/><circle cx="122" cy="${hy - 22}" r="12" fill="${piel}"/>
+      <path d="M50 ${hy + 8} Q 100 ${hy + 18} 150 ${hy + 8}" stroke="${osc}" stroke-width="2" fill="none" opacity=".6"/>`;
+  else if (especie === "jirafa") h += `<ellipse cx="100" cy="${hy}" rx="26" ry="${hr}" fill="${piel}"/><ellipse cx="100" cy="${hy + 16}" rx="17" ry="12" fill="${claro}"/>`;
+  else h += `<circle cx="100" cy="${hy}" r="${hr}" fill="${piel}"/>`;
+  // detalles de la cara
+  if (especie === "tigre") h += `<path d="M100 ${hy - 40} l0 12 M88 ${hy - 37} l2 10 M112 ${hy - 37} l-2 10 M62 ${hy - 4} l12 2 M64 ${hy + 8} l11 -1 M138 ${hy - 4} l-12 2 M136 ${hy + 8} l-11 -1"
+      stroke="${osc}" stroke-width="4" stroke-linecap="round"/>`;
+  if (especie === "gato") h += `<path d="M92 ${hy - 38} l3 9 M100 ${hy - 40} l0 10 M108 ${hy - 38} l-3 9" stroke="${osc}" stroke-width="3" stroke-linecap="round"/>`;
+  if (especie === "pinguino") h += `<ellipse cx="100" cy="${hy + 8}" rx="30" ry="28" fill="${claro}"/>`;
+  if (["gato", "perro", "tigre"].includes(especie)) h += `<ellipse cx="100" cy="${hy + 16}" rx="20" ry="14" fill="${claro}"/>`;
+  if (especie === "lagarto") [[84, hy + 2], [116, hy + 2], [100, hy - 10]].forEach(([x, y]) => h += `<circle cx="${x}" cy="${y}" r="3" fill="${osc}" opacity=".5"/>`);
+  // ojos
+  const ex = especie === "jirafa" ? 10 : especie === "lagarto" ? 22 : 15, ey = especie === "lagarto" ? hy - 24 : especie === "jirafa" ? hy - 8 : hy - 6;
+  const er = especie === "jirafa" ? 4.5 : 6.5;
+  [100 - ex, 100 + ex].forEach(x => {
+    if (flaco) h += `<circle cx="${x}" cy="${ey}" r="${er + 4}" fill="${osc}" opacity=".35"/>`;
+    h += especie === "lagarto"
+      ? `<circle cx="${x}" cy="${ey}" r="${er + 1}" fill="#f5d33b"/><ellipse cx="${x}" cy="${ey}" rx="2" ry="${er}" fill="#1b1b1b"/>`
+      : `<circle cx="${x}" cy="${ey}" r="${er}" fill="#1b1b1b"/><circle cx="${x + 2}" cy="${ey - 2}" r="${er * .35}" fill="#fff"/>`;
+  });
+  // nariz / pico / boca
+  const ny = especie === "jirafa" ? hy + 12 : especie === "lagarto" ? hy + 6 : hy + 10;
+  if (especie === "pinguino") h += `<path d="M92 ${hy + 4} L 108 ${hy + 4} L 100 ${hy + 16} Z" fill="#f39c12"/>`;
+  else if (especie === "lagarto") h += `<circle cx="94" cy="${ny - 6}" r="2" fill="${osc}"/><circle cx="106" cy="${ny - 6}" r="2" fill="${osc}"/>`;
+  else h += `<ellipse cx="100" cy="${ny}" rx="${especie === "perro" ? 7 : 4.5}" ry="${especie === "perro" ? 5 : 3.5}" fill="${especie === "gato" ? "#e57f92" : "#2b2b2b"}"/>`;
+  if (especie === "gato" || especie === "tigre") h += `<path d="M72 ${ny + 2} l-18 -3 M72 ${ny + 7} l-18 3 M128 ${ny + 2} l18 -3 M128 ${ny + 7} l18 3" stroke="#555" stroke-width="1.5"/>`;
+  const my = especie === "pinguino" ? hy + 24 : ny + (especie === "lagarto" ? 6 : 8);
+  if (estado === "feliz") h += `<path d="M${100 - 10} ${my} Q 100 ${my + 10} ${100 + 10} ${my}" stroke="#1b1b1b" stroke-width="3" fill="none" stroke-linecap="round"/>` +
+    (especie === "perro" ? `<ellipse cx="100" cy="${my + 8}" rx="6" ry="8" fill="#e8677a"/>` : "") +
+    (especie === "lagarto" ? `<path d="M100 ${my + 5} l0 10 l-4 5 M100 ${my + 15} l4 5" stroke="#e8677a" stroke-width="2.5" fill="none" stroke-linecap="round"/>` : "") +
+    (especie !== "lagarto" && especie !== "pinguino" ? `<ellipse cx="${100 - ex - 10}" cy="${ey + 14}" rx="6" ry="3.5" fill="#ff8fa3" opacity=".6"/><ellipse cx="${100 + ex + 10}" cy="${ey + 14}" rx="6" ry="3.5" fill="#ff8fa3" opacity=".6"/>` : "");
+  else if (estado === "hambre") h += `<path d="M${100 - 8} ${my + 3} L ${100 + 8} ${my + 3}" stroke="#1b1b1b" stroke-width="3" stroke-linecap="round"/>`;
+  else h += `<path d="M${100 - 9} ${my + 8} Q 100 ${my - 1} ${100 + 9} ${my + 8}" stroke="#1b1b1b" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+  return h + "</svg>";
+}
+
 // ---------------------------------------------------------------- 🕹️ Minijuegos, mascota y cartera virtual
 let mascota = null, jSub = "mascota";
-const POS_ACC = { cabeza: [50, 13, 2.6], ojos: [50, 52, 2.3], cuello: [50, 76, 2.1], mano: [90, 64, 2.2], pies: [50, 99, 1.8] };
 const POS_FONDO = [[12, 22], [86, 18], [14, 70], [88, 72], [50, 10], [30, 40], [72, 42]];
 function estadoMascota(m) {
   if (!m) return "feliz";
   if (Number(m.saldo) <= 0 || m.horas_sin_comer > 48) return "huesos";
   return m.horas_sin_comer > 24 ? "hambre" : "feliz";
-}
-function mascotaSVG(estado, color, jersey) {
-  const ns = "http://www.w3.org/2000/svg";
-  const c = estado === "huesos" ? "#b9b2a6" : color, oscuro = estado === "huesos" ? "#8d857a" : "rgba(0,0,0,.18)";
-  const rx = estado === "huesos" ? 42 : estado === "hambre" ? 62 : 70, ry = estado === "huesos" ? 64 : estado === "hambre" ? 58 : 62;
-  let h = `<svg xmlns="${ns}" viewBox="0 0 200 200" aria-label="Tu mascota (${estado})">
-    <ellipse cx="100" cy="186" rx="${rx * .9}" ry="9" fill="rgba(0,0,0,.18)"/>
-    <ellipse cx="${100 - rx * .45}" cy="178" rx="15" ry="9" fill="${oscuro}"/><ellipse cx="${100 + rx * .45}" cy="178" rx="15" ry="9" fill="${oscuro}"/>
-    <path d="M100 52 C 96 36, 104 26, 114 22 C 112 34, 108 44, 100 52 Z" fill="#3cb371"/>
-    <path d="M100 52 C 98 42, 90 34, 82 34 C 86 44, 92 50, 100 52 Z" fill="#2e9e5f"/>
-    <ellipse cx="100" cy="118" rx="${rx}" ry="${ry}" fill="${c}"/>
-    <ellipse cx="100" cy="${118 + ry * .35}" rx="${rx * .62}" ry="${ry * .5}" fill="rgba(255,255,255,.28)"/>`;
-  if (estado === "huesos") {
-    for (let i = 0; i < 4; i++) h += `<path d="M${100 - rx * .55} ${126 + i * 11} Q 100 ${133 + i * 11} ${100 + rx * .55} ${126 + i * 11}" stroke="#7a7266" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;
-  }
-  if (jersey) h += `<path d="M${100 - rx * .82} ${132} Q 100 ${150} ${100 + rx * .82} ${132} L ${100 + rx * .7} ${118 + ry * .78} Q 100 ${118 + ry * 1.0} ${100 - rx * .7} ${118 + ry * .78} Z" fill="${jersey}" opacity=".95"/>
-    <text x="100" y="${118 + ry * .6}" font-family="Barlow Condensed, sans-serif" font-weight="700" font-size="22" fill="#fff" text-anchor="middle">10</text>`;
-  const ojo = estado === "huesos" ? 12 : 10;
-  [78, 122].forEach(x => {
-    if (estado === "huesos") h += `<circle cx="${x}" cy="100" r="${ojo + 4}" fill="#9d9488"/>`;
-    h += `<circle cx="${x}" cy="100" r="${ojo}" fill="#1b1b1b"/><circle cx="${x + 3}" cy="96" r="3.4" fill="#fff"/>`;
-  });
-  if (estado === "feliz") h += `<ellipse cx="66" cy="118" rx="9" ry="5" fill="#ff8fa3" opacity=".7"/><ellipse cx="134" cy="118" rx="9" ry="5" fill="#ff8fa3" opacity=".7"/>
-    <path d="M86 122 Q 100 138 114 122" stroke="#1b1b1b" stroke-width="4" fill="#c2414b" stroke-linecap="round"/>`;
-  else if (estado === "hambre") h += `<path d="M88 127 L 112 127" stroke="#1b1b1b" stroke-width="4" stroke-linecap="round"/>
-    <path d="M140 84 q 6 10 0 14 q -6 -4 0 -14" fill="#7fd0ff"/>`;
-  else h += `<path d="M86 132 Q 100 120 114 132" stroke="#1b1b1b" stroke-width="4" fill="none" stroke-linecap="round"/>`;
-  return h + "</svg>";
 }
 async function cargarMascota() {
   try { mascota = await api("jugar", { accion: "estado" }); pintarMascota(); }
@@ -2802,16 +2875,22 @@ async function cargarMascota() {
 }
 function pintarMascota() {
   const m = mascota, est = estadoMascota(m), cat = m.catalogo || {}, puestos = m.mascota.puestos || [], tiene = m.mascota.items || [];
-  const fav = perfil && perfil.equipo_fav;
-  const color = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#39c08c";
-  const jersey = puestos.includes("jersey") ? ((fav && /^#[0-9a-f]{6}$/i.test(fav.color || "") && fav.color) || "#c0392b") : null;
+  const fav = perfil && perfil.equipo_fav, especie = m.mascota.especie || "perro";
+  const hex = c => /^#[0-9a-f]{6}$/i.test(c || "") ? c : null;
+  const c1 = (fav && hex(fav.color)) || getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#c0392b";
+  const c2 = (fav && hex(fav.color2) && fav.color2.toLowerCase() !== c1.toLowerCase() ? fav.color2 : "#ffffff");
   const corral = $("corral"); corral.className = "corral " + est + (est === "huesos" ? " triste" : "");
-  $("pet").innerHTML = mascotaSVG(est, color, jersey);
+  $("pet").innerHTML = animalSVG(especie, est, c1, c2);
   const accs = $("accs"); accs.innerHTML = "";
-  puestos.filter(k => cat[k] && POS_ACC[cat[k].tipo]).forEach(k => {
-    const [x, y, t] = POS_ACC[cat[k].tipo];
+  puestos.filter(k => cat[k] && k !== "jersey" && posAcc(especie, cat[k].tipo)).forEach(k => {
+    const [x, y, t] = posAcc(especie, cat[k].tipo);
     const sp = el("span", "", cat[k].e); sp.style.cssText = `left:${x}%;top:${y}%;font-size:${t}rem`; accs.append(sp);
   });
+  const sel = $("especies"); sel.innerHTML = "";
+  Object.entries(ESPECIES).forEach(([k, n]) => { const b = el("button", "", n); b.type = "button"; b.setAttribute("aria-pressed", String(k === especie));
+    b.onclick = async () => { if (k === especie) return; try { await api("jugar", { accion: "especie", especie: k }); cargarMascota(); } catch (e) { estado(e.message); } };
+    sel.append(b); });
+  $("playera-txt").textContent = fav ? `👕 Trae la playera de ${fav.nombre}.` : "👕 Elige tu equipo favorito (menú → ⭐ Mi equipo) y tu mascota usará su playera.";
   const fondo = $("fondo-items"); fondo.innerHTML = "";
   tiene.filter(k => cat[k] && cat[k].tipo === "fondo").forEach((k, i) => {
     const [x, y] = POS_FONDO[i % POS_FONDO.length], sp = el("span", "", cat[k].e); sp.style.cssText = `left:${x}%;top:${y}%;transform:translate(-50%,-50%)`; fondo.append(sp);
@@ -2828,7 +2907,7 @@ function pintarMascota() {
   $("j-tope").textContent = `Premios de hoy: $${Number(m.premios_hoy)} de $60. Lo principal se gana con tus apuestas ganadas.`;
   // tienda
   const t = $("tienda"); t.innerHTML = "";
-  Object.entries(cat).sort((a, b) => a[1].p - b[1].p).forEach(([k, it]) => {
+  Object.entries(cat).filter(([k]) => k !== "jersey").sort((a, b) => a[1].p - b[1].p).forEach(([k, it]) => {
     const ya = tiene.includes(k), puesto = puestos.includes(k);
     const bt = el("button", "item" + (ya ? " tiene" : "") + (puesto ? " puesto" : "") + (!ya && Number(m.saldo) < it.p ? " caro" : "")); bt.type = "button";
     bt.append(el("span", "e", it.e), el("b", "", it.n),

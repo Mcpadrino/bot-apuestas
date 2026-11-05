@@ -202,8 +202,8 @@ export default async function handler(req, res) {
       // ---------- 🕹️ minijuegos y mascota
       case "jugar": {
         const d = b.datos || {};
-        if (!["estado", "comprar", "poner", "nombre", "premio", "ranking"].includes(d.accion)) return res.status(400).json({ error: "acción" });
-        const r = await jugar(d.accion, { usuario, item: txt(d.item, 20), nombre: txt(d.nombre, 20), juego: txt(d.juego, 20), puntos: Math.round(num(d.puntos) || 0) });
+        if (!["estado", "comprar", "poner", "nombre", "premio", "ranking", "especie"].includes(d.accion)) return res.status(400).json({ error: "acción" });
+        const r = await jugar(d.accion, { usuario, item: txt(d.item, 20), nombre: txt(d.nombre, 20), juego: txt(d.juego, 20), puntos: Math.round(num(d.puntos) || 0), especie: txt(d.especie, 20) });
         return res.status(r && r.error ? 400 : 200).json(r);
       }
       case "ligas_juego":
