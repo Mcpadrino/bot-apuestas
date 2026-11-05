@@ -113,6 +113,12 @@ gastan. Guarda 15 créditos de reserva y te avisa por Telegram si se acaban.
 - **🔎 Checador**: escribe lo que te ofrece el casino (`Ravens -250?` en Telegram o en la página) y te dice si está barata, justa o cara.
 - **💸 Retiros y depósitos**: `retiro 50` / `deposito 50` (o en la página) cambian la banca del bot y los montos sugeridos; `retiro normal 50` / `deposito normal 50` llevan el saldo de tus apuestas normales.
 - **🔮 Gurú**: pronósticos de modelos open source (Dixon-Coles con `penaltyblog` para fútbol, Elo para NFL/NBA/MLB) comparados contra Pinnacle; guarda el historial y lleva el marcador de quién acierta más (`pronosticos.py`, `pronosticos.yml`).
+- **📏 ¿Vas bien o es suerte?**: CLV contra el último escaneo antes del partido y gráfica de ganancia real contra la esperada con franja de suerte normal.
+- **⚡ Movimientos fuertes**: aviso por Telegram si una línea de Pinnacle se mueve 3 puntos o más entre escaneos.
+- **🧪 Gurú xG**: modelo aparte con xG estimado con los tiros de ESPN (Liga MX y 5 grandes).
+- **🕹️ Minijuegos**: mascota con tienda (cartera virtual = lo ganado en apuestas + premios, no es dinero real), Adivina el logo, Penales, Canasta y Gol de campo.
+- **🐉 LoL Worlds**: calendario y resultados de la API pública de LoL Esports, Elo por equipo y transmisión en vivo.
+- **⏰ Horarios**: los dispara Supabase (pg_cron + pg_net) con un token de GitHub guardado en `privado.secretos`.
 - **📈 Movimiento de líneas**: cómo cambió la probabilidad de Pinnacle entre escaneos.
 - **🏆 Quiniela**: pronósticos de la jornada sin dinero, con tabla entre amigos.
 - **⚔️ Retos 1 vs 1**: retas a un amigo; el bot avisa quién ganó.
