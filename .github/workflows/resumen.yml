@@ -1,0 +1,26 @@
+name: Resumen semanal
+
+on:
+  schedule:
+    - cron: "0 3 * * 1"       # lunes 03:00 UTC = domingo 21:00 CDMX
+  workflow_dispatch:
+    inputs:
+      prueba:
+        description: "Solo mostrar el mensaje (no enviar)"
+        type: boolean
+        default: true
+
+jobs:
+  resumen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: Enviar resumen
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+        run: python resumen_semanal.py ${{ inputs.prueba && '--prueba' || '' }}

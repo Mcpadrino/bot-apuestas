@@ -253,6 +253,16 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
 .club-ops button { display: inline-flex; gap: 6px; align-items: center; padding: 6px 10px; font-size: .8rem; border-radius: 999px; }
 .club-ops img { width: 20px; height: 20px; object-fit: contain; }
 
+.reacciones { display: flex; gap: 6px; flex-wrap: wrap; }
+.reacciones button { padding: 3px 9px; font-size: .82rem; border-radius: 999px; background: var(--bg); }
+.reacciones button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.limite { display: grid; gap: 6px; background: rgba(0,0,0,.2); border-radius: 10px; padding: 10px 12px; }
+.limite .tope { height: 8px; border-radius: 4px; background: rgba(255,255,255,.18); overflow: hidden; }
+.limite .tope i { display: block; height: 100%; background: #8ff0bf; }
+.limite.cerca .tope i { background: #ffd27a; } .limite.pasado .tope i { background: #ff8f80; }
+.limite small { color: var(--hl); font-size: .78rem; }
+.descargar { justify-self: start; }
+
 /* ---------- Avatares de la comunidad ---------- */
 .msg .cabeza { display: flex; gap: 8px; align-items: center; }
 .avatar { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; flex: 0 0 30px;
@@ -333,7 +343,12 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
         <div><span class="label">Mayor premio</span><span class="num" id="n-max">—</span></div>
         <div><span class="label">En juego</span><span class="num" id="n-juego">$0.00</span></div>
       </div>
-      <p class="verdict">Parlays y apuestas por tu cuenta. No tocan la banca del bot; aquí solo se suma lo que ganas o pierdes.</p>
+      <div class="limite" id="n-limite" hidden>
+        <div class="bank"><span class="label">🛑 Límite semanal</span><span class="num" id="n-lim-txt"></span></div>
+        <div class="tope"><i id="n-lim-barra"></i></div>
+        <small id="n-lim-nota"></small>
+      </div>
+      <p class="verdict">Parlays y apuestas por tu cuenta. No tocan la banca del bot; aquí solo se suma lo que ganas o pierdes. Puedes ponerte un tope semanal escribiéndole al bot <b>limite 300</b>.</p>
     </section>
   </div>
 
@@ -406,6 +421,7 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
     </div>
     <div class="stats-sec" id="por-liga-sec" hidden><h2>Por liga</h2><div class="stats-sec" id="por-liga"></div></div>
     <div class="stats-sec" id="por-casa-sec" hidden><h2>Por casa</h2><div class="stats-sec" id="por-casa"></div></div>
+    <button type="button" class="descargar" id="excel">⬇️ Descargar mi historial en Excel</button>
     <h2>Apuestas cerradas</h2>
     <div class="list" id="res"></div>
   </div>
@@ -457,6 +473,7 @@ function aAmericano(d) { return d >= 2 ? "+" + Math.round((d - 1) * 100) : "-" +
 function ganancia(b) { return b.resultado === "gana" ? b.monto * (b.cuota - 1) : b.resultado === "pierde" ? -b.monto : 0; }
 function esperada(b) { return b.prob ? b.monto * (b.prob * b.cuota - 1) : 0; }
 
+let limiteSemanal = 0;
 let apuestas = [], bancaInicial = 200, listo = false, confirmando = null;
 let vista = "bot", filtro = "todas";
 const LLAVE = "bitacora-token";
@@ -483,6 +500,7 @@ async function cargar() {
   try {
     const r = await api("todas");
     bancaInicial = Number(r.banca) || 200;
+    limiteSemanal = Number(r.limite) || 0;
     $("cfg-banca").value = bancaInicial;
     $("q-nombre").textContent = "";
     $("b-saludo").textContent = r.nombre ? `🤖 Hola, ${r.nombre} · banca del bot` : "🤖 Banca del bot";
@@ -567,6 +585,22 @@ function render() {
   $("n-roi").textContent = na ? (ng / na * 100).toFixed(1) + "%" : "—";
   $("n-max").textContent = premios.length ? "+" + fmt(Math.max(...premios)) : "—";
   $("n-juego").textContent = fmt(suma(pend(nor), b => b.monto));
+  // Límite semanal (lunes a domingo, hora de México): lo perdido en neto + lo que está en juego
+  $("n-limite").hidden = !limiteSemanal;
+  if (limiteSemanal) {
+    const ahoraMx = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Mexico_City" }));
+    const lunes = new Date(ahoraMx); lunes.setHours(0, 0, 0, 0); lunes.setDate(lunes.getDate() - ((lunes.getDay() + 6) % 7));
+    const dif = ahoraMx.getTime() - Date.now();                // para comparar con fechas reales
+    const desde = lunes.getTime() - dif;
+    const netoSem = suma(nc.filter(b => (b.cerrada || 0) >= desde), ganancia);
+    const riesgo = Math.max(0, -netoSem) + suma(pend(nor), b => b.monto);
+    const pct = Math.min(100, riesgo / limiteSemanal * 100);
+    $("n-limite").className = "limite" + (pct >= 100 ? " pasado" : pct >= 80 ? " cerca" : "");
+    $("n-lim-txt").textContent = `${fmt(riesgo)} de ${fmt(limiteSemanal)}`;
+    $("n-lim-barra").style.width = pct + "%";
+    $("n-lim-nota").textContent = pct >= 100 ? "Te pasaste del tope de esta semana. El lunes se reinicia."
+      : pct >= 80 ? "Estás cerca de tu tope semanal." : "Perdido en la semana + en juego. Se reinicia cada lunes.";
+  }
 
   // Pendientes de la pestaña actual
   if (vista !== "resultados") {
@@ -745,6 +779,45 @@ function pintarResultados(lista) {
     row.append(mid, der); cont.append(row);
   });
 }
+
+// ---------------------------------------------------------------- Excel
+function cargarScript(src) {
+  return new Promise((ok, mal) => {
+    if (window.XLSX) return ok();
+    const sc = document.createElement("script"); sc.src = src; sc.onload = ok; sc.onerror = () => mal(new Error("No se pudo cargar el generador de Excel."));
+    document.head.append(sc);
+  });
+}
+$("excel").addEventListener("click", async () => {
+  const bt = $("excel"); bt.disabled = true; bt.textContent = "Preparando…";
+  try {
+    await cargarScript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js");
+    const res = { gana: "Ganó", pierde: "Perdió", nula: "Nula", pendiente: "Pendiente" };
+    const filas = [...apuestas].sort((a, b) => a.creada - b.creada).map(b => ({
+      "Fecha": new Date(b.creada).toLocaleString("es-MX"), "Tipo": b.cartera === "bot" ? "Bot" : "Normal",
+      "Liga": b.liga, "Partido": b.partido, "Selección": b.seleccion, "Casa": b.casa,
+      "Momio": aAmericano(b.cuota), "Cuota decimal": Number(b.cuota.toFixed(3)), "Monto": b.monto,
+      "% del bot": b.prob ? Number((b.prob * 100).toFixed(1)) : "", "Resultado": res[b.resultado] || b.resultado,
+      "Ganancia": b.resultado === "pendiente" ? "" : Number(ganancia(b).toFixed(2)), "Marcador": b.marcador,
+      "Cerrada": b.cerrada ? new Date(b.cerrada).toLocaleString("es-MX") : "" }));
+    const cerradas = apuestas.filter(b => b.resultado !== "pendiente");
+    const resumenDe = (l, nombre) => {
+      const ap = l.reduce((x, b) => x + b.monto, 0), g = l.reduce((x, b) => x + ganancia(b), 0);
+      return { "Tipo": nombre, "Apuestas": l.length, "Ganadas": l.filter(b => b.resultado === "gana").length,
+        "Perdidas": l.filter(b => b.resultado === "pierde").length, "Apostado": Number(ap.toFixed(2)),
+        "Ganancia": Number(g.toFixed(2)), "ROI %": ap ? Number((g / ap * 100).toFixed(1)) : 0 };
+    };
+    const resumen = [resumenDe(cerradas.filter(b => b.cartera === "bot"), "Bot"),
+      resumenDe(cerradas.filter(b => b.cartera !== "bot"), "Normal"), resumenDe(cerradas, "Total")];
+    const libro = XLSX.utils.book_new();
+    const h1 = XLSX.utils.json_to_sheet(filas);
+    h1["!cols"] = [18, 8, 14, 24, 26, 10, 8, 10, 8, 9, 10, 10, 22, 18].map(w => ({ wch: w }));
+    XLSX.utils.book_append_sheet(libro, h1, "Apuestas");
+    XLSX.utils.book_append_sheet(libro, XLSX.utils.json_to_sheet(resumen), "Resumen");
+    XLSX.writeFile(libro, `bitacora-apuestas-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  } catch (e) { estado(e.message || "No se pudo generar el Excel."); }
+  bt.disabled = false; bt.textContent = "⬇️ Descargar mi historial en Excel";
+});
 
 // ---------------------------------------------------------------- acciones
 async function cerrar(id, resultado) { await hacer("cerrar", { id, resultado }, "No se pudo guardar el resultado."); }
@@ -934,7 +1007,7 @@ async function cargarFeed() {
 }
 let firmaFeed = "";
 function pintarFeed(lista) {
-  const firma = JSON.stringify(lista.map(p => [p.id, p.texto, p.link, p.foto]));
+  const firma = JSON.stringify(lista.map(p => [p.id, p.texto, p.link, p.foto, p.reacciones, p.mias]));
   if (firma === firmaFeed && $("feed").childElementCount) return;      // nada nuevo: no redibujar
   firmaFeed = firma;
   const cont = $("feed"), abajo = window.innerHeight + window.scrollY >= document.body.scrollHeight - 80;
@@ -960,6 +1033,19 @@ function pintarFeed(lista) {
       const a = el("a", "ir", "Abrir apuesta ↗"); a.href = p.link; a.target = "_blank"; a.rel = "noopener noreferrer";
       m.append(a);
     }
+    const reac = el("div", "reacciones");
+    ["🔥", "👍", "😂"].forEach(e => {
+      const n = (p.reacciones || {})[e] || 0, mia = (p.mias || []).includes(e);
+      const bt = el("button", "", n ? `${e} ${n}` : e); bt.type = "button";
+      bt.setAttribute("aria-pressed", String(mia)); bt.setAttribute("aria-label", `Reaccionar ${e}`);
+      bt.onclick = async () => {
+        bt.disabled = true;
+        try { await api("reaccionar", { id: p.id, emoji: e }); firmaFeed = ""; await cargarFeed(); }
+        catch (err) { estado(err.message || "No se pudo reaccionar."); bt.disabled = false; }
+      };
+      reac.append(bt);
+    });
+    m.append(reac);
     const pie = el("div", "pie"); pie.append(el("span", "", quedan(Date.parse(p.expira))));
     if (p.mio) {
       const bajar = el("button", "", "Bajar"); bajar.type = "button";

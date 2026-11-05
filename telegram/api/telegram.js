@@ -108,6 +108,7 @@ const AYUDA = [
   "💰 *Saldo* — tu banca, récord y ganancia",
   "📋 *Pendientes* — apuestas sin resultado",
   "`inicial 300` — cambia la banca inicial",
+  "`limite 300` — tope semanal para apuestas normales (opcional; `limite off` lo quita)",
   "🌐 *Mi página* — la dirección de tu bitácora web",
   "`cuenta usuario contraseña` — crea o cambia tu acceso a la página",
   "",
@@ -225,8 +226,10 @@ async function atenderTexto(chat, texto, esDueno, msgId) {
     return enviar(`🌐 Tu bitácora: ${WEB_URL}\n\nEntra con tu usuario y contraseña. Si aún no tienes, créalos aquí escribiendo:\n\`cuenta tuusuario tucontraseña\``,
       { disable_web_page_preview: true });
 
-  if (["saldo", "banca", "balance", "resumen", "💰"].includes(cmd) || texto.includes("Saldo"))
-    return enviar(await resumen(dbu), { reply_markup: TECLADO });
+  if (["saldo", "banca", "balance", "resumen", "💰"].includes(cmd) || texto.includes("Saldo")) {
+    const lim = await textoLimite(chat).catch(() => ({ texto: "" }));
+    return enviar(await resumen(dbu) + (lim.texto ? "\n\n" + lim.texto : ""), { reply_markup: TECLADO });
+  }
 
   if (["pendientes", "abiertas", "📋"].includes(cmd) || texto.includes("Pendientes")) {
     const lista = await dbu("pendientes");
@@ -244,6 +247,15 @@ async function atenderTexto(chat, texto, esDueno, msgId) {
   if (cmd === "borrar" && /^\d+$/.test(args[0] || "")) {
     const a = await dbu("borrar", { id: Number(args[0]) });
     return enviar(a && a.id ? `🗑 Borré la apuesta #${a.id} (${a.seleccion}).` : `No encontré la apuesta #${args[0]}.`);
+  }
+
+  if (cmd === "limite") {
+    const off = /^(off|no|quitar|sin|0)$/i.test(args[0] || "");
+    const v = parseFloat(String(args[0] || "").replace("$", ""));
+    if (!off && !(v > 0))
+      return enviar("Pon un tope semanal para tus apuestas normales (parlays y por tu cuenta):\n`limite 300`  ·  para quitarlo: `limite off`\n\nCuenta lo que pierdes en la semana (de lunes a domingo) más lo que tienes en juego. No te bloquea: solo te avisa.");
+    await rpcExtras("limite", { usuario: chat, valor: off ? null : v });
+    return enviar(off ? "✅ Quité tu límite semanal." : `✅ Listo: te aviso cuando tus apuestas normales lleguen a ${money(v)} en la semana (al 80 % y al pasarte).`);
   }
 
   if (cmd === "inicial" && parseFloat(args[0]) > 0) {
@@ -298,7 +310,14 @@ async function registrarYConfirmar(chat, dbu, enviar, ap) {
   let extra = `\nSi gana cobras ${money(ap.monto * ap.cuota)} (${signed(gan)})`;
   if (ap.minima && ap.cuota < ap.minima)
     extra += `\n⚠️ Tomaste ${amer(ap.cuota)} y el mínimo era ${amer(ap.minima)}: esta apuesta no tiene valor.`;
-  if (ap.cartera === "libre") extra += "\n🎲 Va a tus apuestas libres: no toca la banca del bot.";
+  if (ap.cartera === "libre") {
+    extra += "\n🎲 Va a tus apuestas libres: no toca la banca del bot.";
+    try {
+      const lim = await textoLimite(chat);
+      if (lim.nivel === 2) extra += `\n\n⛔ *Te pasaste de tu límite semanal.*\n${lim.texto}\nTómate un respiro; el lunes se reinicia.`;
+      else if (lim.nivel === 1) extra += `\n\n⚠️ Estás cerca de tu límite semanal.\n${lim.texto}`;
+    } catch (e) { console.error("limite", e); }
+  }
   else if (ap.prob) {
     const ev = ap.prob * ap.cuota - 1;
     extra += `\nValor: ${ev >= 0 ? "+" : ""}${(ev * 100).toFixed(1)}%` + (ev < 0.03 ? " ⚠️ por debajo del mínimo del bot" : " 👍");
@@ -313,6 +332,26 @@ async function registrarYConfirmar(chat, dbu, enviar, ap) {
         ...ops.map((o) => [{ text: `${o.nombre} · ${o.liga}`.slice(0, 60), callback_data: `l:${a.id}:${o.k}` }]),
         [{ text: "Ninguno", callback_data: `l:${a.id}:0` }]] } });
   }
+}
+
+async function rpcExtras(accion, datos) {
+  const r = await fetch(`${env("SUPABASE_URL")}/rest/v1/rpc/extras`, {
+    method: "POST",
+    headers: { "content-type": "application/json", apikey: env("SUPABASE_KEY"), authorization: `Bearer ${env("SUPABASE_KEY")}` },
+    body: JSON.stringify({ p_clave: env("BOT_CLAVE"), p_accion: accion, p_datos: datos }),
+  });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.message || "error de base de datos");
+  return j;
+}
+
+// Texto del límite semanal (o "" si no hay límite)
+async function textoLimite(chat, extraMonto = 0) {
+  const e = await rpcExtras("estado_limite", { usuario: chat });
+  if (!e || !e.limite) return { texto: "", nivel: 0 };
+  const perdido = Math.max(0, -Number(e.neto)), riesgo = perdido + Number(e.en_juego) + extraMonto, lim = Number(e.limite);
+  const nivel = riesgo >= lim ? 2 : riesgo >= lim * 0.8 ? 1 : 0;
+  return { nivel, texto: `🛑 Límite semanal (normales): ${money(riesgo)} de ${money(lim)} entre perdido y en juego` };
 }
 
 async function rpcSenal(accion, datos) {
@@ -416,6 +455,10 @@ export default async function handler(req, res) {
   if (req.query.pendientes !== undefined) {
     if (!tokenOk()) return res.status(401).json({ error: "no" });
     return res.status(200).json(await rpcResultados("pendientes", {}));
+  }
+  if (req.query.semana !== undefined) {
+    if (!tokenOk()) return res.status(401).json({ error: "no" });
+    return res.status(200).json(await rpcExtras("semana", {}));
   }
   if (req.query.senales !== undefined && req.method === "POST") {
     if (!tokenOk()) return res.status(401).json({ error: "no" });

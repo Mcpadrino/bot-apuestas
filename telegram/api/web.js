@@ -114,6 +114,11 @@ export default async function handler(req, res) {
         await avisarComunidad(usuario, r.autor, txt(d.texto, 1000));
         return res.status(200).json(r);
       }
+      case "reaccionar": {
+        const d = b.datos || {};
+        if (!["🔥", "👍", "😂"].includes(d.emoji)) return res.status(400).json({ error: "Reacción inválida" });
+        return res.status(200).json(await rpc("comunidad", "reaccionar", { usuario, id: num(d.id), emoji: d.emoji }));
+      }
       case "bajar":
         return res.status(200).json(await rpc("comunidad", "bajar", { usuario, id: num((b.datos || {}).id) }));
       case "banca": {
