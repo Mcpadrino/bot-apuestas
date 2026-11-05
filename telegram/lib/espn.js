@@ -192,10 +192,12 @@ const ymd = (d) => d.toISOString().slice(0, 10).replace(/-/g, "");
 
 // Próximos partidos de una liga (para la quiniela): los de los siguientes `dias` días que no han empezado.
 export async function proximos(ruta, dias = 8) {
-  const hoy = new Date(), fin = new Date(Date.now() + dias * 864e5);
-  const j = await json(`${BASE}${ruta}/scoreboard?dates=${ymd(hoy)}-${ymd(fin)}&limit=200`, 5000);
-  const ligaLogo = j?.leagues?.[0]?.logos?.[0]?.href || null;
-  return (j?.events || []).map((ev) => {
+  // ESPN ya no acepta rangos de fechas: se pide día por día (en paralelo)
+  const fechas = Array.from({ length: dias + 1 }, (_, i) => ymd(new Date(Date.now() + i * 864e5)));
+  const respuestas = await Promise.all(fechas.map((f) => json(`${BASE}${ruta}/scoreboard?dates=${f}&limit=200`, 5000)));
+  const ligaLogo = respuestas.find((j) => j?.leagues?.[0]?.logos?.[0]?.href)?.leagues[0].logos[0].href || null;
+  const vistos = new Set();
+  return respuestas.flatMap((j) => j?.events || []).filter((ev) => !vistos.has(ev.id) && vistos.add(ev.id)).map((ev) => {
     const comp = ev.competitions?.[0] || {};
     const lado = (h) => {
       const c = (comp.competitors || []).find((x) => x.homeAway === h) || {};

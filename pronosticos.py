@@ -12,7 +12,6 @@ y cuando termina el partido se guarda el resultado para medir quién acierta má
 python pronosticos.py           -> calcula, guarda y califica
 python pronosticos.py --prueba  -> solo imprime
 """
-import calendar
 import datetime as dt
 import math
 import os
@@ -52,33 +51,38 @@ def api(ruta, accion, datos=None):
 
 
 # ---------------------------------------------------------------- ESPN
+def _dia(ruta, fecha):
+    """Partidos de ESPN de un día (ESPN ya no acepta rangos de fechas)."""
+    salida = []
+    j = espn._get(espn.BASE.format(ruta=f"{ruta}/scoreboard"), dates=f"{fecha:%Y%m%d}", limit=300) or {}
+    for ev in j.get("events") or []:
+        try:
+            comp = ev["competitions"][0]
+            lados = {c["homeAway"]: c for c in comp["competitors"]}
+            h, v = lados["home"], lados["away"]
+            st = ev.get("status", {}).get("type", {})
+            salida.append({
+                "id": str(ev["id"]), "ruta": ruta, "fecha": dt.datetime.fromisoformat(ev["date"].replace("Z", "+00:00")),
+                "estado": st.get("state"), "terminado": bool(st.get("completed")),
+                "neutral": bool(comp.get("neutralSite")),
+                "local": {"id": str(h["team"]["id"]), "nombre": h["team"].get("shortDisplayName") or h["team"].get("displayName"),
+                          "completo": h["team"].get("displayName", ""), "logo": h["team"].get("logo"),
+                          "goles": float(h.get("score") or 0)},
+                "visita": {"id": str(v["team"]["id"]), "nombre": v["team"].get("shortDisplayName") or v["team"].get("displayName"),
+                           "completo": v["team"].get("displayName", ""), "logo": v["team"].get("logo"),
+                           "goles": float(v.get("score") or 0)},
+            })
+        except (KeyError, TypeError, ValueError):
+            continue
+    return salida
+
+
 def eventos(ruta, desde, hasta):
-    """Partidos de ESPN entre dos fechas (mes por mes)."""
-    salida, d = [], dt.date(desde.year, desde.month, 1)
-    while d <= hasta:
-        fin = dt.date(d.year, d.month, calendar.monthrange(d.year, d.month)[1])
-        a, b = max(d, desde), min(fin, hasta)
-        j = espn._get(espn.BASE.format(ruta=f"{ruta}/scoreboard"), dates=f"{a:%Y%m%d}-{b:%Y%m%d}", limit=1000) or {}
-        for ev in j.get("events") or []:
-            try:
-                comp = ev["competitions"][0]
-                lados = {c["homeAway"]: c for c in comp["competitors"]}
-                h, v = lados["home"], lados["away"]
-                st = ev.get("status", {}).get("type", {})
-                salida.append({
-                    "id": str(ev["id"]), "ruta": ruta, "fecha": dt.datetime.fromisoformat(ev["date"].replace("Z", "+00:00")),
-                    "estado": st.get("state"), "terminado": bool(st.get("completed")),
-                    "neutral": bool(comp.get("neutralSite")),
-                    "local": {"id": str(h["team"]["id"]), "nombre": h["team"].get("shortDisplayName") or h["team"].get("displayName"),
-                              "completo": h["team"].get("displayName", ""), "logo": h["team"].get("logo"),
-                              "goles": float(h.get("score") or 0)},
-                    "visita": {"id": str(v["team"]["id"]), "nombre": v["team"].get("shortDisplayName") or v["team"].get("displayName"),
-                               "completo": v["team"].get("displayName", ""), "logo": v["team"].get("logo"),
-                               "goles": float(v.get("score") or 0)},
-                })
-            except (KeyError, TypeError, ValueError):
-                continue
-        d = fin + dt.timedelta(days=1)
+    """Partidos de ESPN entre dos fechas: un día por consulta, varias a la vez."""
+    from concurrent.futures import ThreadPoolExecutor
+    dias = [desde + dt.timedelta(days=i) for i in range((hasta - desde).days + 1)]
+    with ThreadPoolExecutor(max_workers=16) as ex:
+        salida = [e for lista in ex.map(lambda d: _dia(ruta, d), dias) for e in lista]
     vistos, unicos = set(), []
     for e in sorted(salida, key=lambda x: x["fecha"]):
         if e["id"] not in vistos:
@@ -134,7 +138,7 @@ def futbol(lineas):
     for grupo, rutas in GRUPOS_FUTBOL.items():
         hist, prox = [], []
         for ruta in rutas:
-            evs = eventos(ruta, (AHORA - dt.timedelta(days=545)).date(), (AHORA + dt.timedelta(days=8)).date())
+            evs = eventos(ruta, (AHORA - dt.timedelta(days=400)).date(), (AHORA + dt.timedelta(days=8)).date())
             hist += [e for e in evs if e["terminado"]]
             prox += [e for e in evs if e["estado"] == "pre" and e["fecha"] > AHORA]
         print(f"⚽ {grupo}: {len(hist)} partidos jugados, {len(prox)} próximos")
