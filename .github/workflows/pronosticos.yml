@@ -1,9 +1,7 @@
 name: Gurú (pronósticos)
 
 on:
-  schedule:
-    - cron: "25 13 * * *"     # después del escaneo de la mañana (7:25 CDMX)
-    - cron: "25 0 * * *"      # después del escaneo de la tarde (18:25 CDMX)
+  # Horario: lo dispara Supabase (pg_cron) a la hora exacta; GitHub no estaba corriendo los cron.
   workflow_dispatch:
     inputs:
       prueba:

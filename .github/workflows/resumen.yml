@@ -1,8 +1,7 @@
 name: Resumen semanal
 
 on:
-  schedule:
-    - cron: "0 3 * * 1"       # lunes 03:00 UTC = domingo 21:00 CDMX
+  # Horario: lo dispara Supabase (pg_cron) a la hora exacta; GitHub no estaba corriendo los cron.
   workflow_dispatch:
     inputs:
       prueba:

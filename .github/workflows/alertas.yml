@@ -1,10 +1,7 @@
 name: Alertas de apuestas
 
 on:
-  schedule:
-    # Horas en UTC. 13:00 = 07:00 CDMX · 00:00 = 18:00 CDMX
-    - cron: "0 13 * * *"
-    - cron: "0 0 * * *"
+  # Horario: lo dispara Supabase (pg_cron) a la hora exacta; GitHub no estaba corriendo los cron.
   workflow_dispatch:        # botón "Run workflow" para correrlo cuando quieras
 
 permissions:
