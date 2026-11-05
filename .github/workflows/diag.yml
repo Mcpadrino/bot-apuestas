@@ -1,36 +1,16 @@
-name: Diagnóstico (manual)
-
-on:
-  workflow_dispatch:
-
+name: diag
+on: workflow_dispatch
 jobs:
-  diag:
+  d:
     runs-on: ubuntu-latest
-    timeout-minutes: 4
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Probar api/deportes.js
-        working-directory: telegram
+      - name: Mandar folleto, guía y manual al dueño
+        env:
+          T: ${{ secrets.TELEGRAM_TOKEN }}
+          C: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          node --input-type=module -e '
-          import h from "./api/deportes.js";
-          const corre = (q) => new Promise((ok) => h({ query: q }, { setHeader() {}, status(c) { this.c = c; return this; }, json(d) { ok([this.c, d]); } }));
-          const sb = await (await fetch("https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard?dates=20261101")).json();
-          let [c, d] = await corre({ op: "partido", ruta: "soccer/eng.1", id: sb.events[0].id });
-          console.log("PARTIDO", c, d.detalle, d.equipos.map(e => e.nombre + " " + e.marcador), "eventos", d.eventos.length, JSON.stringify(d.eventos.slice(0, 3)), "stats", d.stats.length, JSON.stringify(d.stats.slice(0, 2)), "alin", d.alineaciones.map(a => a.formacion + " " + a.titulares.length + " " + JSON.stringify(a.titulares[0])), d.estadio);
-          [c, d] = await corre({ op: "tabla", ruta: "soccer/mex.1" });
-          console.log("TABLA", c, d.grupos.map(g => g.nombre + " " + g.filas.length), JSON.stringify(d.grupos[0]?.filas[0]), "lideres", JSON.stringify(d.lideres.map(l => [l.cat, l.nom, l.jugadores.slice(0, 2)])).slice(0, 700));
-          [c, d] = await corre({ op: "tabla", ruta: "football/nfl" });
-          console.log("TABLA NFL", c, d.grupos.map(g => g.nombre + " " + g.filas.length).slice(0, 8), JSON.stringify(d.grupos[0]?.filas[0]));
-          [c, d] = await corre({ op: "equipo", ruta: "soccer/mex.1", id: "227" });
-          console.log("EQUIPO", c, d.nombre, d.record, "ult", JSON.stringify(d.ultimos.slice(0, 2)), "prox", JSON.stringify(d.proximos.slice(0, 1)), "pos", JSON.stringify(d.posicion), "notas", d.noticias.length);
-          [c, d] = await corre({ op: "estadios", ruta: "soccer/mex.1", id: "227" });
-          console.log("ESTADIO MX", c, JSON.stringify(d.club), "galeria", d.galeria.length, d.galeria.map(g => g.pedido).join(", "));
-          [c, d] = await corre({ op: "estadios", ruta: "football/nfl", id: "12" });
-          console.log("ESTADIO NFL", c, JSON.stringify(d.club));
-          [c, d] = await corre({ op: "estadios", ruta: "soccer/eng.1", id: "359" });
-          console.log("ESTADIO ENG", c, JSON.stringify(d.club));
-          '
+          B=https://bot-apuestas-telegram.vercel.app/docs
+          curl -s -o /dev/null -w "%{http_code} folleto-url\n" $B/folleto.pdf
+          for f in "folleto.pdf|📄 Folleto: qué es el bot y todo lo que incluye." "guia-usuario.pdf|📘 Guía del usuario (explicada desde cero)." "manual-completo.pdf|🛠 Manual completo con la parte de administrador. Tip: escribe guía al bot cuando quieras volver a recibirlos."; do
+            curl -s -X POST "https://api.telegram.org/bot$T/sendDocument" -d chat_id="$C" --data-urlencode document="$B/${f%%|*}?v=1" --data-urlencode caption="${f#*|}" | head -c 80; echo
+          done
