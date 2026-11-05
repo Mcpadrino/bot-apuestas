@@ -19,6 +19,7 @@ async function get(path, ms = 6000) {
 const https = (u) => (u ? String(u).replace(/^http:\/\//, "https://") : null);
 
 let cache = { t: 0, datos: null };
+let eloCache = { t: 0, hist: null };
 
 async function eloHistorico() {
   // varias páginas hacia atrás de las ligas grandes (cada página trae ~80 series)
@@ -49,7 +50,18 @@ async function eloHistorico() {
 
 export async function datosLol() {
   if (!cache.datos || Date.now() - cache.t > 60000) {
-    const [sch, live, hist] = await Promise.all([get(`getSchedule?hl=es-MX&leagueId=${WORLDS}`), get("getLive?hl=es-MX"), eloHistorico()]);
+    // El Elo es caro (varias páginas): se recalcula cada 6 h; calendario y en vivo cada minuto, con un reintento
+    const eloViejo = !eloCache.hist || Date.now() - eloCache.t > 6 * 3600e3;
+    let [sch, live, hist] = await Promise.all([get(`getSchedule?hl=es-MX&leagueId=${WORLDS}`, 8000), get("getLive?hl=es-MX"),
+      eloViejo ? eloHistorico().catch(() => null) : null]);
+    if (!sch) sch = await get(`getSchedule?hl=es-MX&leagueId=${WORLDS}`, 8000);
+    if (hist && hist.n > 0) eloCache = { t: Date.now(), hist };
+    hist = eloCache.hist || { r: new Map(), n: 0 };
+    if (!sch) {
+      // LoL Esports no respondió: se queda lo último bueno (si hay) en lugar de mostrar todo vacío
+      if (cache.datos) return { ...cache.datos, viejo: true };
+      throw new Error("LoL Esports no responde ahorita.");
+    }
     const desde = Date.now() - 45 * 864e5;
     const eventos = (sch?.data?.schedule?.events || []).filter((e) => e.type === "match" && Date.parse(e.startTime) > desde).map((e) => {
       const [a, b] = e.match?.teams || [];

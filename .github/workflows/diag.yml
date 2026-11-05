@@ -6,10 +6,4 @@ jobs:
     steps:
       - name: Probar LoL
         run: |
-          K=0TvQnueqKa5mxJntVWt0w4LpLfEkrV1Ta8rQBb9Z
-          G=https://esports-api.lolesports.com/persisted/gw
-          echo "--- schedule"; curl -s -m 20 -w "\nHTTP %{http_code}\n" -H "x-api-key: $K" "$G/getSchedule?hl=es-MX&leagueId=98767975604431411" | tail -c 400
-          echo "--- live"; curl -s -m 20 -w "\nHTTP %{http_code}\n" -H "x-api-key: $K" "$G/getLive?hl=es-MX" | tail -c 300
-          echo "--- leagues"; curl -s -m 20 -o /dev/null -w "HTTP %{http_code}\n" -H "x-api-key: $K" "$G/getLeagues?hl=es-MX"
-          echo "--- nuestra api"; curl -s -m 30 -w "\nHTTP %{http_code}\n" https://bot-apuestas-telegram.vercel.app/api/lol | head -c 600
-          echo "--- sin key"; curl -s -m 20 -o /dev/null -w "HTTP %{http_code}\n" "$G/getSchedule?hl=es-MX"
+          for i in 1 2 3; do curl -s -m 60 -o /tmp/l.json -w "HTTP %{http_code} %{time_total}s\n" https://bot-apuestas-telegram.vercel.app/api/lol; python3 -c "import json;d=json.load(open('/tmp/l.json'));print(len(d.get('eventos',[])),'eventos',d.get('series_elo'),'elo',d.get('error'),d.get('viejo'))"; sleep 5; done
