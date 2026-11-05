@@ -41,6 +41,22 @@ async function liga(ruta) {
   return valor;
 }
 
+// Parecido entre dos palabras (0..1) tolerando errores de dedo: letras cambiadas, de más o de menos.
+function parecido(a, b) {
+  if (a === b) return 1;
+  const m = a.length, n = b.length;
+  if (Math.abs(m - n) > 2) return 0;
+  const d = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]);
+  for (let j = 1; j <= n; j++) d[0][j] = j;
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++) {
+      const c = a[i - 1] === b[j - 1] ? 0 : 1;
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + c);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+    }
+  return 1 - d[m][n] / Math.max(m, n);
+}
+
 // 0..1: qué tan seguro es que el texto menciona a este equipo
 function menciona(toks, e) {
   let mejor = 0;
@@ -48,8 +64,12 @@ function menciona(toks, e) {
   for (const k of e.claves) {
     const pk = palabras(k).filter((w) => w.length >= 3);
     if (!pk.length) continue;
+    const casi = (w) => toks.has(w) || (w.length >= 5 && [...toks].some((t) => t.length >= 4 && parecido(w, t) >= 0.8));
     if (pk.every((w) => toks.has(w))) mejor = Math.max(mejor, pk.length > 1 ? 1 : 0.9);
+    else if (pk.length > 1 && pk.every(casi)) mejor = Math.max(mejor, 0.95);      // "manchestr city"
     else if (pk.some((w) => w.length >= 5 && toks.has(w))) mejor = Math.max(mejor, 0.8);
+    else if (pk.some((w) => w.length >= 6 && [...toks].some((t) => t.length >= 5 && parecido(w, t) >= 0.8)))
+      mejor = Math.max(mejor, 0.8);                    // "fenerbache" ≈ "fenerbahce"
   }
   return mejor;
 }

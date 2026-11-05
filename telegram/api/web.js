@@ -59,8 +59,19 @@ export default async function handler(req, res) {
     if (!usuario) return res.status(401).json({ error: "Tu sesión venció. Vuelve a iniciar sesión." });
 
     switch (b.op) {
-      case "todas":
-        return res.status(200).json(await rpc("web", "todas", { usuario }));
+      case "todas": {
+        const r = await rpc("web", "todas", { usuario });
+        // Rellenar logos que falten (hasta 5 por carga). Si no se encuentra, se marca con "" para no buscar otra vez.
+        const sinLogo = (r.apuestas || []).filter((a) => a.logo === null && a.cartera !== "libre").slice(0, 5);
+        await Promise.all(sinLogo.map(async (a) => {
+          try {
+            const l = (await buscarLogo(`${a.seleccion} ${a.partido || ""}`)) || { logo: "", liga: null, liga_logo: null };
+            await rpc("resultados", "logo", { id: a.id, ...l });
+            Object.assign(a, { logo: l.logo || "", liga: a.liga || l.liga, liga_logo: a.liga_logo || l.liga_logo });
+          } catch (e) { console.error("logo", e); }
+        }));
+        return res.status(200).json(r);
+      }
       case "registrar": {
         const d = b.datos || {};
         const cuota = num(d.cuota), monto = num(d.monto), prob = num(d.prob);
