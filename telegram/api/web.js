@@ -1,7 +1,7 @@
 // API de la página web. Cada quien entra con su usuario y contraseña (los crea desde el bot
 // de Telegram) y solo puede ver y cambiar sus propias apuestas.
 
-import { buscarLogo } from "../lib/espn.js";
+import { buscarLogo, sugerencias, equipoPorClave } from "../lib/espn.js";
 
 const env = (k) => (process.env[k] || "").replace(/\s/g, "");
 
@@ -95,6 +95,15 @@ export default async function handler(req, res) {
       }
       case "borrar":
         return res.status(200).json(await rpc("bot", "borrar", { usuario, id: num((b.datos || {}).id) }));
+      case "sugerir":
+        return res.status(200).json(await sugerencias(txt((b.datos || {}).texto, 200)));
+      case "fijar_logo": {
+        const d = b.datos || {};
+        const e = await equipoPorClave(txt(d.k, 40));
+        if (!e) return res.status(404).json({ error: "No encontré ese club." });
+        await rpc("resultados", "logo_forzar", { id: num(d.id), usuario, logo: e.logo, liga: e.liga, liga_logo: e.liga_logo });
+        return res.status(200).json(e);
+      }
       case "feed":
         return res.status(200).json(await rpc("comunidad", "feed", { usuario }));
       case "publicar": {

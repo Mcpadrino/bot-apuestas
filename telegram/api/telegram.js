@@ -3,7 +3,7 @@
 // Variables de entorno: TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, WEBHOOK_SECRET,
 // SUPABASE_URL, SUPABASE_KEY (publishable/anon), BOT_CLAVE (clave de la función bot en la BD).
 
-import { buscarLogo } from "../lib/espn.js";
+import { buscarLogo, sugerencias, equipoPorClave } from "../lib/espn.js";
 
 const env = (k) => (process.env[k] || "").replace(/\s/g, "");
 const TG = () => `https://api.telegram.org/bot${env("TELEGRAM_TOKEN")}`;
@@ -286,10 +286,14 @@ async function atenderTexto(chat, texto, esDueno, msgId) {
 
 async function registrarYConfirmar(chat, dbu, enviar, ap) {
   const a = await dbu("registrar", ap);
+  let opciones = [];
   try {                                   // logo del equipo y de la liga (ESPN); si falla, se guarda sin logo
-    const l = await buscarLogo(`${ap.seleccion} ${ap.partido || ""}`);
+    const texto = `${ap.seleccion} ${ap.partido || ""}`;
+    const l = await buscarLogo(texto);
     if (l) await rpcResultados("logo", { id: a.id, ...l });
+    else if (!/\b(parlay|parley|combinada|empate)\b|m[aá]s de|menos de/i.test(texto)) opciones = await sugerencias(texto);
   } catch (e) { console.error("logo", e); }
+
   const gan = ap.monto * (ap.cuota - 1);
   let extra = `\nSi gana cobras ${money(ap.monto * ap.cuota)} (${signed(gan)})`;
   if (ap.minima && ap.cuota < ap.minima)
@@ -299,7 +303,16 @@ async function registrarYConfirmar(chat, dbu, enviar, ap) {
     const ev = ap.prob * ap.cuota - 1;
     extra += `\nValor: ${ev >= 0 ? "+" : ""}${(ev * 100).toFixed(1)}%` + (ev < 0.03 ? " ⚠️ por debajo del mínimo del bot" : " 👍");
   }
-  return enviar(`✅ Guardada\n${lineaApuesta(a)}${extra}\n\nCuando termine, toca el resultado:`, { reply_markup: botones(a.id) });
+  await enviar(`✅ Guardada\n${lineaApuesta(a)}${extra}\n\nCuando termine, toca el resultado:`, { reply_markup: botones(a.id) });
+  if (opciones.length) {
+    // No estamos seguros del club: preguntamos con los más parecidos
+    const ops = opciones, seleccion = ap.seleccion;
+    await tg("sendMessage", { chat_id: chat, parse_mode: "Markdown",
+      text: `🤔 No reconocí bien el equipo de *${String(seleccion).replace(/[_*\x60[\]]/g, "")}*. ¿Es alguno de estos? (para ponerle su escudo)`,
+      reply_markup: { inline_keyboard: [
+        ...ops.map((o) => [{ text: `${o.nombre} · ${o.liga}`.slice(0, 60), callback_data: `l:${a.id}:${o.k}` }]),
+        [{ text: "Ninguno", callback_data: `l:${a.id}:0` }]] } });
+  }
 }
 
 async function rpcSenal(accion, datos) {
@@ -343,6 +356,18 @@ async function atenderBoton(q) {
     if (res === "pendiente")
       await tg("editMessageReplyMarkup", { chat_id: chat, message_id: msgId, reply_markup: botones(id) });
     await tg("answerCallbackQuery", { callback_query_id: q.id, text: ETIQUETA[res] });
+  } else if (tipo === "l") {
+    // Eligió el club correcto para el escudo
+    if (res === "0") {
+      await editar("👌 Ok, se queda sin escudo.");
+    } else {
+      const e = await equipoPorClave(res);
+      if (e) {
+        await rpcResultados("logo_forzar", { id: Number(id), usuario: String(chat), logo: e.logo, liga: e.liga, liga_logo: e.liga_logo });
+        await editar(`✅ Listo: le puse el escudo de *${e.nombre}* (${e.liga}).`);
+      } else await editar("No encontré ese club. Intenta de nuevo más tarde.");
+    }
+    await tg("answerCallbackQuery", { callback_query_id: q.id });
   } else if (tipo === "p") {
     // Eligió un partido de la alerta: mostrar sus opciones
     const h = await rpcSenal("hermanas", { id: Number(id) });

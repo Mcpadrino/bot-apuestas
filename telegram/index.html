@@ -248,6 +248,11 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
 .dato .ico-dato img { width: 30px; height: 30px; object-fit: contain; }
 .dato .ico-dato span { position: absolute; right: -6px; bottom: -6px; font-size: .9rem; }
 
+.club-q { justify-self: start; padding: 5px 10px; font-size: .78rem; border-radius: 999px; margin-top: 4px; }
+.club-ops { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.club-ops button { display: inline-flex; gap: 6px; align-items: center; padding: 6px 10px; font-size: .8rem; border-radius: 999px; }
+.club-ops img { width: 20px; height: 20px; object-fit: contain; }
+
 /* ---------- Avatares de la comunidad ---------- */
 .msg .cabeza { display: flex; gap: 8px; align-items: center; }
 .avatar { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; flex: 0 0 30px;
@@ -622,6 +627,29 @@ function chipLiga(b, extra = "") {
   c.append(document.createTextNode([b.liga, extra].filter(Boolean).join(" · ")));
   return c;
 }
+// Si no hay escudo, ofrece buscar el club más parecido y que el usuario elija
+function botonClub(b, cont) {
+  if (b.logo || /\b(parlay|parley|combinada|empate)\b|m[aá]s de|menos de/i.test(b.seleccion)) return;
+  const bt = el("button", "club-q", "🔎 ¿Qué equipo es?"); bt.type = "button";
+  bt.onclick = async () => {
+    bt.disabled = true; bt.textContent = "Buscando…";
+    try {
+      const ops = await api("sugerir", { texto: `${b.seleccion} ${b.partido || ""}` });
+      const caja = el("div", "club-ops");
+      if (!ops.length) caja.append(el("span", "meta", "No encontré un club parecido en las ligas que sigo."));
+      ops.forEach(o => {
+        const op = el("button"); op.type = "button";
+        if (o.logo) op.append(imagen(o.logo));
+        op.append(document.createTextNode(`${o.nombre} · ${o.liga}`));
+        op.onclick = async () => { op.disabled = true; await hacer("fijar_logo", { id: b.id, k: o.k }, "No se pudo guardar el escudo."); };
+        caja.append(op);
+      });
+      bt.replaceWith(caja);
+    } catch (e) { bt.disabled = false; bt.textContent = "🔎 ¿Qué equipo es?"; estado(e.message || "No se pudo buscar."); }
+  };
+  cont.append(bt);
+}
+
 function selConLogo(b, prefijo = "") {
   const caja = el("div", "sel-logo");
   if (b.logo) { const im = el("img"); im.src = b.logo; im.alt = ""; im.loading = "lazy"; im.onerror = () => im.remove(); caja.append(im); }
@@ -643,6 +671,7 @@ function pintarPendientes(lista) {
     const txt = el("div");
     if (b.liga) txt.append(chipLiga(b));
     txt.append(el("div", "sel", b.seleccion), el("div", "meta", meta(b)));
+    botonClub(b, txt);
     izq.append(escudo(b), txt);
     if (b.marcador) txt.append(el("div", "marcador", "🏁 " + b.marcador + " · confírmalo abajo"));
     der.append(el("div", "num", fmt(b.monto)), el("div", "meta", "cobra " + fmt(b.monto * b.cuota)));
@@ -705,6 +734,7 @@ function pintarResultados(lista) {
     txt.append(el("div", "tag " + b.cartera, (b.cartera === "bot" ? "🤖 Bot" : "🎲 Normal") + " · " + fecha(b.cerrada)));
     if (b.liga) txt.append(chipLiga(b));
     txt.append(el("div", "sel", b.seleccion), el("div", "meta", meta(b)));
+    botonClub(b, txt);
     mid.append(escudo(b, b.resultado), txt);
     if (b.marcador) txt.append(el("div", "marcador", "🏁 " + b.marcador));
     const g = ganancia(b), der = el("div", "amt");

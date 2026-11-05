@@ -7,6 +7,14 @@ const LIGAS = {
   "soccer/ger.1": "Bundesliga", "soccer/fra.1": "Ligue 1", "soccer/uefa.champions": "Champions",
   "soccer/uefa.europa": "Europa League",
 };
+// Ligas extra que solo se usan para encontrar escudos (no salen en Hoy ni en noticias)
+const EXTRA = {
+  "soccer/tur.1": "Süper Lig", "soccer/por.1": "Liga Portugal", "soccer/ned.1": "Eredivisie", "soccer/usa.1": "MLS",
+  "soccer/bra.1": "Brasileirão", "soccer/arg.1": "Liga Argentina", "soccer/mex.2": "Liga Expansión",
+  "soccer/uefa.europa.conf": "Conference League",
+};
+const TODAS = { ...LIGAS, ...EXTRA };
+const RUTAS = Object.keys(TODAS);
 const BASE = "https://site.api.espn.com/apis/site/v2/sports/";
 const VACIAS = new Set(["fc", "cf", "club", "de", "the", "afc", "sc", "ac", "cd", "ud", "sd", "ca", "cp", "fk", "sk",
   "ssc", "as", "us", "rc", "rcd", "vfb", "vfl", "tsg", "sv", "bv", "y", "and", "del", "la", "el", "los", "las",
@@ -32,6 +40,7 @@ async function liga(ruta) {
   if (c && Date.now() - c.t < DOCE_HORAS) return c;
   const [eq, sb] = await Promise.all([json(`${BASE}${ruta}/teams?limit=200`), json(`${BASE}${ruta}/scoreboard`)]);
   const equipos = (eq?.sports?.[0]?.leagues?.[0]?.teams || []).map(({ team: t }) => ({
+    id: String(t.id || ""), nombre: t.displayName || t.shortDisplayName || "",
     abrev: (t.abbreviation || "").toLowerCase(),
     logo: t.logos?.[0]?.href || null,
     claves: [t.displayName, t.shortDisplayName, t.name, t.location, t.nickname].filter(Boolean),
@@ -77,17 +86,63 @@ function menciona(toks, e) {
 export async function buscarLogo(texto) {
   const toks = new Set(palabras(texto));
   if (!toks.size) return null;
-  const ligas = await Promise.all(Object.keys(LIGAS).map(async (ruta) => ({ ruta, ...(await liga(ruta)) })));
+  const ligas = await Promise.all(RUTAS.map(async (ruta) => ({ ruta, ...(await liga(ruta)) })));
   let mejor = null, puntos = 0, empate = false;
   for (const l of ligas) {
     for (const e of l.equipos) {
       const p = menciona(toks, e);
-      if (p > puntos) { mejor = { logo: e.logo, liga: LIGAS[l.ruta], liga_logo: l.ligaLogo }; puntos = p; empate = false; }
+      if (p > puntos) { mejor = { logo: e.logo, liga: TODAS[l.ruta], liga_logo: l.ligaLogo }; puntos = p; empate = false; }
       else if (p === puntos && p > 0 && mejor && mejor.logo !== e.logo) empate = true;
     }
   }
   // Si dos equipos empatan (p. ej. "Atlético") mejor no adivinar
   return puntos >= 0.8 && !empate && mejor?.logo ? mejor : null;
+}
+
+// Parecido entre dos textos cualesquiera (0..1), sin límite de largo
+function similitud(a, b) {
+  if (!a || !b) return 0;
+  if (a === b) return 1;
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++)
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = cur;
+  }
+  return 1 - prev[b.length] / Math.max(a.length, b.length);
+}
+
+// Los clubes que más se parecen a lo que escribió el usuario (para preguntarle cuál es).
+export async function sugerencias(texto, maximo = 3) {
+  const toks = palabras(texto).filter((t) => t.length >= 3 && !/^\d/.test(t));
+  if (!toks.length) return [];
+  const q = toks.join(" ");
+  const ligas = await Promise.all(RUTAS.map(async (ruta, i) => ({ ruta, i, ...(await liga(ruta)) })));
+  const mejores = new Map();             // logo -> candidato (un club puede estar en varias ligas)
+  for (const l of ligas) {
+    for (const e of l.equipos) {
+      let p = 0;
+      for (const k of e.claves) {
+        const c = palabras(k).join(" ");
+        p = Math.max(p, similitud(q, c));
+        for (const w of palabras(k)) if (w.length >= 4) for (const t of toks) if (t.length >= 4) p = Math.max(p, similitud(w, t) * 0.95);
+      }
+      if (p >= 0.6 && e.logo && (!mejores.has(e.logo) || mejores.get(e.logo).p < p))
+        mejores.set(e.logo, { p, k: `${l.i}.${e.id}`, nombre: e.nombre, logo: e.logo, liga: TODAS[l.ruta], liga_logo: l.ligaLogo });
+    }
+  }
+  return [...mejores.values()].sort((a, b) => b.p - a.p).slice(0, maximo).map(({ p, ...x }) => x);
+}
+
+// El club de una sugerencia ("índiceDeLiga.idDeEquipo")
+export async function equipoPorClave(k) {
+  const [i, id] = String(k).split(".");
+  const ruta = RUTAS[Number(i)];
+  if (!ruta) return null;
+  const l = await liga(ruta);
+  const e = l.equipos.find((x) => x.id === id);
+  return e ? { nombre: e.nombre, logo: e.logo, liga: TODAS[ruta], liga_logo: l.ligaLogo } : null;
 }
 
 // Futbolistas con 2 o más goles en un partido (de los eventos del partido)
