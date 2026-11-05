@@ -7,14 +7,7 @@ jobs:
       - name: Probar
         env:
           T: ${{ secrets.TELEGRAM_TOKEN }}
-          C: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           U=https://bot-apuestas-telegram.vercel.app
-          echo "--- registro codigo malo"; curl -s -X POST $U/api/web -H 'content-type: application/json' -d '{"op":"registro","datos":{"codigo":"ZZZZZZ","nombre":"Prueba","usuario":"prueba_x","pass":"123456"}}'; echo
-          echo "--- estado"; curl -s -X POST "$U/api/telegram?estado=1" -H "x-bot-token: $T" -H 'content-type: application/json' -d '{"clave":"creditos","valor":{"restantes":null,"nota":"prueba"}}'; echo
-          echo "--- usuarios"; curl -s "$U/api/telegram?usuarios=1" -H "x-bot-token: $T" | head -c 300; echo
-          echo "--- pagina"; curl -s $U/ | grep -c "v-admin"
-          B=$U/docs
-          for f in "folleto.pdf|📄 Folleto (actualizado)." "guia-usuario.pdf|📘 Guía del usuario (actualizada)." "manual-completo.pdf|🛠 Manual completo (actualizado)."; do
-            curl -s -X POST "https://api.telegram.org/bot$T/sendDocument" -d chat_id="$C" --data-urlencode document="$B/${f%%|*}?v=5" --data-urlencode caption="${f#*|}" | head -c 30; echo
-          done
+          echo "--- premiar"; curl -s -X POST "$U/api/telegram?mas=1" -H "x-bot-token: $T" -H 'content-type: application/json' -d '{"accion":"torneo_premiar","datos":{}}'; echo
+          echo "--- pagina"; curl -s $U/ | grep -c "Tour de la app\|pr-modo\|TOUR = "
