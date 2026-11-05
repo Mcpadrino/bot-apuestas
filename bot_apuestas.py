@@ -63,6 +63,11 @@ DEPORTES = {
     "nba": ["basketball_nba"],
 }
 DEPORTES["todos"] = [s for lista in DEPORTES.values() for s in lista]
+NOMBRE_LIGA = {
+    "soccer_mexico_ligamx": "Liga MX", "soccer_epl": "Premier", "soccer_spain_la_liga": "LaLiga",
+    "soccer_uefa_champs_league": "Champions", "americanfootball_nfl": "NFL",
+    "baseball_mlb": "MLB", "basketball_nba": "NBA",
+}
 DIAS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
 NOMBRE_MERCADO = {"h2h": "Ganador", "spreads": "Hándicap", "totals": "Total"}
 CAMPOS = ["id", "fecha", "partido", "seleccion", "casa", "cuota", "monto",
@@ -243,12 +248,18 @@ def escanear(args):
     limite = ahora + dt.timedelta(hours=args.horas)
     valor, tabla = [], []
     previo, nuevo_estado = cargar_estado(), {}
+    conteo = {}   # liga -> [partidos en la API, en el horario, con línea Pinnacle, señales]
 
     for sport in DEPORTES[args.deporte]:
-        for ev in obtener_momios(sport, args.mercados, args.demo):
+        eventos = obtener_momios(sport, args.mercados, args.demo)
+        c = conteo.setdefault(sport, [len(eventos), 0, 0, 0])
+        for ev in eventos:
             inicio = dt.datetime.fromisoformat(ev["commence_time"].replace("Z", "+00:00"))
             if not args.demo and not (ahora < inicio <= limite):
                 continue
+            c[1] += 1
+            if any(b["key"] == CASA_SHARP for b in ev["bookmakers"]):
+                c[2] += 1
             partido = f"{ev['home_team']} vs {ev['away_team']}" if sport.startswith("soccer") \
                 else f"{ev['away_team']} @ {ev['home_team']}"
             local = inicio.astimezone(ZONA)
@@ -275,6 +286,7 @@ def escanear(args):
                         "mov": (p - antes) if antes is not None else 0.0,
                     }
                     tabla.append(fila)
+                    c[3] += 1
                     if sel in mejores:
                         cuota, casa = mejores[sel]
                         ev_pct = p * cuota - 1
@@ -282,11 +294,19 @@ def escanear(args):
                             valor.append({**fila, "cuota": cuota, "casa": casa,
                                           "ev": ev_pct, "monto": monto_sugerido(p, cuota)})
 
+    resumen_ligas = " · ".join(
+        f"{NOMBRE_LIGA.get(k, k)} {v[3]}" for k, v in conteo.items())
+    print("\nPor liga (partidos API / en horario / con Pinnacle / señales):")
+    for k, v in conteo.items():
+        print(f"  {NOMBRE_LIGA.get(k, k):<12} {v[0]:>3} / {v[1]:>3} / {v[2]:>3} / {v[3]:>3}")
+
     if not args.demo:
         ESTADO.write_text(json.dumps(nuevo_estado), encoding="utf-8")
 
     if not tabla:
         print("No hay partidos con líneas disponibles en ese rango de horas.")
+        if args.telegram:
+            telegram(f"Sin señales en las próximas {args.horas} h.\n{resumen_ligas}")
         return
 
     print(f"\n=== CUOTAS MÍNIMAS para Caliente / Draftea "
@@ -305,6 +325,7 @@ def escanear(args):
               f"  → ${f['monto']:,.0f}")
         msg.append(f"{rayo.strip()}{f['seleccion']} ({f['mercado']}): mín {a_americano(f['minima'])}"
                    f" / {f['minima']:.2f} → ${f['monto']:,.0f}")
+    msg.append(f"\n📋 Señales por liga: {resumen_ligas}")
     if args.telegram:
         telegram("\n".join(msg))
 
