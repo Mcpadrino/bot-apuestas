@@ -482,6 +482,15 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
 .tour-burbuja .tb-cap button { background: none; border: 0; color: var(--muted); font-size: 1rem; padding: 2px 6px; }
 .tour-burbuja .tb-barra { height: 4px; border-radius: 4px; background: var(--line); overflow: hidden; }
 .tour-burbuja .tb-barra i { display: block; height: 100%; background: var(--accent); transition: width .3s; }
+.cap-sec { margin-top: 10px; }
+.cap-btn { justify-self: start; display: inline-flex; gap: 6px; align-items: center; padding: 11px 16px; border-radius: 999px; background: var(--accent); color: var(--accent-ink, #fff); font-weight: 700; cursor: pointer; }
+.cap-fila { background: var(--bg); border: 1px solid var(--line); border-radius: 14px; padding: 10px; display: grid; gap: 6px; }
+.cap-fila.revisar { border-color: #d48a16; }
+.cap-fila .cap-tit { display: flex; justify-content: space-between; gap: 8px; font-size: .9rem; }
+.cap-op { display: grid; grid-template-columns: 1fr 86px auto; gap: 6px; align-items: center; font-size: .85rem; }
+.cap-op input { padding: 6px 8px; font: 600 .9rem var(--font-mono, monospace); text-align: center; }
+.cap-ver { font-size: .72rem; font-weight: 700; padding: 3px 7px; border-radius: 999px; white-space: nowrap; }
+.cap-ver.barata { background: #1d7a52; color: #fff; } .cap-ver.justa { background: #d48a16; color: #1b1203; } .cap-ver.cara { background: #b3261e; color: #fff; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip-op { display: grid; gap: 1px; padding: 7px 11px; border-radius: 12px; font-size: .8rem; text-align: left; min-width: 0;
   transition: background .2s, color .2s, transform .15s cubic-bezier(.3,1.6,.5,1); }
@@ -1128,6 +1137,13 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
       </form>
       <div id="ck-res" aria-live="polite"></div>
     </section>
+    <section class="checador cap-sec" aria-label="Subir captura">
+      <b>📸 Sube la captura de la casa</b>
+      <span class="hint" style="margin:0">Toma captura de la lista de partidos en Caliente o Draftea (pestaña Ganador / Money line / 1 X 2) y la leo: comparo todos los momios contra el bot de una vez. Se lee en tu celular, no se sube la imagen.</span>
+      <label class="cap-btn" for="cap-foto">📷 Elegir captura</label><input id="cap-foto" type="file" accept="image/*" hidden>
+      <div id="cap-res" aria-live="polite"></div>
+    </section>
+
     <div id="cv-senales" class="section">
       <p class="explica">Escribe lo que paga tu casa (por ejemplo <b class="num">-150</b> o <b class="num">+120</b>) y te digo al instante si
         <span class="sube">✅ conviene</span> o <span class="baja">❌ no vale</span>. Lo que captures lo ven tus amigos, pueden votar si la
@@ -4680,6 +4696,194 @@ function pintarTorneo() {
   }
   html += `<p class="hint" style="margin:0">Premios para la mascota: 🥇 $500 · 🥈 $300 · 🥉 $150 (dinero virtual). El campeón gana la insignia 🏆.${t.campeonatos ? ` Llevas ${t.campeonatos} campeonato(s).` : ""}</p>`;
   panel.innerHTML = html;
+}
+
+// ---------------------------------------------------------------- 📸 Leer momios de una captura de la casa (Caliente / Draftea)
+// ===== LECTOR DE CAPTURAS (inicio) — se copia tal cual a index.html
+const CAP_SKIP = new Set(["empate", "x", "1", "2", "draw", "pa", "partidos", "cambiar", "futbol", "fútbol", "money", "line", "goles", "populares", "todos", "balance", "acceder", "registrarse", "boleto", "roulette", "descargar", "futuras", "live"]);
+const capNorm = (t) => String(t || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+function capLev(a, b) {
+  if (Math.abs(a.length - b.length) > 2) return 9;
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
+    d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+  return d[a.length][b.length];
+}
+// Lo que pudo leer el OCR en un botón de momio → posibles valores decimales
+function capCandidatos(raw) {
+  let t = String(raw || "").replace(/[#*]/g, "+").replace(/[—–]/g, "-").replace(/[,'’]/g, "").replace(/\s/g, "");
+  t = t.replace(/^\(|\)$/g, "");
+  const am = (n) => (n > 0 ? 1 + n / 100 : 1 + 100 / -n);
+  let m;
+  if ((m = t.match(/^([+-])(\d{3,5})$/))) { const n = Number(m[2]) * (m[1] === "-" ? -1 : 1); return Math.abs(n) >= 100 ? [am(n)] : []; }
+  if ((m = t.match(/^4(\d{3})$/))) return [am(Number(m[1])), am(-Number(m[1]))].concat(Number(t) <= 5000 ? [am(Number(t))] : []);   // el "+" se lee como "4"
+  if ((m = t.match(/^(\d{3,4})$/))) { const n = Number(m[1]); return n >= 100 ? [am(n), am(-n)] : []; }
+  if ((m = t.match(/^(\d{1,2})[.,](\d{2})$/))) { const d = Number(m[1] + "." + m[2]); return d > 1 && d < 60 ? [d] : []; }
+  return [];
+}
+// words: [{text, conf, x0, y0, x1, y1}] → filas con momios y el texto de alrededor
+function capFilas(words) {
+  const odds = [], txt = [];
+  words.forEach((w) => {
+    const c = capCandidatos(w.text);
+    const h = w.y1 - w.y0, cy = (w.y0 + w.y1) / 2, cx = (w.x0 + w.x1) / 2;
+    if (c.length && /\d/.test(w.text)) odds.push({ ...w, c, cy, cx, h });
+    else if (/[a-záéíóúñü]{2,}/i.test(w.text) && (w.conf ?? 90) >= 35) txt.push({ ...w, cy, cx, h });
+  });
+  if (!odds.length) return [];
+  const hs = odds.map((o) => o.h).sort((a, b) => a - b), tol = Math.max(8, hs[Math.floor(hs.length / 2)] * 0.9);
+  odds.sort((a, b) => a.cy - b.cy);
+  const filas = [];
+  odds.forEach((o) => { const f = filas.find((r) => Math.abs(r.cy - o.cy) <= tol); if (f) { f.items.push(o); f.cy = (f.cy + o.cy) / 2; } else filas.push({ cy: o.cy, items: [o] }); });
+  const buenas = filas.filter((f) => f.items.length >= 2 && f.items.length <= 3);
+  // columnas (izquierda / centro / derecha) con todas las filas
+  const xs = buenas.flatMap((f) => f.items.map((i) => i.cx)).sort((a, b) => a - b);
+  const cols = [];
+  xs.forEach((x) => { const c = cols.find((k) => Math.abs(k.x - x) < tol * 4); if (c) { c.n++; c.x += (x - c.x) / c.n; } else cols.push({ x, n: 1 }); });
+  cols.sort((a, b) => a.x - b.x);
+  let prev = -Infinity;
+  return buenas.map((f) => {
+    const arriba = txt.filter((w) => w.cy > prev + tol && w.cy < f.cy + tol)
+      .filter((w) => !CAP_SKIP.has(capNorm(w.text)))
+      .sort((a, b) => (Math.abs(a.cy - b.cy) < tol ? a.cx - b.cx : a.cy - b.cy));
+    prev = f.cy;
+    const porCol = cols.map(() => null);
+    f.items.forEach((i) => { let k = 0; cols.forEach((c, j) => { if (Math.abs(c.x - i.cx) < Math.abs(cols[k].x - i.cx)) k = j; }); porCol[k] = i; });
+    return { palabras: arriba.map((w) => capNorm(w.text)).filter(Boolean), texto: arriba.map((w) => w.text).join(" "), momios: porCol, ncols: cols.length };
+  });
+}
+// ¿Qué tan bien aparece un equipo en las palabras? (0 a 1) y en qué posición
+function capEquipo(nombre, palabras) {
+  const toks = capNorm(nombre).split(" ").filter((t) => t.length >= 3 && !["fc", "cf", "sv", "ac", "club", "the", "de", "tsg"].includes(t));
+  if (!toks.length) return { s: 0, pos: 99 };
+  let ok = 0, pos = 99;
+  toks.forEach((t) => {
+    const i = palabras.findIndex((p) => p === t || (p.length >= 4 && t.startsWith(p)) || (t.length >= 4 && p.startsWith(t)) || (t.length >= 5 && capLev(p, t) <= 1));
+    if (i >= 0) { ok++; pos = Math.min(pos, i); }
+  });
+  return { s: ok / toks.length, pos };
+}
+// Elige la combinación de lecturas que da un margen de casa razonable (si no, marca "revisar")
+function capResolver(cands) {
+  let mejor = null;
+  const rec = (i, sel) => {
+    if (i === cands.length) {
+      const vals = sel.filter((v) => v);
+      if (vals.length < 2) return;
+      const over = vals.reduce((s, d) => s + 1 / d, 0);
+      const meta = cands.length === 3 && vals.length === 3 ? 1.07 : vals.length === 2 && cands.length === 2 ? 1.05 : null;
+      const pen = meta ? Math.abs(over - meta) : 0;
+      if (!mejor || pen < mejor.pen) mejor = { sel: [...sel], pen, over, completo: !!meta };
+      return;
+    }
+    const cs = cands[i] && cands[i].length ? cands[i] : [null];
+    cs.forEach((c) => { sel.push(c); rec(i + 1, sel); sel.pop(); });
+  };
+  rec(0, []);
+  if (!mejor) return { vals: cands.map(() => null), revisar: true };
+  const revisar = !mejor.completo || mejor.over < 1.0 || mejor.over > 1.2;
+  return { vals: mejor.sel, revisar };
+}
+// filas + partidos del bot (conv.partidos) → propuestas para guardar
+function capEmparejar(filas, partidos) {
+  return filas.map((f) => {
+    let best = null;
+    (partidos || []).forEach((p) => {
+      const h2h = (p.mercados && p.mercados.h2h) || [];
+      const eq = h2h.filter((o) => o.seleccion !== "Empate");
+      if (eq.length !== 2) return;
+      const a = capEquipo(eq[0].seleccion, f.palabras), b = capEquipo(eq[1].seleccion, f.palabras);
+      const s = a.s + b.s;
+      if (a.s >= 0.5 && b.s >= 0.5 && (!best || s > best.s)) best = { s, p, eq, orden: a.pos <= b.pos ? [eq[0], eq[1]] : [eq[1], eq[0]] };
+    });
+    const cands = f.momios.map((m) => (m ? m.c : null));
+    const r = capResolver(cands);
+    if (!best) return { texto: f.texto, partido: null, lecturas: f.momios.map((m) => (m ? m.text : "")), vals: r.vals };
+    const emp = (best.p.mercados.h2h || []).find((o) => o.seleccion === "Empate");
+    let sels;
+    if (f.momios.length === 3 && emp) sels = [best.orden[0], emp, best.orden[1]];
+    else if (f.momios.length === 3) sels = [best.orden[0], null, best.orden[1]];
+    else sels = [best.orden[0], best.orden[1]];
+    return { texto: f.texto, partido: best.p, revisar: r.revisar,
+      opciones: sels.map((o, i) => (o ? { ...o, cuota: r.vals[i], leido: f.momios[i] ? f.momios[i].text : "" } : null)).filter(Boolean) };
+  });
+}
+
+function capVeredicto(o, d) {
+  if (!(d > 1)) return ["", ""];
+  const v = o.prob * d - 1;
+  return d >= o.minima ? ["barata", `Barata +${(v * 100).toFixed(1)}%`] : v > -0.02 ? ["justa", "Justa"] : ["cara", `Cara ${(v * 100).toFixed(1)}%`];
+}
+function capLeerMomio(t) {
+  t = String(t || "").trim().replace(",", ".");
+  if (/^[+-]?\d{3,5}$/.test(t)) { const n = Number(t); if (Math.abs(n) < 100) return null; return n > 0 ? 1 + n / 100 : 1 + 100 / -n; }
+  const d = Number(t); return d > 1 && d < 60 ? d : null;
+}
+async function capPreparar(file) {
+  const img = await new Promise((ok, mal) => { const i = new Image(); i.onload = () => ok(i); i.onerror = mal; i.src = URL.createObjectURL(file); });
+  const esc = Math.min(2, 1600 / img.width), c = document.createElement("canvas");
+  c.width = Math.round(img.width * esc); c.height = Math.round(img.height * esc);
+  const g = c.getContext("2d"); g.drawImage(img, 0, 0, c.width, c.height);
+  const d = g.getImageData(0, 0, c.width, c.height), px = d.data;
+  let suma = 0; for (let i = 0; i < px.length; i += 4) suma += px[i] * .3 + px[i + 1] * .59 + px[i + 2] * .11;
+  const oscuro = suma / (px.length / 4) < 128;
+  let mn = 255, mx = 0; const gris = new Uint8ClampedArray(px.length / 4);
+  for (let i = 0, k = 0; i < px.length; i += 4, k++) { let v = px[i] * .3 + px[i + 1] * .59 + px[i + 2] * .11; if (oscuro) v = 255 - v; gris[k] = v; if (v < mn) mn = v; if (v > mx) mx = v; }
+  const r = Math.max(1, mx - mn);
+  for (let i = 0, k = 0; i < px.length; i += 4, k++) { const v = (gris[k] - mn) * 255 / r; px[i] = px[i + 1] = px[i + 2] = v; }
+  g.putImageData(d, 0, 0);
+  return c;
+}
+$("cap-foto").addEventListener("change", async () => {
+  const file = $("cap-foto").files[0]; if (!file) return;
+  const res = $("cap-res"); res.innerHTML = `<p class="hint">⏳ Cargando el lector (solo la primera vez tarda)…</p>`;
+  try {
+    if (!conv) conv = await api("conviene");
+    if (!tesseract) { await cargarScript("https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"); tesseract = window.Tesseract; }
+    const canvas = await capPreparar(file);
+    const { data } = await tesseract.recognize(canvas, "spa+eng", { logger: m => { if (m.status === "recognizing text") res.innerHTML = `<p class="hint">🔎 Leyendo la captura… ${Math.round(m.progress * 100)}%</p>`; } });
+    const words = (data.words || []).map(w => ({ text: w.text, conf: w.confidence, x0: w.bbox.x0, y0: w.bbox.y0, x1: w.bbox.x1, y1: w.bbox.y1 }));
+    const casa = /draftea/i.test(data.text) ? "Draftea" : /caliente/i.test(data.text) ? "Caliente" : "";
+    const props = capEmparejar(capFilas(words), conv.partidos || []);
+    pintarCaptura(props, casa);
+  } catch (e) { res.innerHTML = `<p class="empty">No pude leer la captura: ${admEsc(e.message || e)}</p>`; }
+  $("cap-foto").value = "";
+});
+function pintarCaptura(props, casa) {
+  const res = $("cap-res"), ok = props.filter(p => p.partido), no = props.filter(p => !p.partido);
+  if (!props.length) { res.innerHTML = `<p class="empty">No encontré momios en la imagen. Usa una captura de la lista de partidos con los momios a la vista (1 X 2 / Money line).</p>`; return; }
+  let h = `<div style="display:grid;gap:8px"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b>Encontré ${ok.length} partido(s) del bot</b>
+    <select id="cap-casa"><option ${casa === "Caliente" ? "selected" : ""}>Caliente</option><option ${casa === "Draftea" ? "selected" : ""}>Draftea</option></select></div>
+    <span class="hint" style="margin:0">Revisa que los momios coincidan con tu captura (la lectura puede fallar) y corrige si hace falta.</span>`;
+  ok.forEach((p, i) => {
+    h += `<div class="cap-fila${p.revisar ? " revisar" : ""}" data-i="${i}"><div class="cap-tit"><b>${DEP(p.partido.deporte)} ${admEsc(p.partido.partido)}</b>${p.revisar ? `<span class="cap-ver justa">⚠️ revisa</span>` : ""}</div>`;
+    p.opciones.forEach((o, k) => {
+      const [cls, txt] = capVeredicto(o, o.cuota);
+      h += `<div class="cap-op" data-k="${k}"><span>${admEsc(o.seleccion)}<small class="hint" style="display:block;margin:0">${(o.prob * 100).toFixed(0)}% · mín ${aAmericano(o.minima)}</small></span>
+        <input inputmode="text" value="${o.cuota ? aAmericano(o.cuota) : ""}" placeholder="momio" aria-label="Momio de ${admEsc(o.seleccion)}"><span class="cap-ver ${cls}">${txt}</span></div>`;
+    });
+    h += `</div>`;
+  });
+  if (no.length) h += `<details><summary class="hint">${no.length} fila(s) que no están en las señales del bot</summary><p class="hint">${no.map(n => admEsc(n.texto || "¿?")).join(" · ")}</p></details>`;
+  if (ok.length) h += `<button type="button" class="primary" id="cap-guardar">Guardar ${ok.reduce((s, p) => s + p.opciones.length, 0)} momios en ¿Conviene?</button>`;
+  h += `</div>`;
+  res.innerHTML = h;
+  res.querySelectorAll(".cap-op input").forEach(inp => inp.addEventListener("input", () => {
+    const f = inp.closest(".cap-fila"), p = ok[f.dataset.i], o = p.opciones[inp.closest(".cap-op").dataset.k];
+    o.cuota = capLeerMomio(inp.value);
+    const [cls, txt] = capVeredicto(o, o.cuota), v = inp.nextElementSibling; v.className = "cap-ver " + cls; v.textContent = txt;
+  }));
+  if ($("cap-guardar")) $("cap-guardar").onclick = async () => {
+    const b = $("cap-guardar"); b.disabled = true; let n = 0, err = 0;
+    const casaSel = $("cap-casa").value;
+    for (const p of ok) for (const o of p.opciones) {
+      if (!(o.cuota > 1)) continue;
+      try { await api("cotizar", { evento: p.partido.evento, mercado: "h2h", seleccion: o.seleccion, casa: casaSel, cuota: o.cuota }); n++; } catch (e) { err++; }
+    }
+    res.innerHTML = `<p class="hint">✅ Guardé ${n} momio(s) de ${casaSel}${err ? ` (${err} no se pudieron)` : ""}. Abajo ves si conviene cada uno.</p>`;
+    cargarConviene();
+  };
 }
 </script>
 </body>
