@@ -131,6 +131,36 @@ async function wiki(titulos, lang = "en") {
     nombre: p.title, pedido: red[p.title] || p.title, foto: p.thumbnail.source,
     credito: `Foto: Wikimedia Commons · ${lang}.wikipedia.org/wiki/${encodeURIComponent(p.title.replace(/ /g, "_"))}` }));
 }
+// Busca la página del ESTADIO (no la de la persona que le da nombre: "Santiago Bernabéu", "Alfredo Harp Helú"…)
+const ES_ESTADIO = /stadium|stadion|estadio|est[áa]dio|arena|field|park|ground|ballpark|coliseum|coliseo|dome|center|centre|bowl|venue|sports? (complex|hall)|recinto|cancha/i;
+export async function wikiEstadio(nombre) {
+  const limpio = String(nombre || "").replace(/\s*\(.*?\)\s*/g, " ").trim();
+  if (!limpio) return null;
+  const pedir = async (lang, params) => {
+    const u = `https://${lang}.wikipedia.org/w/api.php?action=query&prop=pageimages|description|categories&piprop=thumbnail&pithumbsize=1600&cllimit=30&redirects=1&format=json&origin=*&${params}`;
+    const j = await json(u, 8000);
+    return Object.values(j?.query?.pages || {}).sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
+  };
+  const esEstadio = (p) => p && p.thumbnail?.source && (ES_ESTADIO.test(p.description || "") || ES_ESTADIO.test(p.title || "") ||
+    (p.categories || []).some((c) => /stadium|stadiums|estadios|venues|arenas|sports venues/i.test(c.title)));
+  const fmt = (p, lang) => ({ nombre: p.title, foto: p.thumbnail.source,
+    credito: `Foto: Wikimedia Commons · ${lang}.wikipedia.org/wiki/${encodeURIComponent(p.title.replace(/ /g, "_"))}` });
+  // 1) títulos directos: "X Stadium", "Estadio X", "X"
+  const titulos = /stadium|estadio|arena|field|park|dome|center|centre/i.test(limpio) ? [limpio] : [`${limpio} Stadium`, `Estadio ${limpio}`, limpio];
+  for (const lang of ["en", "es"]) {
+    const ps = await pedir(lang, `titles=${encodeURIComponent(titulos.join("|"))}`);
+    const ok = titulos.map((t) => ps.find((p) => p.title.toLowerCase() === t.toLowerCase() || (p.title.toLowerCase().includes(limpio.toLowerCase()) && ES_ESTADIO.test(p.title))))
+      .find(esEstadio) || ps.find(esEstadio);
+    if (ok) return fmt(ok, lang);
+  }
+  // 2) búsqueda: "<nombre> estadio" y quedarse solo con páginas de estadios
+  for (const [lang, extra] of [["en", "stadium"], ["es", "estadio"]]) {
+    const ps = await pedir(lang, `generator=search&gsrlimit=6&gsrsearch=${encodeURIComponent(`${limpio} ${extra}`)}`);
+    const ok = ps.find(esEstadio);
+    if (ok) return fmt(ok, lang);
+  }
+  return null;
+}
 let cacheGaleria = null;
 async function estadios(ruta, id) {
   let club = null;
@@ -139,7 +169,7 @@ async function estadios(ruta, id) {
       const t = (await json(`${BASE}${ruta}/teams/${id}`))?.team;
       const v = t?.venue || t?.franchise?.venue;
       if (v?.images?.length) club = { nombre: v.fullName, foto: v.images[0].href, interior: v.images[1]?.href || null, credito: "Foto: ESPN" };
-      else if (v?.fullName) club = (await wiki([v.fullName]))[0] || null;
+      else if (v?.fullName) club = (await wikiEstadio(v.fullName)) || null;
     } else {
       // el estadio donde más juega de local esta temporada
       const sc = await json(`${BASE}${ruta}/teams/${id}/schedule`);
@@ -147,7 +177,7 @@ async function estadios(ruta, id) {
       (sc?.events || []).forEach((e) => { const c = e.competitions?.[0]; const yo = (c?.competitors || []).find((x) => String(x.id) === String(id));
         if (yo?.homeAway === "home" && c.venue?.fullName) cuenta[c.venue.fullName] = (cuenta[c.venue.fullName] || 0) + 1; });
       const nombre = Object.entries(cuenta).sort((a, b) => b[1] - a[1])[0]?.[0];
-      if (nombre) club = (await wiki([nombre]))[0] || (await wiki([nombre], "es"))[0] || { nombre, foto: null };
+      if (nombre) club = (await wikiEstadio(nombre)) || { nombre, foto: null };
     }
   }
   if (!cacheGaleria) {

@@ -4,10 +4,13 @@ jobs:
   d:
     runs-on: ubuntu-latest
     steps:
-      - name: Probar
-        env:
-          T: ${{ secrets.TELEGRAM_TOKEN }}
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Probar estadios
         run: |
-          U=https://bot-apuestas-telegram.vercel.app
-          echo "--- premiar"; curl -s -X POST "$U/api/telegram?mas=1" -H "x-bot-token: $T" -H 'content-type: application/json' -d '{"accion":"torneo_premiar","datos":{}}'; echo
-          echo "--- pagina"; curl -s $U/ | grep -c "Tour de la app\|pr-modo\|TOUR = "
+          cd telegram && node --input-type=module -e "
+          const m = await import('./api/deportes.js');
+          for (const n of ['Santiago Bernabéu','Estadio Akron','Alfredo Harp Helú','Nemesio Diez','Estadio Hidalgo','Ciudad de los Deportes','Estadio Olímpico Universitario','Riyadh Air Metropolitano','Arrowhead Stadium','Benito Villamarín','Estadio Jalisco','Estadio Victoria','Estadio Corregidora','Signal Iduna Park','Emirates Stadium']) {
+            const r = await m.wikiEstadio(n); console.log(n, '=>', r ? r.nombre + ' | ' + r.foto.slice(-50) : 'NADA');
+          }"
