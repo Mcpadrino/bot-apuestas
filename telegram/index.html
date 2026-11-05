@@ -230,6 +230,20 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
 @keyframes latido { 50% { opacity: .25; } }
 .tu-apuesta { font-size: .8rem; background: var(--win-bg); color: var(--fg); border-radius: 8px; padding: 6px 8px; }
 
+/* ---------- Noticias y datos del día ---------- */
+.destacado { display: grid; gap: 10px; }
+.nota { display: grid; grid-template-columns: 92px 1fr; gap: 12px; align-items: center; background: var(--surface);
+  border: 1px solid var(--line); border-radius: 12px; padding: 8px; text-decoration: none; color: var(--fg); }
+.nota img, .nota .sin-img { width: 92px; height: 66px; object-fit: cover; border-radius: 8px; background: var(--bg); }
+.nota .sin-img { display: grid; place-items: center; font-size: 1.6rem; }
+.nota b { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; font-size: .9rem; line-height: 1.3; }
+.nota small { display: block; color: var(--muted); font-size: .72rem; margin-top: 3px; }
+.dato { display: grid; grid-template-columns: 34px 1fr; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 12px;
+  background: linear-gradient(135deg, var(--win-bg), var(--surface)); border: 1px solid var(--line); font-size: .9rem; }
+.dato .ico-dato { width: 34px; height: 34px; display: grid; place-items: center; font-size: 1.2rem; position: relative; }
+.dato .ico-dato img { width: 30px; height: 30px; object-fit: contain; }
+.dato .ico-dato span { position: absolute; right: -6px; bottom: -6px; font-size: .9rem; }
+
 /* ---------- Avatares de la comunidad ---------- */
 .msg .cabeza { display: flex; gap: 8px; align-items: center; }
 .avatar { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; flex: 0 0 30px;
@@ -400,6 +414,13 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
         <button type="button" data-h="mios" aria-pressed="false">Mis apuestas</button>
       </div>
     </div>
+    <section class="destacado" id="lo-mas" hidden>
+      <h2>📰 Lo más importante</h2>
+      <div class="destacado" id="notas"></div>
+      <h2 id="datos-tit" hidden>🤓 Datos de ayer</h2>
+      <div class="destacado" id="datos"></div>
+      <h2>📺 Partidos</h2>
+    </section>
     <p class="hint" id="hoy-act"></p>
     <div class="list" id="hoy"></div>
   </div>
@@ -766,8 +787,33 @@ function fechaDia(d) {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Mexico_City", year: "numeric", month: "2-digit", day: "2-digit" })
     .format(f).replace(/-/g, "");
 }
+let notasCargadas = 0;
+async function cargarNoticias() {
+  if (Date.now() - notasCargadas < 30 * 60000) return;          // a lo mucho cada 30 min
+  notasCargadas = Date.now();
+  try {
+    const r = await fetch("/api/noticias"); const j = await r.json();
+    const notas = $("notas"), datos = $("datos"); notas.innerHTML = ""; datos.innerHTML = "";
+    (j.noticias || []).forEach(n => {
+      if (!/^https:\/\//.test(n.link || "")) return;
+      const a = el("a", "nota"); a.href = n.link; a.target = "_blank"; a.rel = "noopener noreferrer";
+      a.append(n.imagen && /^https:\/\//.test(n.imagen) ? imagen(n.imagen) : el("span", "sin-img", "📰"));
+      const t = el("div"); t.append(el("b", "", n.titulo), el("small", "", `${n.liga} · ${hace(Date.parse(n.publicada))}`));
+      a.append(t); notas.append(a);
+    });
+    (j.datos || []).forEach(d => {
+      const c = el("div", "dato"), ic = el("div", "ico-dato");
+      if (d.logo && /^https:\/\//.test(d.logo)) { ic.append(imagen(d.logo), el("span", "", d.icono)); } else ic.textContent = d.icono;
+      c.append(ic, el("div", "", d.texto)); datos.append(c);
+    });
+    $("datos-tit").hidden = !(j.datos || []).length;
+    $("lo-mas").hidden = !(j.noticias || []).length && !(j.datos || []).length;
+  } catch (e) { notasCargadas = 0; }
+}
+
 async function cargarHoy() {
   clearTimeout(hoyTimer);
+  if (hoyDia === 0) cargarNoticias();
   try {
     const r = await fetch("/api/hoy?fecha=" + fechaDia(hoyDia));
     const j = await r.json();
@@ -814,6 +860,7 @@ function pintarHoy() {
 }
 document.querySelectorAll(".dia button").forEach(bt => bt.addEventListener("click", () => {
   hoyDia = Number(bt.dataset.d);
+  $("lo-mas").hidden = hoyDia !== 0 || !$("notas").childElementCount;
   document.querySelectorAll(".dia button").forEach(x => x.setAttribute("aria-pressed", String(x === bt)));
   $("hoy").innerHTML = ""; $("hoy-act").textContent = "Cargando…"; cargarHoy();
 }));
@@ -839,7 +886,11 @@ async function cargarFeed() {
   clearTimeout(feedTimer);
   if (vista === "comunidad" && !document.hidden) feedTimer = setTimeout(cargarFeed, 30000);
 }
+let firmaFeed = "";
 function pintarFeed(lista) {
+  const firma = JSON.stringify(lista.map(p => [p.id, p.texto, p.link, p.foto]));
+  if (firma === firmaFeed && $("feed").childElementCount) return;      // nada nuevo: no redibujar
+  firmaFeed = firma;
   const cont = $("feed"), abajo = window.innerHeight + window.scrollY >= document.body.scrollHeight - 80;
   cont.innerHTML = "";
   if (!lista.length) { cont.append(el("p", "empty", "Todavía nadie publica. Sé el primero: sube la foto de tu apuesta con el link para que otros la copien.")); return; }
@@ -852,9 +903,10 @@ function pintarFeed(lista) {
     const q = el("div", "quien-pub"); const b = el("b", "", p.mio ? "Tú" : p.autor);
     q.append(b, document.createTextNode(" · " + hace(Date.parse(p.creada))));
     cab.append(av, q); m.append(cab);
-    if (p.imagen && /^data:image\/(jpeg|png|webp);base64,/.test(p.imagen)) {
-      const img = el("img"); img.src = p.imagen; img.alt = "Foto de la apuesta de " + (p.mio ? "ti" : p.autor); img.loading = "lazy";
-      img.onclick = () => { $("visor-img").src = p.imagen; $("visor").hidden = false; };
+    if (p.foto) {
+      const src = `/api/img?id=${encodeURIComponent(p.id)}&t=${encodeURIComponent(token)}`;
+      const img = el("img"); img.src = src; img.alt = "Foto de la apuesta de " + (p.mio ? "ti" : p.autor); img.loading = "lazy";
+      img.onclick = () => { $("visor-img").src = src; $("visor").hidden = false; };
       m.append(img);
     }
     if (p.texto) m.append(el("p", "", p.texto));

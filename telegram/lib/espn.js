@@ -70,6 +70,20 @@ export async function buscarLogo(texto) {
   return puntos >= 0.8 && !empate && mejor?.logo ? mejor : null;
 }
 
+// Futbolistas con 2 o más goles en un partido (de los eventos del partido)
+function dobletes(comp) {
+  const cuenta = new Map();
+  for (const d of comp.details || []) {
+    if (!d.scoringPlay || d.ownGoal || d.shootout) continue;
+    const a = d.athletesInvolved?.[0];
+    if (!a?.displayName) continue;
+    const t = (comp.competitors || []).find((c) => c.team?.id === d.team?.id);
+    const x = cuenta.get(a.displayName) || { nombre: a.displayName, goles: 0, logo: t?.team?.logo || null };
+    x.goles++; cuenta.set(a.displayName, x);
+  }
+  return [...cuenta.values()].filter((x) => x.goles >= 2);
+}
+
 // Partidos de un día (fecha AAAAMMDD) en todas las ligas, con logos y marcador en vivo.
 export async function partidosDelDia(fecha) {
   const ligas = await Promise.all(Object.entries(LIGAS).map(async ([ruta, nombre]) => {
@@ -80,7 +94,7 @@ export async function partidosDelDia(fecha) {
       const lado = (h) => {
         const c = (comp.competitors || []).find((x) => x.homeAway === h) || {};
         return { nombre: c.team?.shortDisplayName || c.team?.displayName || "", logo: c.team?.logo || null,
-                 marcador: c.score ?? null, ganador: Boolean(c.winner) };
+                 marcador: c.score ?? null, ganador: Boolean(c.winner), record: c.records?.[0]?.summary || "" };
       };
       const st = ev.status?.type || {};
       return {
@@ -88,8 +102,63 @@ export async function partidosDelDia(fecha) {
         estado: st.state || "pre",                 // pre | in | post
         detalle: st.shortDetail || st.detail || "",
         local: lado("home"), visita: lado("away"),
+        dobletes: dobletes(comp),
       };
     });
   }));
   return ligas.flat().sort((a, b) => (a.inicio || "").localeCompare(b.inicio || ""));
+}
+
+// Las noticias más recientes (en español) de tus ligas. Solo las de las últimas 24 h.
+export async function noticias(maximo = 5) {
+  const listas = await Promise.all(Object.entries(LIGAS).map(async ([ruta, nombre]) => {
+    const j = await json(`${BASE}${ruta}/news?lang=es&region=mx&limit=6`, 4000);
+    return (j?.articles || []).map((a) => ({
+      titulo: a.headline || "", resumen: a.description || "", publicada: a.published || a.lastModified || "",
+      imagen: a.images?.[0]?.url || null, link: a.links?.web?.href || a.links?.mobile?.href || null, liga: nombre,
+    }));
+  }));
+  const hace24 = Date.now() - 24 * 3600 * 1000, vistos = new Set();
+  const todas = listas.flat()
+    .filter((n) => n.titulo && n.link && /^https:\/\//.test(n.link) && Date.parse(n.publicada) > hace24)
+    .filter((n) => !/\b(fantasy|highlights|resumen en video)\b/i.test(n.titulo))
+    .sort((a, b) => Date.parse(b.publicada) - Date.parse(a.publicada));
+  // Que no salgan 5 de la misma liga: máximo 2 por liga
+  const porLiga = {}, salida = [];
+  for (const n of todas) {
+    if (vistos.has(n.titulo) || (porLiga[n.liga] || 0) >= 2) continue;
+    vistos.add(n.titulo); porLiga[n.liga] = (porLiga[n.liga] || 0) + 1; salida.push(n);
+    if (salida.length >= maximo) break;
+  }
+  return salida;
+}
+
+// Datos curiosos sacados de los partidos de ayer: goleada, partido con más goles/puntos, dobletes, mejor récord.
+export async function datosDelDia(fechaAyer) {
+  const partidos = await partidosDelDia(fechaAyer);
+  const terminados = partidos.filter((p) => p.estado === "post");
+  const datos = [];
+  const num = (x) => Number(x) || 0;
+  const futbol = terminados.filter((p) => !["NFL", "NBA", "MLB"].includes(p.liga));
+  const mas = futbol.sort((a, b) => (num(b.local.marcador) + num(b.visita.marcador)) - (num(a.local.marcador) + num(a.visita.marcador)))[0];
+  if (mas && num(mas.local.marcador) + num(mas.visita.marcador) >= 4)
+    datos.push({ icono: "🔥", texto: `Lluvia de goles en ${mas.liga}: ${mas.visita.nombre} ${mas.visita.marcador} – ${mas.local.marcador} ${mas.local.nombre}.`,
+                 logo: mas.local.logo });
+  const gol = terminados.map((p) => ({ p, dif: Math.abs(num(p.local.marcador) - num(p.visita.marcador)) }))
+    .filter((x) => !["NBA", "MLB", "NFL"].includes(x.p.liga) && x.dif >= 3).sort((a, b) => b.dif - a.dif)[0];
+  if (gol) {
+    const g = num(gol.p.local.marcador) > num(gol.p.visita.marcador) ? gol.p.local : gol.p.visita;
+    datos.push({ icono: "💥", texto: `Goleada: ${g.nombre} ganó por ${gol.dif} goles en ${gol.p.liga}.`, logo: g.logo });
+  }
+  for (const p of terminados.filter((x) => x.dobletes?.length).slice(0, 2))
+    for (const d of p.dobletes) datos.push({ icono: "⚽", texto: `${d.nombre} marcó ${d.goles} goles (${p.visita.nombre} vs ${p.local.nombre}).`, logo: d.logo });
+  const nba = terminados.filter((p) => p.liga === "NBA").sort((a, b) =>
+    (num(b.local.marcador) + num(b.visita.marcador)) - (num(a.local.marcador) + num(a.visita.marcador)))[0];
+  if (nba) datos.push({ icono: "🏀", texto: `El partido con más puntos de la NBA: ${nba.visita.nombre} ${nba.visita.marcador} – ${nba.local.marcador} ${nba.local.nombre}.`, logo: nba.local.logo });
+  const recs = partidos.flatMap((p) => [p.local, p.visita].map((t) => ({ ...t, liga: p.liga })))
+    .filter((t) => ["NFL", "NBA"].includes(t.liga) && /^\d+-\d+/.test(t.record || ""))
+    .map((t) => { const [w, l] = t.record.split("-").map(Number); return { ...t, w, l }; })
+    .filter((t) => t.w + t.l >= 5).sort((a, b) => b.w / (b.w + b.l) - a.w / (a.w + a.l))[0];
+  if (recs) datos.push({ icono: "📈", texto: `${recs.nombre} va ${recs.record}: de lo mejor de la ${recs.liga}.`, logo: recs.logo });
+  return datos.slice(0, 3);
 }
