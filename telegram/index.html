@@ -230,6 +230,10 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
 @keyframes latido { 50% { opacity: .25; } }
 .tu-apuesta { font-size: .8rem; background: var(--win-bg); color: var(--fg); border-radius: 8px; padding: 6px 8px; }
 
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 999px; padding: 4px; }
+.seg button { border: 0; border-radius: 999px; padding: 9px 6px; background: transparent; color: var(--muted); font-size: .88rem; }
+.seg button[aria-selected="true"] { background: var(--fg); color: var(--bg); }
 /* ---------- Noticias y datos del día ---------- */
 .destacado { display: grid; gap: 10px; }
 .nota { display: grid; grid-template-columns: 92px 1fr; gap: 12px; align-items: center; background: var(--surface);
@@ -403,7 +407,11 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
 
   <!-- ===================== HOY ===================== -->
   <div id="v-hoy" class="vista section" hidden>
-    <div class="head">
+    <div class="seg" role="tablist" aria-label="Hoy">
+      <button type="button" role="tab" data-s="partidos" aria-selected="true">📺 Partidos</button>
+      <button type="button" role="tab" data-s="noticias" aria-selected="false">📰 Noticias y datos</button>
+    </div>
+    <div class="head" id="hoy-controles">
       <div class="dia" role="group" aria-label="Día">
         <button type="button" data-d="-1" aria-pressed="false">Ayer</button>
         <button type="button" data-d="0" aria-pressed="true">Hoy</button>
@@ -416,10 +424,10 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
     </div>
     <section class="destacado" id="lo-mas" hidden>
       <h2>📰 Lo más importante</h2>
-      <div class="destacado" id="notas"></div>
+      <div class="destacado" id="notas"><p class="empty">Cargando noticias…</p></div>
       <h2 id="datos-tit" hidden>🤓 Datos de ayer</h2>
       <div class="destacado" id="datos"></div>
-      <h2>📺 Partidos</h2>
+      <p class="hint">Se actualizan solas unas 5 veces al día.</p>
     </section>
     <p class="hint" id="hoy-act"></p>
     <div class="list" id="hoy"></div>
@@ -787,6 +795,16 @@ function fechaDia(d) {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Mexico_City", year: "numeric", month: "2-digit", day: "2-digit" })
     .format(f).replace(/-/g, "");
 }
+let hoySub = "partidos";
+function verSub(v) {
+  hoySub = v;
+  document.querySelectorAll("[data-s]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.s === v)));
+  const noticias = v === "noticias";
+  $("lo-mas").hidden = !noticias;
+  ["hoy-controles", "hoy-act", "hoy"].forEach(id => $(id).hidden = noticias);
+  if (noticias) cargarNoticias();
+}
+document.querySelectorAll("[data-s]").forEach(b => b.addEventListener("click", () => verSub(b.dataset.s)));
 let notasCargadas = 0;
 async function cargarNoticias() {
   if (Date.now() - notasCargadas < 30 * 60000) return;          // a lo mucho cada 30 min
@@ -807,13 +825,12 @@ async function cargarNoticias() {
       c.append(ic, el("div", "", d.texto)); datos.append(c);
     });
     $("datos-tit").hidden = !(j.datos || []).length;
-    $("lo-mas").hidden = !(j.noticias || []).length && !(j.datos || []).length;
+    if (!(j.noticias || []).length) notas.append(el("p", "empty", "Por ahora no hay noticias nuevas de tus ligas."));
   } catch (e) { notasCargadas = 0; }
 }
 
 async function cargarHoy() {
   clearTimeout(hoyTimer);
-  if (hoyDia === 0) cargarNoticias();
   try {
     const r = await fetch("/api/hoy?fecha=" + fechaDia(hoyDia));
     const j = await r.json();
@@ -860,7 +877,6 @@ function pintarHoy() {
 }
 document.querySelectorAll(".dia button").forEach(bt => bt.addEventListener("click", () => {
   hoyDia = Number(bt.dataset.d);
-  $("lo-mas").hidden = hoyDia !== 0 || !$("notas").childElementCount;
   document.querySelectorAll(".dia button").forEach(x => x.setAttribute("aria-pressed", String(x === bt)));
   $("hoy").innerHTML = ""; $("hoy-act").textContent = "Cargando…"; cargarHoy();
 }));
