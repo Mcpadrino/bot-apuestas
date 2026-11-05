@@ -8,53 +8,29 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 4
     steps:
-      - name: ESPN endpoints
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Probar api/deportes.js
+        working-directory: telegram
         run: |
-          python3 - <<'PY'
-          import json, urllib.request
-          def g(u):
-              try:
-                  r = urllib.request.Request(u, headers={"user-agent": "Mozilla/5.0"})
-                  return json.load(urllib.request.urlopen(r, timeout=20))
-              except Exception as e:
-                  return {"__error": str(e)}
-          B = "https://site.api.espn.com/apis/site/v2/sports/"
-          s = g("https://site.api.espn.com/apis/v2/sports/soccer/mex.1/standings")
-          ch = s.get("children") or []
-          print("standings mex keys", list(s)[:8], "children", len(ch), [c.get("name") for c in ch][:3])
-          if ch:
-              e = ch[0]["standings"]["entries"][0]
-              print("  entry", e["team"]["displayName"], [(x.get("name"), x.get("displayValue")) for x in e["stats"]][:14], "note", e.get("note"))
-          s2 = g("https://site.api.espn.com/apis/v2/sports/football/nfl/standings")
-          print("standings nfl children", [c.get("name") for c in s2.get("children") or []][:4])
-          st = g(B + "soccer/mex.1/statistics")
-          print("statistics keys", list(st)[:8], str(st)[:600])
-          sc = g(B + "soccer/mex.1/teams/227/schedule")
-          evs = sc.get("events") or []
-          print("schedule mex 227", list(sc)[:8], len(evs), json.dumps(evs[-1] if evs else {})[:900])
-          sc2 = g(B + "soccer/mex.1/teams/227/schedule?fixture=true")
-          print("fixture", len(sc2.get("events") or []), [(e.get("date"), e.get("name")) for e in (sc2.get("events") or [])[:3]])
-          n = g(B + "soccer/mex.1/news?team=227&lang=es&region=mx&limit=3")
-          print("news team", [a.get("headline") for a in n.get("articles", [])][:3])
-          # un partido terminado para ver summary
-          for d in ["20261101", "20261102", "20261031", "20261025"]:
-              sb = g(B + f"soccer/eng.1/scoreboard?dates={d}")
-              if sb.get("events"):
-                  eid = sb["events"][0]["id"]; break
-          su = g(B + f"soccer/eng.1/summary?event={eid}")
-          print("summary keys", list(su))
-          print("keyEvents", json.dumps((su.get("keyEvents") or [])[:2])[:900])
-          r = su.get("rosters") or []
-          print("rosters", len(r), json.dumps(r[0] if r else {})[:900])
-          print("gameInfo", json.dumps(su.get("gameInfo"))[:400])
-          for d in ["20261102", "20261101", "20261026"]:
-              sb = g(B + f"football/nfl/scoreboard?dates={d}")
-              if sb.get("events"):
-                  eid = sb["events"][0]["id"]; break
-          su = g(B + f"football/nfl/summary?event={eid}")
-          print("nfl summary keys", list(su))
-          print("nfl scoringPlays", json.dumps((su.get("scoringPlays") or [])[:1])[:500])
-          print("nfl boxscore teams stats", json.dumps(((su.get("boxscore") or {}).get("teams") or [{}])[0].get("statistics", [])[:6])[:600])
-          print("nfl leaders", json.dumps((su.get("leaders") or [])[:1])[:500])
-          print("nfl gameInfo", json.dumps(su.get("gameInfo"))[:400])
-          PY
+          node --input-type=module -e '
+          import h from "./api/deportes.js";
+          const corre = (q) => new Promise((ok) => h({ query: q }, { setHeader() {}, status(c) { this.c = c; return this; }, json(d) { ok([this.c, d]); } }));
+          const sb = await (await fetch("https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard?dates=20261101")).json();
+          let [c, d] = await corre({ op: "partido", ruta: "soccer/eng.1", id: sb.events[0].id });
+          console.log("PARTIDO", c, d.detalle, d.equipos.map(e => e.nombre + " " + e.marcador), "eventos", d.eventos.length, JSON.stringify(d.eventos.slice(0, 3)), "stats", d.stats.length, JSON.stringify(d.stats.slice(0, 2)), "alin", d.alineaciones.map(a => a.formacion + " " + a.titulares.length + " " + JSON.stringify(a.titulares[0])), d.estadio);
+          [c, d] = await corre({ op: "tabla", ruta: "soccer/mex.1" });
+          console.log("TABLA", c, d.grupos.map(g => g.nombre + " " + g.filas.length), JSON.stringify(d.grupos[0]?.filas[0]), "lideres", JSON.stringify(d.lideres.map(l => [l.cat, l.nom, l.jugadores.slice(0, 2)])).slice(0, 700));
+          [c, d] = await corre({ op: "tabla", ruta: "football/nfl" });
+          console.log("TABLA NFL", c, d.grupos.map(g => g.nombre + " " + g.filas.length).slice(0, 8), JSON.stringify(d.grupos[0]?.filas[0]));
+          [c, d] = await corre({ op: "equipo", ruta: "soccer/mex.1", id: "227" });
+          console.log("EQUIPO", c, d.nombre, d.record, "ult", JSON.stringify(d.ultimos.slice(0, 2)), "prox", JSON.stringify(d.proximos.slice(0, 1)), "pos", JSON.stringify(d.posicion), "notas", d.noticias.length);
+          [c, d] = await corre({ op: "estadios", ruta: "soccer/mex.1", id: "227" });
+          console.log("ESTADIO MX", c, JSON.stringify(d.club), "galeria", d.galeria.length, d.galeria.map(g => g.pedido).join(", "));
+          [c, d] = await corre({ op: "estadios", ruta: "football/nfl", id: "12" });
+          console.log("ESTADIO NFL", c, JSON.stringify(d.club));
+          [c, d] = await corre({ op: "estadios", ruta: "soccer/eng.1", id: "359" });
+          console.log("ESTADIO ENG", c, JSON.stringify(d.club));
+          '
