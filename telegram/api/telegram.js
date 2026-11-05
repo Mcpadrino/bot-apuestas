@@ -537,7 +537,7 @@ export default async function handler(req, res) {
     if (!tokenOk()) return res.status(401).json({ error: "no" });
     const b = req.body || {};
     const PERMITIDAS = ["favoritos", "aviso", "quiniela_pendientes", "quiniela_res", "retos_abiertos", "reto_cerrar",
-      "practica_pendientes", "practica_pierna", "respaldo", "lineas2"];
+      "practica_pendientes", "practica_pierna", "respaldo", "lineas2", "clv_pendientes", "clv_set"];
     if (!PERMITIDAS.includes(b.accion)) return res.status(400).json({ error: "acción" });
     return res.status(200).json(await mas(b.accion, b.datos || {}));
   }

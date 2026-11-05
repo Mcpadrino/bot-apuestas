@@ -24,7 +24,7 @@ MX = dt.timezone(dt.timedelta(hours=-6))
 
 
 def api(accion, datos=None):
-    if PRUEBA and accion in ("quiniela_res", "reto_cerrar", "practica_pierna", "aviso"):
+    if PRUEBA and accion in ("quiniela_res", "reto_cerrar", "practica_pierna", "aviso", "clv_set"):
         print("   (prueba) no se guarda:", accion, datos)
         return None
     r = requests.post(f"{BOT_URL}/api/telegram", params={"mas": "1"}, headers={"x-bot-token": TOKEN},
@@ -209,10 +209,38 @@ def favoritos():
             telegram(u["chat_id"], txt, e.get("logo"))
 
 
+# ---------------------------------------------------------------- CLV: ¿le ganaste a la línea de cierre?
+def clv():
+    """Compara el momio que tomaste contra la última probabilidad de Pinnacle antes del partido (último escaneo)."""
+    datos = api("clv_pendientes") or {}
+    cierres = datos.get("cierres") or []
+    ahora = dt.datetime.now(dt.timezone.utc)
+    for a in datos.get("apuestas") or []:
+        creada = fecha(a["creada"])
+        mejor, puntos = None, 0.0
+        for c in cierres:
+            inicio = fecha(c["inicio"])
+            if not (creada - dt.timedelta(hours=6) <= inicio <= creada + dt.timedelta(hours=40)):
+                continue
+            ps = espn.parecido(a["seleccion"], c["seleccion"])
+            if ps < 0.75:
+                continue
+            pp = espn.parecido(a.get("partido") or "", c["partido"]) if a.get("partido") else 0.5
+            pts = ps + 0.5 * pp
+            if pts > puntos:
+                mejor, puntos = c, pts
+        if mejor and fecha(mejor["inicio"]) < ahora:
+            prob = float(mejor["prob"])
+            print(f"CLV #{a['id']} {a['seleccion']} @ {float(a['cuota']):.2f} vs cierre {prob:.1%} → {float(a['cuota']) * prob - 1:+.1%}")
+            api("clv_set", {"id": a["id"], "prob": prob})
+        elif not mejor and ahora - creada > dt.timedelta(days=3):
+            api("clv_set", {"id": a["id"], "prob": None})       # no salió en las señales: ya no se busca
+
+
 def main():
     if not TOKEN:
         sys.exit("Falta TELEGRAM_TOKEN")
-    for paso in (quiniela, retos, practica, favoritos):
+    for paso in (quiniela, retos, practica, favoritos, clv):
         try:
             paso()
         except Exception as e:           # un paso que falle no detiene a los demás

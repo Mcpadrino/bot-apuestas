@@ -130,6 +130,9 @@ def mercado_pinnacle(lineas, partido):
 
 
 # ---------------------------------------------------------------- fútbol: Dixon-Coles
+PROXIMOS_FUTBOL = []          # los partidos próximos que encontró futbol(), para el modelo xG
+
+
 def futbol(lineas):
     import penaltyblog as pb
     import pandas as pd
@@ -142,6 +145,7 @@ def futbol(lineas):
             hist += [e for e in evs if e["terminado"]]
             prox += [e for e in evs if e["estado"] == "pre" and e["fecha"] > AHORA]
         print(f"⚽ {grupo}: {len(hist)} partidos jugados, {len(prox)} próximos")
+        PROXIMOS_FUTBOL.extend(prox)
         if len(hist) < 100 or not prox:
             continue
         df = pd.DataFrame([{"h": e["local"]["id"], "a": e["visita"]["id"], "gh": int(e["local"]["goles"]),
@@ -172,6 +176,105 @@ def futbol(lineas):
             }, lineas))
     return filas
 
+
+
+# ---------------------------------------------------------------- 🧪 Gurú xG (experimental, aparte): goles esperados de Understat
+UNDERSTAT = {"soccer/eng.1": "EPL", "soccer/esp.1": "La_liga", "soccer/ita.1": "Serie_A",
+             "soccer/ger.1": "Bundesliga", "soccer/fra.1": "Ligue_1"}
+
+
+def understat(liga, temporada):
+    """Partidos jugados de Understat con xG: [{fecha, local, visita, xg_l, xg_v}]."""
+    import json as _json
+    import re as _re
+    h = {"user-agent": "Mozilla/5.0", "x-requested-with": "XMLHttpRequest"}
+    datos = None
+    try:
+        r = requests.get(f"https://understat.com/getLeagueData/{liga}/{temporada}", headers=h, timeout=25)
+        if r.ok and r.text.strip().startswith("{"):
+            datos = r.json().get("dates")
+    except (requests.RequestException, ValueError):
+        pass
+    if datos is None:                                   # formato viejo: JSON escondido en la página
+        try:
+            r = requests.get(f"https://understat.com/league/{liga}/{temporada}", headers=h, timeout=25)
+            m = _re.search(r"datesData\s*=\s*JSON\.parse\('(.+?)'\)", r.text)
+            if m:
+                datos = _json.loads(m.group(1).encode().decode("unicode_escape"))
+        except (requests.RequestException, ValueError):
+            pass
+    salida = []
+    for d in datos or []:
+        try:
+            if not d.get("isResult"):
+                continue
+            salida.append({"fecha": dt.datetime.fromisoformat(d["datetime"]).replace(tzinfo=dt.timezone.utc),
+                           "local": d["h"]["title"], "visita": d["a"]["title"],
+                           "xg_l": float(d["xG"]["h"]), "xg_v": float(d["xG"]["a"])})
+        except (KeyError, TypeError, ValueError):
+            continue
+    return salida
+
+
+def poisson_grid(lh, la, n=10):
+    pf = lambda k, l: math.exp(-l) * l ** k / math.factorial(k)
+    return [[pf(i, lh) * pf(j, la) for j in range(n)] for i in range(n)]
+
+
+def futbol_xg(lineas):
+    """Fuerza de ataque y defensa con xG (no goles), ponderando lo reciente. Un modelo aparte del Dixon-Coles."""
+    filas = []
+    temporada = AHORA.year if AHORA.month >= 7 else AHORA.year - 1
+    for ruta, liga in UNDERSTAT.items():
+        partidos = understat(liga, temporada) + understat(liga, temporada - 1)
+        prox = [e for e in PROXIMOS_FUTBOL if e["ruta"] == ruta]
+        print(f"🧪 xG {liga}: {len(partidos)} partidos con xG, {len(prox)} próximos")
+        if len(partidos) < 60 or not prox:
+            continue
+        w = [math.exp(-0.0025 * (AHORA - p["fecha"]).days) for p in partidos]
+        sw = sum(w)
+        mu_h = sum(wi * p["xg_l"] for wi, p in zip(w, partidos)) / sw
+        mu_a = sum(wi * p["xg_v"] for wi, p in zip(w, partidos)) / sw
+        ata, dfe, peso = defaultdict(float), defaultdict(float), defaultdict(float)
+        for wi, p in zip(w, partidos):
+            # todo se normaliza contra el promedio de local o visitante, así se juntan los dos
+            ata[p["local"]] += wi * p["xg_l"] / mu_h
+            dfe[p["local"]] += wi * p["xg_v"] / mu_a
+            ata[p["visita"]] += wi * p["xg_v"] / mu_a
+            dfe[p["visita"]] += wi * p["xg_l"] / mu_h
+            peso[p["local"]] += wi
+            peso[p["visita"]] += wi
+        K = 4.0                                       # encoge hacia el promedio a los equipos con pocos partidos
+        A = {t: (ata[t] + K) / (peso[t] + K) for t in peso}
+        D = {t: (dfe[t] + K) / (peso[t] + K) for t in peso}
+        equipos = list(peso)
+
+        def buscar(e):
+            mejor, pts = None, 0.0
+            for t in equipos:
+                p = max(espn.parecido(t, e["completo"]), espn.parecido(t, e["nombre"]))
+                if p > pts:
+                    mejor, pts = t, p
+            return mejor if pts >= 0.72 else None
+
+        for e in prox:
+            th, ta = buscar(e["local"]), buscar(e["visita"])
+            if not th or not ta:
+                print("  sin xG para", e["local"]["nombre"], "vs", e["visita"]["nombre"])
+                continue
+            lh, la = mu_h * A[th] * D[ta], mu_a * A[ta] * D[th]
+            g = poisson_grid(lh, la)
+            pl = sum(g[i][j] for i in range(10) for j in range(10) if i > j)
+            pe = sum(g[i][i] for i in range(10))
+            pv = 1 - pl - pe
+            over = sum(g[i][j] for i in range(10) for j in range(10) if i + j > 2)
+            btts = sum(g[i][j] for i in range(1, 10) for j in range(1, 10))
+            i, j = max(((i, j) for i in range(10) for j in range(10)), key=lambda t: g[t[0]][t[1]])
+            f = fila(e, "xG", pl, pe, pv, {"xg_local": round(lh, 2), "xg_visita": round(la, 2), "over25": round(over, 4),
+                                          "btts": round(btts, 4), "marcador": f"{i}-{j}", "p_marcador": round(g[i][j], 4)}, lineas)
+            f["evento"] = "xg|" + f["evento"]
+            filas.append(f)
+    return filas
 
 # ---------------------------------------------------------------- NFL / NBA / MLB: Elo
 def elo_deporte(ruta, lineas):
@@ -228,7 +331,7 @@ def fila(e, modelo, pl, pe, pv, datos, lineas):
 def calificar():
     import juegos
     for p in api("guru", "pendientes"):
-        ruta, _, id_ = p["evento"].rpartition(":")
+        ruta, _, id_ = p["evento"].removeprefix("xg|").rpartition(":")
         r = juegos.resumen(ruta, id_)
         if not r or not r["terminado"]:
             continue
@@ -265,7 +368,7 @@ def main():
         print("No se pudieron leer las líneas de Pinnacle:", e)
         lineas = []
     filas = []
-    for paso, args in [(futbol, (lineas,))] + [(elo_deporte, (r, lineas)) for r in ELO]:
+    for paso, args in [(futbol, (lineas,)), (futbol_xg, (lineas,))] + [(elo_deporte, (r, lineas)) for r in ELO]:
         try:
             filas += paso(*args)
         except Exception as e:                   # un deporte que falle no detiene a los demás

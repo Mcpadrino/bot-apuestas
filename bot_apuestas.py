@@ -49,6 +49,7 @@ APUESTA_FIJA = float(os.getenv("APUESTA_FIJA", 0))      # >0 = monto fijo en lug
 METODO_DEVIG = os.getenv("METODO_DEVIG", "power")       # power (recomendado) o multiplicativo
 LIBROS = os.getenv("LIBROS", "pinnacle")                # 1 crédito API por mercado y liga
 MOVIMIENTO = float(os.getenv("MOVIMIENTO", 0.02))       # avisa si la prob. se movió ≥ 2 pts
+MOVIMIENTO_FUERTE = float(os.getenv("MOVIMIENTO_FUERTE", 0.03))  # avisa aparte si se mueve ≥ 3 pts entre escaneos
 # ======================
 
 LIGAS_TOP = [
@@ -640,6 +641,16 @@ def escanear(args):
                 msg.append("\n👇 ¿Apostaste alguna? Toca el partido y te pregunto el momio.")
             telegram("\n".join(msg), chat, botones)
         BANCA = banca_original
+        # ⚡ Movimientos fuertes de Pinnacle desde el escaneo anterior: el dinero de los profesionales
+        fuertes = sorted([f for f in tabla if abs(f["mov"]) >= MOVIMIENTO_FUERTE], key=lambda x: -abs(x["mov"]))[:8]
+        if fuertes:
+            txt = ["⚡ MOVIMIENTOS FUERTES de Pinnacle (desde el escaneo anterior)", ""]
+            for f in fuertes:
+                flecha = "🟢 subió" if f["mov"] > 0 else "🔴 bajó"
+                txt.append(f"{f['partido']}\n   {f['seleccion']}: {flecha} {abs(f['mov']) * 100:.1f} pts → {f['prob']:.1%}")
+            txt.append("\nSi subió mucho, el dinero fuerte le está entrando. Revisa si tu casa todavía paga lo mínimo.")
+            for chat, _b, _n in usuarios_alertas():
+                telegram("\n".join(txt), chat)
 
     if valor:
         print("\n=== VALOR ENCONTRADO en casas del feed ===")

@@ -565,6 +565,22 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
   border-radius: 10px; padding: 8px 10px; font-size: .82rem; }
 .g-row .q { text-align: center; min-width: 64px; font-size: .72rem; color: var(--muted); }
 .g-row .q b { display: block; font-size: 1rem; }
+
+/* ---------- ¿Vas bien o es suerte? + CLV ---------- */
+.clv-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.clv-kpis div { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 9px 10px; display: grid; gap: 2px; }
+.clv-kpis b { font: 600 1.1rem var(--font-mono); }
+.clv-kpis small { color: var(--muted); font-size: .7rem; line-height: 1.25; }
+.suerte-graf { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px; }
+.suerte-graf svg { width: 100%; height: 160px; display: block; overflow: visible; }
+.leyenda { display: flex; gap: 12px; flex-wrap: wrap; font-size: .72rem; color: var(--muted); margin-top: 6px; }
+.leyenda i { display: inline-block; width: 14px; height: 4px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
+.leyenda .lr { background: var(--accent); } .leyenda .le { background: var(--muted); } .leyenda .lb { background: var(--accent); opacity: .2; height: 10px; }
+.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 70;
+  width: min(92vw, 520px); background: #1d2a4a; color: #fff; border-radius: 14px; padding: 12px 14px; display: flex; gap: 10px; align-items: start;
+  box-shadow: 0 16px 40px -12px rgba(0,0,0,.5); animation: sube .4s cubic-bezier(.2,.9,.25,1) both; font-size: .88rem; }
+.toast button { background: transparent; border: 0; color: #fff; padding: 0 4px; font-size: 1.1rem; }
+@keyframes sube { from { opacity: 0; transform: translate(-50%, 20px); } }
 </style>
 </head>
 <body>
@@ -631,6 +647,13 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
         <div class="mov-btns"><button type="submit" class="primary" id="mov-ok">Guardar</button><button type="button" id="mov-cancel">Cancelar</button></div>
       </form>
       <p class="verdict" id="b-verdict"></p>
+    </section>
+    <section class="section" id="suerte-sec">
+      <div class="head"><h2>📏 ¿Vas bien o es suerte?</h2></div>
+      <div class="clv-kpis" id="clv-kpis"></div>
+      <div class="suerte-graf"><svg id="suerte" viewBox="0 0 320 150" preserveAspectRatio="none" aria-label="Ganancia real contra esperada"></svg>
+        <div class="leyenda"><span><i class="lr"></i>Real</span><span><i class="le"></i>Esperada</span><span><i class="lb"></i>Suerte normal (95%)</span></div></div>
+      <p class="hint" id="suerte-txt"></p>
     </section>
     <section class="section" id="sen-sec">
       <div class="head"><h2>🎯 Señales del bot</h2><span class="label" id="sen-cuando"></span></div>
@@ -727,6 +750,7 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
       </div>
     </form>
   </div>
+  <div class="toast" id="toast" hidden role="status"><span id="toast-txt"></span><button type="button" id="toast-x" aria-label="Cerrar">✕</button></div>
   <div class="visor" id="visor" hidden><img id="visor-img" alt="Foto ampliada"></div>
 
 
@@ -781,6 +805,7 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
       <button type="button" data-g="nba" aria-pressed="false">🏀 NBA</button>
       <button type="button" data-g="mlb" aria-pressed="false">⚾ MLB</button>
       <button type="button" data-g="valor" aria-pressed="false">🔥 Discrepa</button>
+      <button type="button" data-g="xg" aria-pressed="false">🧪 Gurú xG</button>
     </div>
     <div class="list" id="g-lista"><p class="empty">Cargando…</p></div>
     <details class="g-hist"><summary><b>📚 Historial: quién acertó cada partido</b></summary><div class="list" id="g-hist" style="margin-top:8px"></div></details>
@@ -1020,7 +1045,8 @@ async function cargar() {
       marcador: x.marcador ? String(x.marcador) : "", logo: /^https:\/\//.test(x.logo || "") ? x.logo : "",
       liga: x.liga ? String(x.liga) : "", ligaLogo: /^https:\/\//.test(x.liga_logo || "") ? x.liga_logo : "",
       resultado: String(x.resultado || "pendiente"), creada: Date.parse(x.creada) || 0,
-      cerrada: x.cerrada ? Date.parse(x.cerrada) : null }));
+      cerrada: x.cerrada ? Date.parse(x.cerrada) : null,
+      clv: x.clv != null ? Number(x.clv) : null, probCierre: x.prob_cierre != null ? Number(x.prob_cierre) : null }));
     listo = true; estado("");
     $("v-login").hidden = true; $("quien").hidden = false; $("abrir-menu").hidden = false;
     $("marca").hidden = true; $("sec-actual").hidden = false;
@@ -1052,7 +1078,7 @@ function irA(v) {
     window.scrollTo({ top: 0 });
   }
   if (vista === "hoy") cargarHoy();
-  if (vista === "bot") cargarSenales();
+  if (vista === "bot") { cargarSenales(); pintarSuerte(); avisoRacha(); }
   if (vista === "comunidad") cargarFeed();
   if (vista === "lineas") cargarLineas();
   if (vista === "conviene") cargarConviene();
@@ -2443,8 +2469,9 @@ function barra(pl, pe, pv, chica) {
   return b;
 }
 function pintarGuru() {
-  const d = guruDatos.duelo || {}, n = Number(d.n || 0);
-  $("g-n").textContent = n ? `últimos ${n} partidos` : "aún sin partidos calificados";
+  const esXg = guruFiltro === "xg";
+  const d = (esXg ? guruDatos.duelo_xg : guruDatos.duelo) || {}, n = Number(d.n || 0);
+  $("g-n").textContent = (esXg ? "🧪 xG · " : "") + (n ? `últimos ${n} partidos` : "aún sin partidos calificados");
   $("g-ag").textContent = d.aciertos_guru || 0; $("g-ap").textContent = d.aciertos_pinnacle || 0;
   const tot = (d.guru_mas_cerca || 0) + (d.pinnacle_mas_cerca || 0);
   $("g-tira-g").style.width = tot ? (d.guru_mas_cerca / tot * 100) + "%" : "50%";
@@ -2461,10 +2488,14 @@ function pintarGuru() {
     const ops = [["L", p.p_local, p.local], ["E", p.p_empate, "Empate"], ["V", p.p_visita, p.visita]].filter(x => x[1] != null && p.mercado[x[0]] != null);
     return ops.map(([k, pg, nom]) => ({ k, nom, d: Number(pg) - Number(p.mercado[k]) })).sort((a, b) => b.d - a.d)[0];
   };
-  let lista = (guruDatos.lista || []).filter(p => Date.parse(p.inicio) > ahora - 3 * 3600e3 && !p.res);
+  let lista = (guruDatos.lista || []).filter(p => Date.parse(p.inicio) > ahora - 3 * 3600e3 && !p.res && ((p.modelo === "xG") === esXg));
+  if (esXg) {
+    const nota = el("p", "explica", "🧪 Gurú xG (experimental, va aparte): usa los goles esperados de Understat en las 5 grandes ligas en lugar de los goles reales. Tiene su propio marcador contra Pinnacle y no se mezcla con el Gurú normal.");
+    cont.append(nota);
+  }
   if (guruFiltro === "valor") lista = lista.filter(p => (dif(p) || { d: 0 }).d >= .04);
-  else if (guruFiltro !== "todos") lista = lista.filter(p => p.deporte === guruFiltro);
-  if (!lista.length) cont.append(el("p", "empty", guruFiltro === "valor" ? "Ningún partido donde el gurú y Pinnacle difieran 4 puntos o más."
+  else if (guruFiltro !== "todos" && !esXg) lista = lista.filter(p => p.deporte === guruFiltro);
+  if (!lista.length) cont.append(el("p", "empty", esXg ? "Sin pronósticos xG por ahora (solo Premier, LaLiga, Serie A, Bundesliga y Ligue 1)." : guruFiltro === "valor" ? "Ningún partido donde el gurú y Pinnacle difieran 4 puntos o más."
     : "Sin pronósticos por ahora. Se calculan después de cada escaneo (7:25 y 18:25)."));
   let liga = null;
   lista.forEach(p => {
@@ -2474,7 +2505,7 @@ function pintarGuru() {
     eq.append(lado(p.local, p.logo_local), el("div", "mid", cuando(p.inicio)), lado(p.visita, p.logo_visita));
     c.append(eq);
     c.append(el("div", "g-et", ""), barra(p.p_local, p.p_empate, p.p_visita));
-    const et = c.querySelector(".g-et"); et.append(el("span", "", "🔮 Gurú (" + (p.modelo || "") + ")"), el("span", "", p.p_empate != null ? "Local · Empate · Visita" : "Local · Visita"));
+    const et = c.querySelector(".g-et"); et.append(el("span", "", (p.modelo === "xG" ? "🧪 Gurú xG" : "🔮 Gurú (" + (p.modelo || "") + ")")), el("span", "", p.p_empate != null ? "Local · Empate · Visita" : "Local · Visita"));
     if (p.mercado) {
       const et2 = el("div", "g-et"); et2.append(el("span", "", "📌 Pinnacle"), el("span", "", ""));
       c.append(et2, barra(p.mercado.L, p.mercado.E, p.mercado.V, true));
@@ -2496,7 +2527,7 @@ function pintarGuru() {
   });
   // historial
   const h = $("g-hist"); h.innerHTML = "";
-  const hist = guruDatos.historial || [];
+  const hist = (esXg ? guruDatos.historial_xg : guruDatos.historial) || [];
   if (!hist.length) h.append(el("p", "hint", "Todavía no hay partidos terminados."));
   hist.forEach(p => {
     const prob = (o, k) => o == null ? null : Number(o[k]);
@@ -2515,6 +2546,52 @@ document.querySelectorAll("[data-g]").forEach(b => b.addEventListener("click", (
   document.querySelectorAll("[data-g]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
   if (guruDatos) pintarGuru();
 }));
+
+// ---------------------------------------------------------------- ¿Vas bien o es suerte? + CLV + aviso de racha
+function pintarSuerte() {
+  const bot = apuestas.filter(b => b.cartera === "bot" && b.resultado !== "pendiente" && b.prob).sort((a, b) => (a.cerrada || a.creada) - (b.cerrada || b.creada));
+  // CLV
+  const conClv = apuestas.filter(b => b.cartera === "bot" && b.clv != null);
+  const k = $("clv-kpis"); k.innerHTML = "";
+  const kp = (val, cls, txt) => { const d = el("div"); d.append(el("b", cls, val), el("small", "", txt)); k.append(d); };
+  if (conClv.length) {
+    const prom = conClv.reduce((s, b) => s + b.clv, 0) / conClv.length, ganas = conClv.filter(b => b.clv > 0).length;
+    kp(`${prom > 0 ? "+" : ""}${(prom * 100).toFixed(1)}%`, prom > 0 ? "pos" : "neg", "CLV promedio (ventaja contra el cierre)");
+    kp(`${Math.round(ganas / conClv.length * 100)}%`, ganas / conClv.length >= .5 ? "pos" : "neg", "le ganaste al cierre");
+    kp(String(conClv.length), "", "apuestas medidas");
+  } else kp("—", "", "El CLV aparece cuando empiecen tus apuestas del bot (se mide contra el último escaneo antes del partido).");
+  // gráfica
+  const svg = $("suerte"); svg.innerHTML = "";
+  if (bot.length < 2) { $("suerte-txt").textContent = "Con al menos 2 apuestas del bot cerradas (con % del bot) aparece la gráfica."; return; }
+  let r = 0, e = 0, v = 0; const pts = [{ r: 0, e: 0, s: 0 }];
+  bot.forEach(b => { r += ganancia(b); e += b.monto * (b.prob * b.cuota - 1); v += b.monto * b.monto * b.cuota * b.cuota * b.prob * (1 - b.prob); pts.push({ r, e, s: Math.sqrt(v) }); });
+  const W = 320, H = 150, lo = Math.min(...pts.map(p => Math.min(p.r, p.e - 1.96 * p.s))), hi = Math.max(...pts.map(p => Math.max(p.r, p.e + 1.96 * p.s)));
+  const x = i => i / (pts.length - 1) * W, y = val => H - 6 - (val - lo) / ((hi - lo) || 1) * (H - 12);
+  const ns = "http://www.w3.org/2000/svg", mk = (t, at) => { const n = document.createElementNS(ns, t); for (const a in at) n.setAttribute(a, at[a]); svg.append(n); return n; };
+  mk("polygon", { points: pts.map((p, i) => `${x(i)},${y(p.e + 1.96 * p.s)}`).concat(pts.slice().reverse().map((p, j) => `${x(pts.length - 1 - j)},${y(p.e - 1.96 * p.s)}`)).join(" "),
+    fill: "var(--accent)", "fill-opacity": ".15" });
+  mk("line", { x1: 0, x2: W, y1: y(0), y2: y(0), stroke: "var(--line)", "stroke-dasharray": "2 3" });
+  mk("polyline", { points: pts.map((p, i) => `${x(i)},${y(p.e)}`).join(" "), fill: "none", stroke: "var(--muted)", "stroke-width": 1.6, "stroke-dasharray": "5 4" });
+  const linea = mk("polyline", { points: pts.map((p, i) => `${x(i)},${y(p.r)}`).join(" "), fill: "none", stroke: "var(--accent)", "stroke-width": 2.6, "stroke-linejoin": "round", "stroke-linecap": "round" });
+  try { const L = linea.getTotalLength(); linea.style.strokeDasharray = L; linea.style.strokeDashoffset = L; linea.getBoundingClientRect(); linea.style.transition = "stroke-dashoffset 1.1s ease"; linea.style.strokeDashoffset = 0; } catch (err) {}
+  const u = pts[pts.length - 1];
+  mk("circle", { cx: x(pts.length - 1), cy: y(u.r), r: 4, fill: "var(--accent)" });
+  const z = u.s ? (u.r - u.e) / u.s : 0;
+  $("suerte-txt").textContent = `${bot.length} apuestas: ganaste ${sign(u.r)} y lo esperado era ${sign(u.e)}. ` +
+    (Math.abs(z) <= 1.96 ? "Estás dentro de la franja: la diferencia es suerte normal; sigue el método." :
+     z > 0 ? "Vas por arriba de la franja: estás teniendo buena suerte, no subas los montos por eso." :
+     "Vas por debajo de la franja: es más que mala suerte. Revisa que tomes momios iguales o mejores que el mínimo.");
+}
+function avisoRacha() {
+  const bot = apuestas.filter(b => b.cartera === "bot" && b.resultado !== "pendiente").sort((a, b) => (b.cerrada || b.creada) - (a.cerrada || a.creada));
+  let n = 0; for (const b of bot) { if (b.resultado === "pierde") n++; else if (b.resultado === "gana") break; }
+  if (n < 3) return;
+  const llave = "racha-" + n + "-" + (bot[0] && bot[0].id);
+  try { if (localStorage.getItem(llave)) return; } catch (e) {}
+  $("toast-txt").textContent = `🧊 Vas ${n} perdidas seguidas. Con apuestas de valor es normal tener rachas así. No subas el monto para recuperar: sigue con lo que sugiere el bot.`;
+  $("toast").hidden = false;
+  $("toast-x").onclick = () => { $("toast").hidden = true; try { localStorage.setItem(llave, "1"); } catch (e) {} };
+}
 $("login").addEventListener("submit", async e => {
   e.preventDefault();
   $("l-btn").disabled = true; estado("Entrando…");
