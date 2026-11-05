@@ -216,3 +216,15 @@ export async function guru(accion, datos = {}) {
   if (!r.ok) throw new Error(j.message || "error de base de datos");
   return j;
 }
+
+// ---------------------------------------------------------------- 🕹️ Minijuegos, mascota y cartera virtual
+export async function jugar(accion, datos = {}) {
+  const r = await fetch(`${env("SUPABASE_URL")}/rest/v1/rpc/jugar`, {
+    method: "POST",
+    headers: { "content-type": "application/json", apikey: env("SUPABASE_KEY"), authorization: `Bearer ${env("SUPABASE_KEY")}` },
+    body: JSON.stringify({ p_clave: env("BOT_CLAVE"), p_accion: accion, p_datos: datos }),
+  });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.message || "error de base de datos");
+  return j;
+}

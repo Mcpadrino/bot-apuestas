@@ -274,3 +274,11 @@ export async function datosDelDia(fechaAyer) {
   if (recs) datos.push({ icono: "📈", texto: `${recs.nombre} va ${recs.record}: de lo mejor de la ${recs.liga}.`, logo: recs.logo });
   return datos.slice(0, 3);
 }
+
+// Equipos con logo de una liga (para el minijuego "Adivina el logo")
+export const LIGAS_JUEGO = Object.entries(TODAS).map(([ruta, nombre]) => ({ ruta, nombre }));
+export async function equiposDe(ruta) {
+  if (!TODAS[ruta]) return [];
+  const l = await liga(ruta);
+  return l.equipos.filter((e) => e.logo).map((e) => ({ nombre: e.nombre, abrev: e.abrev, logo: e.logo, claves: e.claves }));
+}

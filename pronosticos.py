@@ -343,7 +343,17 @@ def calificar():
 
 
 def diagnostico():
-    """Solo en --prueba: revisa qué contesta ESPN a una consulta por rango de fechas."""
+    """Solo en --prueba: revisa qué contestan ESPN y Understat."""
+    h = {"user-agent": "Mozilla/5.0", "x-requested-with": "XMLHttpRequest"}
+    for url in ["https://understat.com/getLeagueData/EPL/2025", "https://understat.com/league/EPL/2025",
+                "https://understat.com/getLeagueData/EPL/2024"]:
+        try:
+            r = requests.get(url, headers=h, timeout=25)
+            print("diag understat", url, r.status_code, r.headers.get("content-type"), len(r.text), repr(r.text[:160]))
+            import re as _re
+            print("   vars:", _re.findall(r"var (\w+)\s*=", r.text)[:8], "scripts:", _re.findall(r"src=\"([^\"]+\.js[^\"]*)\"", r.text)[:6])
+        except Exception as e:
+            print("diag understat", url, type(e).__name__, e)
     hoy = AHORA.date()
     for ruta, params in [("soccer/mex.1", {"dates": f"{hoy - dt.timedelta(days=30):%Y%m%d}-{hoy:%Y%m%d}", "limit": 1000}),
                          ("soccer/mex.1", {"dates": f"{hoy - dt.timedelta(days=30):%Y%m%d}-{hoy:%Y%m%d}", "limit": 300}),
@@ -360,6 +370,8 @@ def diagnostico():
 def main():
     if PRUEBA:
         diagnostico()
+        if "--solo-diag" in sys.argv:
+            return
     if not TOKEN:
         sys.exit("Falta TELEGRAM_TOKEN")
     try:

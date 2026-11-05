@@ -1,8 +1,8 @@
 // API de la página web. Cada quien entra con su usuario y contraseña (los crea desde el bot
 // de Telegram) y solo puede ver y cambiar sus propias apuestas.
 
-import { buscarLogo, sugerencias, equipoPorClave, proximos, PRINCIPALES } from "../lib/espn.js";
-import { mas, tg, textoReto, botonesReto, avisarRespuesta, agruparSenales, conv, avisarValor, sacarMomio, buscarSenal, veredicto, guru } from "../lib/mas.js";
+import { buscarLogo, sugerencias, equipoPorClave, proximos, PRINCIPALES, equiposDe, LIGAS_JUEGO } from "../lib/espn.js";
+import { mas, tg, textoReto, botonesReto, avisarRespuesta, agruparSenales, conv, avisarValor, sacarMomio, buscarSenal, veredicto, guru, jugar } from "../lib/mas.js";
 
 // Ligas para la quiniela, en orden: se usa la primera que tenga partidos en los próximos días
 const QUINIELA = ["soccer/mex.1", "soccer/uefa.champions", "soccer/eng.1", "soccer/esp.1"];
@@ -199,6 +199,21 @@ export default async function handler(req, res) {
       }
       case "mov_anular":
         return res.status(200).json(await mas("mov_anular", { usuario, id: num((b.datos || {}).id) }));
+      // ---------- 🕹️ minijuegos y mascota
+      case "jugar": {
+        const d = b.datos || {};
+        if (!["estado", "comprar", "poner", "nombre", "premio", "ranking"].includes(d.accion)) return res.status(400).json({ error: "acción" });
+        const r = await jugar(d.accion, { usuario, item: txt(d.item, 20), nombre: txt(d.nombre, 20), juego: txt(d.juego, 20), puntos: Math.round(num(d.puntos) || 0) });
+        return res.status(r && r.error ? 400 : 200).json(r);
+      }
+      case "ligas_juego":
+        return res.status(200).json(LIGAS_JUEGO);
+      case "equipos_quiz": {
+        const rutas = (Array.isArray((b.datos || {}).rutas) ? b.datos.rutas : []).slice(0, 19).map((r) => txt(r, 40));
+        const listas = await Promise.all(rutas.map(async (r) => (await equiposDe(r)).map((e) => ({ ...e, liga: r }))));
+        const vistos = new Set();
+        return res.status(200).json(listas.flat().filter((e) => !vistos.has(e.logo) && vistos.add(e.logo)));
+      }
       case "guru": {
         const [lista, precision, duelo, historial, duelo_xg, historial_xg] = await Promise.all([guru("lista"), guru("precision"),
           guru("duelo"), guru("historial", { n: 200 }), guru("duelo", { modelo: "xG" }), guru("historial", { n: 200, modelo: "xG" })]);
