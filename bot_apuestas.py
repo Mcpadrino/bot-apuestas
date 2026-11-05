@@ -78,7 +78,7 @@ def obtener_momios(sport, mercados, demo=None):
 
     if requests is None:
         sys.exit("Falta 'requests': pip install requests")
-    clave = ODDS_API_KEY
+    clave = "".join(ODDS_API_KEY.split())     # quita espacios o saltos de línea pegados
     if not clave or clave == "PEGA_TU_CLAVE_AQUI":
         sys.exit("Falta tu clave: ábrela gratis en the-odds-api.com y pégala en ODDS_API_KEY "
                  "al inicio de bot_apuestas.py")
@@ -91,7 +91,13 @@ def obtener_momios(sport, mercados, demo=None):
     )
     if r.status_code in (404, 422):   # liga fuera de temporada o sin datos
         return []
-    r.raise_for_status()
+    if r.status_code == 401:
+        sys.exit("Clave de the-odds-api inválida (401). Revisa el secret ODDS_API_KEY: "
+                 "deben ser 32 letras/números, sin espacios.")
+    if r.status_code == 429 or (r.status_code == 401 and "quota" in r.text.lower()):
+        sys.exit("Se acabaron los créditos del mes en the-odds-api.")
+    if not r.ok:                       # nunca imprimir la URL: lleva tu clave
+        sys.exit(f"Error {r.status_code} de the-odds-api: {r.text[:200]}")
     restantes = r.headers.get("x-requests-remaining")
     if restantes:
         print(f"[créditos API restantes: {restantes}]", file=sys.stderr)
@@ -212,7 +218,8 @@ def monto_sugerido(p, cuota):
 
 # ---------------------------------------------------------------- alertas
 def telegram(texto):
-    token, chat = os.getenv("TELEGRAM_TOKEN"), os.getenv("TELEGRAM_CHAT_ID")
+    token = "".join(os.getenv("TELEGRAM_TOKEN", "").split())
+    chat = "".join(os.getenv("TELEGRAM_CHAT_ID", "").split())
     if not (token and chat and requests):
         return
     try:
@@ -220,7 +227,7 @@ def telegram(texto):
             requests.post(f"https://api.telegram.org/bot{token}/sendMessage",
                           data={"chat_id": chat, "text": texto[i:i + 4000]}, timeout=10)
     except requests.RequestException as e:
-        print(f"No se pudo enviar a Telegram: {e}", file=sys.stderr)
+        print(f"No se pudo enviar a Telegram: {type(e).__name__}", file=sys.stderr)
 
 
 def cargar_estado():
