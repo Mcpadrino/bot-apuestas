@@ -75,6 +75,20 @@ CALENDARIO = {
     **{liga: {4, 5, 6} for liga in LIGAS_TOP},  # viernes, sábado, domingo
 }
 # ======================================================================
+
+# ===== PRESUPUESTO de créditos (--presupuesto) =====
+CORRIDAS_DIA = int(os.getenv("CORRIDAS_DIA", 3))   # cuántas veces corre al día en GitHub
+RESERVA = int(os.getenv("RESERVA", 15))            # créditos que nunca se gastan
+# Mercados extra en orden de prioridad: se agregan mientras alcance el presupuesto.
+EXTRAS = [
+    ("americanfootball_nfl", "spreads"), ("americanfootball_nfl", "totals"),
+    ("soccer_mexico_ligamx", "totals"), ("soccer_uefa_champs_league", "totals"),
+    ("soccer_epl", "totals"), ("soccer_spain_la_liga", "totals"),
+    ("soccer_italy_serie_a", "totals"), ("soccer_germany_bundesliga", "totals"),
+    ("soccer_france_ligue_one", "totals"),
+    ("basketball_nba", "totals"), ("basketball_nba", "spreads"),
+]
+# ===================================================
 NOMBRE_LIGA = {
     "soccer_mexico_ligamx": "Liga MX", "soccer_epl": "Premier", "soccer_spain_la_liga": "LaLiga",
     "soccer_uefa_champs_league": "Champions", "americanfootball_nfl": "NFL",
@@ -121,6 +135,37 @@ def obtener_momios(sport, mercados, demo=None):
     if restantes:
         print(f"[créditos API restantes: {restantes}]", file=sys.stderr)
     return r.json()
+
+
+def estado_api():
+    """Créditos restantes y ligas activas. Esta llamada es gratis en the-odds-api."""
+    clave = "".join(ODDS_API_KEY.split())
+    r = requests.get("https://api.the-odds-api.com/v4/sports",
+                     params={"apiKey": clave}, timeout=20)
+    if r.status_code == 401:
+        sys.exit("Clave de the-odds-api inválida (401). Revisa el secret ODDS_API_KEY.")
+    if not r.ok:
+        sys.exit(f"Error {r.status_code} de the-odds-api: {r.text[:200]}")
+    restantes = int(float(r.headers.get("x-requests-remaining", 0)))
+    activas = {d["key"] for d in r.json() if d.get("active")}
+    return restantes, activas
+
+
+def planear_mercados(ligas, restantes):
+    """Reparte los créditos que quedan entre los días que faltan del mes."""
+    hoy = dt.datetime.now(ZONA).date()
+    fin_mes = (hoy.replace(day=28) + dt.timedelta(days=4)).replace(day=1)
+    dias = (fin_mes - hoy).days                       # incluye hoy
+    por_corrida = max(restantes - RESERVA, 0) / (dias * CORRIDAS_DIA)
+    plan = {lg: ["h2h"] for lg in ligas}
+    costo = len(plan)
+    for lg, mk in EXTRAS:
+        if lg in plan and costo + 1 <= por_corrida:
+            plan[lg].append(mk)
+            costo += 1
+    if costo > por_corrida and restantes - RESERVA < costo:
+        plan = {}                                      # sin créditos: no gastar la reserva
+    return plan, por_corrida, costo
 
 
 def etiqueta(outcome, mercado):
@@ -274,8 +319,24 @@ def escanear(args):
     else:
         ligas = DEPORTES[args.deporte]
 
+    plan, nota_creditos = {lg: list(args.mercados) for lg in ligas}, ""
+    if args.presupuesto and not args.demo:
+        restantes, activas = estado_api()
+        ligas = [lg for lg in ligas if lg in activas]          # fuera de temporada: no gastar
+        plan, por_corrida, costo = planear_mercados(ligas, restantes)
+        if not plan:
+            telegram("⚠️ Se acabaron los créditos de the-odds-api de este mes.")
+            sys.exit("Sin créditos suficientes este mes.")
+        detalle = ", ".join(f"{NOMBRE_LIGA.get(k, k)}: {'+'.join(NOMBRE_MERCADO[m] for m in v)}"
+                            for k, v in plan.items())
+        print(f"Créditos: {restantes} restantes · presupuesto {por_corrida:.1f}/corrida · "
+              f"esta corrida gasta ≤ {costo}\nPlan: {detalle}")
+        nota_creditos = f"💳 Créditos: {restantes - costo} aprox. · {detalle}"
+        ligas = list(plan)
+
     for sport in ligas:
-        eventos = obtener_momios(sport, args.mercados, args.demo)
+        mercados = plan.get(sport, args.mercados)
+        eventos = obtener_momios(sport, mercados, args.demo)
         c = conteo.setdefault(sport, [len(eventos), 0, 0, 0])
         for ev in eventos:
             inicio = dt.datetime.fromisoformat(ev["commence_time"].replace("Z", "+00:00"))
@@ -292,7 +353,7 @@ def escanear(args):
             local = inicio.astimezone(ZONA)
             hora = f"{DIAS[local.weekday()]} {local:%d %H:%M}"
 
-            for mk in args.mercados:
+            for mk in mercados:
                 res = probabilidades_justas(ev, mk)
                 if not res:
                     continue
@@ -333,7 +394,7 @@ def escanear(args):
     if not tabla:
         print("No hay partidos con líneas disponibles en ese rango de horas.")
         if args.telegram:
-            telegram(f"Sin señales en las próximas {args.horas} h.\n{resumen_ligas}")
+            telegram(f"Sin señales en las próximas {args.horas} h.\n{resumen_ligas}\n{nota_creditos}")
         return
 
     print(f"\n=== CUOTAS MÍNIMAS para Caliente / Draftea "
@@ -353,6 +414,8 @@ def escanear(args):
         msg.append(f"{rayo.strip()}{f['seleccion']} ({f['mercado']}): mín {a_americano(f['minima'])}"
                    f" / {f['minima']:.2f} → ${f['monto']:,.0f}")
     msg.append(f"\n📋 Señales por liga: {resumen_ligas}")
+    if nota_creditos:
+        msg.append(nota_creditos)
     if args.telegram:
         telegram("\n".join(msg))
 
@@ -454,6 +517,8 @@ def main():
                    help="auto = según el CALENDARIO de días por liga")
     e.add_argument("--mercados", nargs="+", default=["h2h"], choices=list(NOMBRE_MERCADO),
                    help="h2h (ganador), spreads (hándicap), totals (altas/bajas)")
+    e.add_argument("--presupuesto", action="store_true",
+                   help="elige mercados extra según los créditos que quedan en el mes")
     e.add_argument("--horas", type=int, default=36, help="solo partidos en las próximas N horas")
     e.add_argument("--demo", help="archivo JSON de prueba en lugar de la API")
     e.add_argument("--telegram", action="store_true", help="enviar el resultado a Telegram")

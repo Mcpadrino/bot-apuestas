@@ -5,7 +5,7 @@
    Liga MX, Premier, LaLiga, Champions, NFL, NBA y MLB.
 2. Les quita el margen con el **método power**, que corrige el sesgo de las
    cuotas altas, y obtiene la probabilidad real de cada resultado.
-3. Te manda a **Telegram**, 2 veces al día, la **cuota mínima** que debes
+3. Te manda a **Telegram**, 3 veces al día (7:00, 12:00 y 18:00), la **cuota mínima** que debes
    encontrar en Caliente o Draftea y **cuánto apostar** (Kelly fraccional).
 4. Marca con ⚡ las líneas que se movieron desde el escaneo anterior: ahí es
    más probable que Caliente se haya quedado atrás.
@@ -43,7 +43,7 @@ Copia tu clave.
 5. Pruébalo: pestaña *Actions → Alertas de apuestas → Run workflow*.
    En un minuto te llega el mensaje a Telegram.
 
-Desde ahí corre solo a las **10:00 y 17:00** (hora CDMX). También puedes
+Desde ahí corre solo a las **7:00, 12:00 y 18:00** (hora CDMX), según el calendario: NFL lun/jue/dom, Champions mar/mié, Liga MX + 5 grandes ligas vie/sáb/dom. También puedes
 correrlo cuando quieras desde la app de GitHub en el celular.
 
 > Nunca pegues tus claves dentro del código si el repositorio es público.
@@ -88,10 +88,17 @@ Se cambian al inicio de `bot_apuestas.py`, o como *variables* en GitHub
 | `MOVIMIENTO` | 0.02 | cuánto debe moverse la prob. para marcar ⚡ |
 
 ## Créditos de la API
-Cada liga con partidos cuesta 1 crédito por escaneo (las ligas sin partidos
-no cobran). Con 2 escaneos al día gastas unos 300–400 de los 500 del mes.
-Si agregas `totals` o `spreads`, el gasto se duplica o triplica: baja a 1
-escaneo diario en ese caso.
+El bot reparte solo los 500 créditos del mes: cada corrida revisa cuántos
+quedan y cuántos días faltan. Siempre busca el ganador (h2h); si sobra
+presupuesto agrega hándicap y totales en este orden: NFL, Liga MX, Champions,
+Premier, LaLiga, Serie A, Bundesliga, Ligue 1. Las ligas fuera de temporada no
+gastan. Guarda 15 créditos de reserva y te avisa por Telegram si se acaban.
+
+## Que no se apague
+- Si una corrida falla, te llega un ⚠️ a Telegram con el enlace al error.
+- GitHub apaga los workflows de repos públicos tras 60 días sin actividad;
+  el bot hace un commit vacío cada 20 días para evitarlo.
+- GitHub puede retrasar las corridas programadas unos minutos en horas pico.
 
 ## Reglas del experimento
 - Banca $200, sin recargas a mitad del experimento.

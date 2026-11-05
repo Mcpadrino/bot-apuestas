@@ -2,10 +2,14 @@ name: Alertas de apuestas
 
 on:
   schedule:
-    # Horas en UTC. 16:00 UTC = 10:00 CDMX · 23:00 UTC = 17:00 CDMX
-    - cron: "0 16 * * *"
-    - cron: "0 23 * * *"
+    # Horas en UTC. 13:00 = 07:00 CDMX · 18:00 = 12:00 CDMX · 00:00 = 18:00 CDMX
+    - cron: "0 13 * * *"
+    - cron: "0 18 * * *"
+    - cron: "0 0 * * *"
   workflow_dispatch:        # botón "Run workflow" para correrlo cuando quieras
+
+permissions:
+  contents: write           # para el commit de "sigo vivo" (ver abajo)
 
 jobs:
   escanear:
@@ -33,4 +37,29 @@ jobs:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           BANCA: ${{ vars.BANCA || '200' }}
-        run: python bot_apuestas.py escanear --deporte auto --horas 30 --telegram
+          CORRIDAS_DIA: "3"
+        run: python bot_apuestas.py escanear --deporte auto --horas 30 --presupuesto --telegram
+
+      # GitHub apaga los workflows programados de un repo público tras 60 días
+      # sin actividad. Si el último commit tiene más de 20 días, hace uno vacío.
+      - name: Mantener vivo el bot
+        if: github.event_name == 'schedule'
+        run: |
+          ultimo=$(git log -1 --format=%ct)
+          if [ $(( $(date +%s) - ultimo )) -gt 1728000 ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit --allow-empty -m "Mantener vivo el bot"
+            git push
+          fi
+
+      # Si algo falla, te avisa por Telegram en lugar de quedarse callado.
+      - name: Avisar si falló
+        if: failure()
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            -d chat_id="${TELEGRAM_CHAT_ID}" \
+            -d text="⚠️ El bot falló. Revisa: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" > /dev/null
