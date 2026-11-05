@@ -36,8 +36,9 @@ const signed = (n) => (n > 0 ? "+" : "") + money(n);
 const amer = (d) => (d >= 2 ? "+" + Math.round((d - 1) * 100) : "-" + Math.round(100 / (d - 1)));
 const LIBRE = new Set(["libre", "aparte", "personal", "fuera"]);
 const CASAS = { caliente: "Caliente", draftea: "Draftea", codere: "Codere", bet365: "Bet365" };
+const WEB_URL = env("WEB_URL") || "https://bot-apuestas-telegram.vercel.app";
 const TECLADO = {
-  keyboard: [[{ text: "💰 Saldo" }, { text: "📋 Pendientes" }], [{ text: "❓ Ayuda" }]],
+  keyboard: [[{ text: "💰 Saldo" }, { text: "📋 Pendientes" }], [{ text: "🌐 Mi página" }, { text: "❓ Ayuda" }]],
   resize_keyboard: true,
   is_persistent: true,
 };
@@ -105,6 +106,7 @@ const AYUDA = [
   "💰 *Saldo* — tu banca, récord y ganancia",
   "📋 *Pendientes* — apuestas sin resultado",
   "`inicial 300` — cambia la banca inicial",
+  "🌐 *Mi página* — te manda tu enlace para ver todo en el navegador",
   "",
   "🎲 *Apuestas fuera de la banca* (parlays, corazonadas):",
   "agrega la palabra *libre* o *parlay* y van a una cuenta aparte que no toca la banca del bot:",
@@ -195,6 +197,18 @@ async function atenderTexto(chat, texto, esDueno) {
   if (esDueno && cmd === "usuarios") {
     const us = await db("usuarios");
     return enviar("👥 *Con acceso*\n" + us.map((u) => `• ${u.nombre || "—"} (${u.chat_id}) · banca ${money(u.banca_actual)}`).join("\n"));
+  }
+
+  if (["web", "pagina", "página", "🌐"].includes(cmd) || texto.includes("Mi página")) {
+    const r = await fetch(`${env("SUPABASE_URL")}/rest/v1/rpc/web`, {
+      method: "POST",
+      headers: { "content-type": "application/json", apikey: env("SUPABASE_KEY"), authorization: `Bearer ${env("SUPABASE_KEY")}` },
+      body: JSON.stringify({ p_clave: env("BOT_CLAVE"), p_accion: "enlace_nuevo", p_datos: { usuario: chat } }),
+    }).then((x) => x.json());
+    if (!r || !r.codigo) return enviar("No pude crear tu enlace. Intenta de nuevo.");
+    return tg("sendMessage", { chat_id: chat,
+      text: "🌐 Tu enlace personal para entrar a la página (sirve una vez y vence en 15 minutos; después la página te recuerda en ese navegador por 30 días):",
+      reply_markup: { inline_keyboard: [[{ text: "Abrir mi bitácora", url: `${WEB_URL}/#entrar=${r.codigo}` }]] } });
   }
 
   if (["saldo", "banca", "balance", "resumen", "💰"].includes(cmd) || texto.includes("Saldo"))

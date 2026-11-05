@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d1411">
+<title>Bitácora de Apuestas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: pestañas arriba (Banca bot · Apuesta normal · Resultados); cada una es su propia libreta */
+:root {
+  --bg: #eef2ef; --surface: #ffffff; --line: #d5ddd8; --fg: #13201a; --muted: #5d6e65;
+  --accent: #0d7a57; --accent-ink: #ffffff; --win: #0d7a57; --win-bg: #e1f3ea; --loss: #c0392b; --loss-bg: #fbe7e4;
+  --pend: #a86b12; --normal: #6a4fb3;
+  --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0d1411; --surface: #151f1a; --line: #26342d; --fg: #e4ece7; --muted: #92a59a;
+  --accent: #39c08c; --accent-ink: #062016; --win: #39c08c; --win-bg: #133325; --loss: #ef6f5e; --loss-bg: #3a1c18;
+  --pend: #e3a948; --normal: #a990f0; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0d1411; --surface: #151f1a; --line: #26342d; --fg: #e4ece7; --muted: #92a59a;
+  --accent: #39c08c; --accent-ink: #062016; --win: #39c08c; --win-bg: #133325; --loss: #ef6f5e; --loss-bg: #3a1c18;
+  --pend: #e3a948; --normal: #a990f0; color-scheme: dark }
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 var(--font-body);
+  padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.quien { display: flex; gap: 8px; align-items: center; font-size: .85rem; color: var(--muted); }
+.login { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; display: grid; gap: 12px; }
+.login p { margin: 0; }
+.login a { color: var(--accent); font-weight: 600; }
+.wrap { max-width: 640px; margin: 0 auto; padding-block: 16px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 18px; }
+header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+h1 { font: 700 1.9rem/1 var(--font-display); letter-spacing: .01em; margin: 0; text-transform: uppercase; }
+h2 { font: 700 1.15rem/1.2 var(--font-display); letter-spacing: .06em; text-transform: uppercase; margin: 0; color: var(--muted); }
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.pos { color: var(--win); } .neg { color: var(--loss); }
+
+.tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 10px; padding: 4px; }
+.tab { border: 0; border-radius: 7px; padding: 10px 6px; background: transparent; color: var(--muted); font-size: .88rem; }
+.tab[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
+.tab[data-v="normal"][aria-selected="true"] { background: var(--normal); color: #fff; }
+
+.summary { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 14px; }
+.bank { display: flex; justify-content: space-between; align-items: end; gap: 12px; flex-wrap: wrap; }
+.big { font: 700 2.6rem/1 var(--font-display); }
+.label { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.stats div { display: grid; gap: 2px; min-width: 0; }
+.stats .num { font-size: 1.05rem; }
+@media (max-width: 460px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+.verdict { font-size: .88rem; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 10px; margin: 0; }
+svg.spark { width: 100%; height: 56px; display: block; }
+
+form { display: grid; gap: 10px; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+label { display: grid; gap: 4px; font-size: .8rem; color: var(--muted); min-width: 0; }
+input, select { font: 500 1rem var(--font-body); color: var(--fg); background: var(--surface); border: 1px solid var(--line);
+  border-radius: 8px; padding: 10px 11px; width: 100%; box-sizing: border-box; min-width: 0; }
+input:focus, select:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.hint { font-size: .78rem; color: var(--muted); margin: 0; }
+.preview { font-size: .88rem; margin: 0; min-height: 1.4em; }
+button { font: 600 .95rem var(--font-body); border-radius: 8px; padding: 11px 14px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--fg); cursor: pointer; }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.vista-normal button.primary { background: var(--normal); border-color: var(--normal); color: #fff; }
+button:disabled { opacity: .5; cursor: default; }
+
+.list { display: grid; gap: 8px; }
+.bet { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--pend); border-radius: 8px;
+  padding: 12px; display: grid; gap: 8px; }
+.bet-top { display: flex; justify-content: space-between; gap: 10px; align-items: start; }
+.bet-top > div { min-width: 0; }
+.sel { font-weight: 600; overflow-wrap: anywhere; }
+.meta { font-size: .8rem; color: var(--muted); overflow-wrap: anywhere; }
+.amt { text-align: right; white-space: nowrap; }
+.actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.actions button { padding: 7px 11px; font-size: .85rem; }
+.btn-win { color: var(--win); } .btn-loss { color: var(--loss); }
+.empty { color: var(--muted); font-size: .9rem; padding: 14px; border: 1px dashed var(--line); border-radius: 8px; margin: 0; }
+.status { font-size: .85rem; color: var(--pend); margin: 0; }
+details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
+.section { display: grid; gap: 10px; }
+.head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+
+/* Resultados */
+.filters { display: flex; gap: 6px; flex-wrap: wrap; }
+.filters button { padding: 6px 12px; font-size: .82rem; border-radius: 999px; }
+.filters button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.res { display: grid; grid-template-columns: 40px 1fr auto; gap: 12px; align-items: center; background: var(--surface);
+  border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+.res.gana { background: var(--win-bg); border-color: transparent; }
+.res.pierde { background: var(--loss-bg); border-color: transparent; }
+.res > div { min-width: 0; }
+.icon { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font: 700 1.3rem/1 var(--font-body); }
+.gana .icon { background: var(--win); color: var(--accent-ink); }
+.pierde .icon { background: var(--loss); color: #fff; }
+.nula .icon { background: var(--line); color: var(--muted); }
+.tag { font-size: .68rem; letter-spacing: .06em; text-transform: uppercase; font-weight: 600; color: var(--muted); }
+.tag.normal { color: var(--normal); } .tag.bot { color: var(--accent); }
+.res .amt .num { font-size: 1.05rem; font-weight: 600; }
+.totbar { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: .9rem; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>Bitácora de Apuestas</h1>
+    <div class="quien" id="quien" hidden><span id="q-nombre"></span><button type="button" id="refrescar">Actualizar</button></div>
+  </header>
+
+  <section class="login" id="v-login" hidden>
+    <h2>Entrar</h2>
+    <p>Escríbele <b>web</b> a tu bot de Telegram (o toca <b>🌐 Mi página</b>) y abre el enlace que te manda. Así entras sin contraseña y solo ves tus apuestas.</p>
+    <p><a href="https://t.me/meapuestinlaverginbot" target="_blank" rel="noopener">Abrir el bot en Telegram →</a></p>
+    <p class="hint">¿No tienes acceso? Pídele a quien te invitó que te agregue.</p>
+  </section>
+
+  <nav class="tabs" role="tablist" aria-label="Secciones" id="tabs" hidden>
+    <button class="tab" role="tab" data-v="bot" id="t-bot">🤖 Banca bot</button>
+    <button class="tab" role="tab" data-v="normal" id="t-normal">🎲 Apuesta normal</button>
+    <button class="tab" role="tab" data-v="resultados" id="t-res">📜 Resultados</button>
+  </nav>
+  <p class="status" id="status" hidden></p>
+
+  <!-- ===================== BANCA BOT ===================== -->
+  <div id="v-bot" class="vista" hidden>
+    <section class="summary" aria-label="Banca del bot">
+      <div class="bank">
+        <div><div class="label">Banca actual</div><div class="big num" id="b-banca">$200.00</div></div>
+        <div style="text-align:right"><div class="label">Ganancia real</div><div class="num" id="b-gan" style="font-size:1.3rem">$0.00</div></div>
+      </div>
+      <svg class="spark" id="spark" viewBox="0 0 300 56" preserveAspectRatio="none" aria-label="Evolución de la banca"></svg>
+      <div class="stats">
+        <div><span class="label">Récord</span><span class="num" id="b-rec">0–0</span></div>
+        <div><span class="label">ROI</span><span class="num" id="b-roi">—</span></div>
+        <div><span class="label">Esperada</span><span class="num" id="b-esp">$0.00</span></div>
+        <div><span class="label">En juego</span><span class="num" id="b-juego">$0.00</span></div>
+      </div>
+      <p class="verdict" id="b-verdict"></p>
+    </section>
+  </div>
+
+  <!-- ===================== APUESTA NORMAL ===================== -->
+  <div id="v-normal" class="vista vista-normal" hidden>
+    <section class="summary" aria-label="Apuestas normales">
+      <div class="bank">
+        <div><div class="label">Ganancia / pérdida</div><div class="big num" id="n-res">$0.00</div></div>
+        <div style="text-align:right"><div class="label">Total apostado</div><div class="num" id="n-apos" style="font-size:1.3rem">$0.00</div></div>
+      </div>
+      <div class="stats">
+        <div><span class="label">Récord</span><span class="num" id="n-rec">0–0</span></div>
+        <div><span class="label">ROI</span><span class="num" id="n-roi">—</span></div>
+        <div><span class="label">Mayor premio</span><span class="num" id="n-max">—</span></div>
+        <div><span class="label">En juego</span><span class="num" id="n-juego">$0.00</span></div>
+      </div>
+      <p class="verdict">Parlays y apuestas por tu cuenta. No tocan la banca del bot; aquí solo se suma lo que ganas o pierdes.</p>
+    </section>
+  </div>
+
+  <!-- Formulario y pendientes (compartidos por Banca bot y Apuesta normal) -->
+  <div id="v-reg" class="section" hidden>
+    <section class="section">
+      <h2 id="f-titulo">Nueva apuesta</h2>
+      <form id="f">
+        <label>Partido<input id="f-partido" placeholder="Jaguars @ Ravens" autocomplete="off"></label>
+        <div class="row">
+          <label>Selección<input id="f-sel" required placeholder="Jaguars ganador" autocomplete="off"></label>
+          <label>Casa<select id="f-casa"><option>Caliente</option><option>Draftea</option><option>Otra</option></select></label>
+        </div>
+        <div class="row">
+          <label>Momio que tomaste<input id="f-cuota" required inputmode="decimal" placeholder="+175 o 2.75" autocomplete="off"></label>
+          <label>Monto $<input id="f-monto" required inputmode="decimal" placeholder="2" autocomplete="off"></label>
+        </div>
+        <label id="f-prob-wrap">% del bot (del mensaje de Telegram)<input id="f-prob" inputmode="decimal" placeholder="38.2" autocomplete="off"></label>
+        <p class="preview num" id="f-prev"></p>
+        <button class="primary" type="submit" id="f-btn">Guardar apuesta</button>
+      </form>
+    </section>
+    <section class="section">
+      <div class="head"><h2>Pendientes</h2><span class="label" id="pend-n"></span></div>
+      <div class="list" id="pend"></div>
+    </section>
+    <details id="ajustes">
+      <summary>Ajustes</summary>
+      <form id="cfg" style="margin-top:10px">
+        <label>Banca inicial $<input id="cfg-banca" inputmode="decimal" value="200"></label>
+        <button type="submit">Guardar banca inicial</button>
+      </form>
+      <button type="button" id="salir" style="margin-top:12px">Cerrar sesión en este navegador</button>
+    </details>
+  </div>
+
+  <!-- ===================== RESULTADOS ===================== -->
+  <div id="v-resultados" class="vista section" hidden>
+    <div class="filters" role="group" aria-label="Filtrar">
+      <button type="button" data-f="todas" aria-pressed="true">Todas</button>
+      <button type="button" data-f="bot" aria-pressed="false">🤖 Bot</button>
+      <button type="button" data-f="normal" aria-pressed="false">🎲 Normal</button>
+    </div>
+    <div class="totbar">
+      <span><span class="pos">✓ <b class="num" id="r-w">0</b></span> · <span class="neg">✗ <b class="num" id="r-l">0</b></span></span>
+      <span>Neto: <b class="num" id="r-net">$0.00</b></span>
+    </div>
+    <div class="list" id="res"></div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt = n => (n < 0 ? "-$" : "$") + Math.abs(n).toFixed(2);
+const sign = n => (n > 0 ? "+" : "") + fmt(n);
+const clase = n => "num " + (n > 0 ? "pos" : n < 0 ? "neg" : "");
+const fecha = t => t ? new Date(t).toLocaleDateString("es-MX", { day: "numeric", month: "short" }) : "";
+
+function aDecimal(txt) {
+  const t = String(txt || "").replace(/\s/g, "");
+  const n = parseFloat(t);
+  if (!isFinite(n)) return null;
+  if (/^[+-]/.test(t) && Math.abs(n) >= 100) return n > 0 ? 1 + n / 100 : 1 + 100 / Math.abs(n);
+  return n > 1 ? n : null;
+}
+function aAmericano(d) { return d >= 2 ? "+" + Math.round((d - 1) * 100) : "-" + Math.round(100 / (d - 1)); }
+function ganancia(b) { return b.resultado === "gana" ? b.monto * (b.cuota - 1) : b.resultado === "pierde" ? -b.monto : 0; }
+function esperada(b) { return b.prob ? b.monto * (b.prob * b.cuota - 1) : 0; }
+
+let apuestas = [], bancaInicial = 200, listo = false, confirmando = null;
+let vista = "bot", filtro = "todas";
+const LLAVE = "bitacora-token";
+let token = null;
+try { token = localStorage.getItem(LLAVE); } catch (e) {}
+
+async function api(op, datos) {
+  const r = await fetch("/api/web", { method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ op, token, datos }) });
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 401) { salirLocal(); throw { auth: true, message: j.error }; }
+  if (!r.ok) throw { message: j.error || "No se pudo completar." };
+  return j;
+}
+function estado(msg) { const s = $("status"); s.textContent = msg || ""; s.hidden = !msg; }
+function mostrarLogin(msg) {
+  ["tabs", "v-bot", "v-normal", "v-reg", "v-resultados", "quien"].forEach(id => $(id).hidden = true);
+  $("v-login").hidden = false; estado(msg || "");
+}
+function salirLocal() { token = null; try { localStorage.removeItem(LLAVE); } catch (e) {} }
+async function cargar() {
+  if (!token) { mostrarLogin(); return; }
+  estado("Cargando…");
+  try {
+    const r = await api("todas");
+    bancaInicial = Number(r.banca) || 200;
+    $("cfg-banca").value = bancaInicial;
+    $("q-nombre").textContent = r.nombre ? "Hola, " + r.nombre : "";
+    apuestas = (r.apuestas || []).map(x => ({
+      id: String(x.id), partido: String(x.partido || ""), seleccion: String(x.seleccion || ""), casa: String(x.casa || ""),
+      cuota: Number(x.cuota) || 2, prob: x.prob ? Number(x.prob) : null, monto: Number(x.monto) || 0,
+      cartera: x.cartera === "libre" ? "normal" : "bot",
+      resultado: String(x.resultado || "pendiente"), creada: Date.parse(x.creada) || 0,
+      cerrada: x.cerrada ? Date.parse(x.cerrada) : null }));
+    listo = true; estado("");
+    $("v-login").hidden = true; $("tabs").hidden = false; $("quien").hidden = false;
+    irA(vista);
+  } catch (e) { e.auth ? mostrarLogin(e.message) : estado(e.message || "No se pudo cargar. Toca Actualizar."); }
+}
+async function hacer(op, datos, errorTxt) {
+  try { await api(op, datos); await cargar(); return true; }
+  catch (e) { e.auth ? mostrarLogin(e.message) : estado(e.message || errorTxt); return false; }
+}
+
+// ---------------------------------------------------------------- vistas
+function irA(v) {
+  vista = ["bot", "normal", "resultados"].includes(v) ? v : "bot";
+  if (!listo) return;
+  document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.v === vista)));
+  $("v-bot").hidden = vista !== "bot";
+  $("v-normal").hidden = vista !== "normal";
+  $("v-resultados").hidden = vista !== "resultados";
+  $("v-reg").hidden = vista === "resultados";
+  $("v-reg").classList.toggle("vista-normal", vista === "normal");
+  $("f-prob-wrap").hidden = vista !== "bot";
+  $("ajustes").hidden = vista !== "bot";
+  $("f-titulo").textContent = vista === "normal" ? "Nueva apuesta normal" : "Nueva apuesta del bot";
+  $("f-sel").placeholder = vista === "normal" ? "Parlay América + Jaguars" : "Jaguars ganador";
+  if (location.hash !== "#" + vista) history.replaceState(null, "", "#" + vista);
+  confirmando = null;
+  render();
+}
+document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => irA(t.dataset.v)));
+window.addEventListener("hashchange", () => { if (!location.hash.startsWith("#entrar=")) irA(location.hash.slice(1)); });
+document.querySelectorAll(".filters button").forEach(b => b.addEventListener("click", () => {
+  filtro = b.dataset.f;
+  document.querySelectorAll(".filters button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  render();
+}));
+
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+function render() {
+  const de = c => apuestas.filter(b => b.cartera === c);
+  const cerr = l => l.filter(b => b.resultado !== "pendiente");
+  const pend = l => l.filter(b => b.resultado === "pendiente");
+  const suma = (l, f) => l.reduce((s, b) => s + f(b), 0);
+
+  // Banca bot
+  const bot = de("bot"), bc = cerr(bot);
+  const bg = suma(bc, ganancia), ba = suma(bc, b => b.monto), be = suma(bc, esperada);
+  $("b-banca").textContent = fmt(bancaInicial + bg);
+  $("b-gan").textContent = sign(bg); $("b-gan").className = clase(bg);
+  $("b-rec").textContent = bc.filter(b => b.resultado === "gana").length + "–" + bc.filter(b => b.resultado === "pierde").length;
+  $("b-roi").textContent = ba ? (bg / ba * 100).toFixed(1) + "%" : "—";
+  $("b-esp").textContent = sign(be);
+  $("b-juego").textContent = fmt(suma(pend(bot), b => b.monto));
+  $("b-verdict").textContent = !bc.length ? "Aún no hay apuestas del bot cerradas. Evalúa el método después de unas 200."
+    : bc.length < 200 ? `${bc.length} de 200 cerradas. Con tan pocas, la diferencia entre real (${sign(bg)}) y esperada (${sign(be)}) es sobre todo suerte.`
+    : bg >= be * 0.5 ? `Con ${bc.length} apuestas, la ganancia real sigue a la esperada: el método funciona.`
+    : `Con ${bc.length} apuestas, la ganancia real va muy debajo de la esperada: revisa cuotas y límites de las casas.`;
+  dibujarBanca(bc);
+
+  // Apuesta normal
+  const nor = de("normal"), nc = cerr(nor);
+  const ng = suma(nc, ganancia), na = suma(nc, b => b.monto);
+  const premios = nc.filter(b => b.resultado === "gana").map(ganancia);
+  $("n-res").textContent = sign(ng); $("n-res").className = "big " + clase(ng);
+  $("n-apos").textContent = fmt(na);
+  $("n-rec").textContent = nc.filter(b => b.resultado === "gana").length + "–" + nc.filter(b => b.resultado === "pierde").length;
+  $("n-roi").textContent = na ? (ng / na * 100).toFixed(1) + "%" : "—";
+  $("n-max").textContent = premios.length ? "+" + fmt(Math.max(...premios)) : "—";
+  $("n-juego").textContent = fmt(suma(pend(nor), b => b.monto));
+
+  // Pendientes de la pestaña actual
+  if (vista !== "resultados") {
+    const lista = pend(vista === "normal" ? nor : bot);
+    $("pend-n").textContent = lista.length ? lista.length + " abiertas" : "";
+    pintarPendientes(lista);
+  }
+
+  // Resultados
+  const todas = cerr(apuestas).filter(b => filtro === "todas" || b.cartera === filtro)
+    .sort((a, b) => (b.cerrada || 0) - (a.cerrada || 0));
+  $("r-w").textContent = todas.filter(b => b.resultado === "gana").length;
+  $("r-l").textContent = todas.filter(b => b.resultado === "pierde").length;
+  const rn = suma(todas, ganancia);
+  $("r-net").textContent = sign(rn); $("r-net").className = clase(rn);
+  pintarResultados(todas);
+}
+
+function dibujarBanca(cerradas) {
+  const orden = [...cerradas].sort((a, b) => (a.cerrada || 0) - (b.cerrada || 0));
+  const pts = [bancaInicial]; let acc = bancaInicial;
+  orden.forEach(b => { acc += ganancia(b); pts.push(acc); });
+  const svg = $("spark"); svg.innerHTML = "";
+  if (pts.length < 2) return;
+  const mn = Math.min(...pts), mx = Math.max(...pts), r = mx - mn || 1;
+  const xy = pts.map((v, i) => [i / (pts.length - 1) * 296 + 2, 52 - (v - mn) / r * 46]);
+  const base = 52 - (bancaInicial - mn) / r * 46, ns = "http://www.w3.org/2000/svg";
+  const mk = (tag, at) => { const e = document.createElementNS(ns, tag); Object.entries(at).forEach(([k, v]) => e.setAttribute(k, v)); return e; };
+  svg.append(
+    mk("line", { x1: 0, x2: 300, y1: base, y2: base, stroke: "var(--line)", "stroke-dasharray": "3 3", "vector-effect": "non-scaling-stroke" }),
+    mk("path", { d: "M" + xy.map(p => p.join(",")).join(" L") + " L298,56 L2,56 Z", fill: "var(--accent)", opacity: ".12" }),
+    mk("polyline", { points: xy.map(p => p.join(",")).join(" "), fill: "none", stroke: "var(--accent)", "stroke-width": 2, "vector-effect": "non-scaling-stroke" }));
+}
+
+function meta(b) {
+  return [b.partido, b.casa, `${aAmericano(b.cuota)} (${b.cuota.toFixed(2)})`, b.prob ? (b.prob * 100).toFixed(1) + "%" : ""]
+    .filter(Boolean).join(" · ");
+}
+
+function pintarPendientes(lista) {
+  const cont = $("pend"); cont.innerHTML = "";
+  if (!lista.length) {
+    cont.append(el("p", "empty", vista === "normal"
+      ? "Sin apuestas normales abiertas. También puedes registrarlas en Telegram con la palabra parlay o libre."
+      : "Sin apuestas del bot abiertas. Al terminar el partido marca Ganó, Perdió o Nula."));
+    return;
+  }
+  lista.forEach(b => {
+    const card = el("div", "bet");
+    const top = el("div", "bet-top"), izq = el("div"), der = el("div", "amt");
+    izq.append(el("div", "sel", b.seleccion), el("div", "meta", meta(b)));
+    der.append(el("div", "num", fmt(b.monto)), el("div", "meta", "cobra " + fmt(b.monto * b.cuota)));
+    top.append(izq, der); card.append(top);
+    const act = el("div", "actions");
+    if (confirmando === b.id) {
+      const si = el("button", "btn-loss", "Sí, borrar"); si.type = "button"; si.onclick = () => borrar(b.id);
+      const no = el("button", "", "Cancelar"); no.type = "button"; no.onclick = () => { confirmando = null; render(); };
+      act.append(el("span", "meta", "¿Borrar esta apuesta?"), si, no);
+    } else {
+      [["gana", "✓ Ganó", "btn-win"], ["pierde", "✗ Perdió", "btn-loss"], ["nula", "Nula", ""]].forEach(([r, t, c]) => {
+        const bt = el("button", c, t); bt.type = "button"; bt.onclick = () => cerrar(b.id, r); act.append(bt);
+      });
+      const del = el("button", "", "Borrar"); del.type = "button"; del.onclick = () => { confirmando = b.id; render(); };
+      act.append(del);
+    }
+    card.append(act); cont.append(card);
+  });
+}
+
+function pintarResultados(lista) {
+  const cont = $("res"); cont.innerHTML = "";
+  if (!lista.length) { cont.append(el("p", "empty", "Aquí aparecen tus apuestas ya cerradas: ✓ las ganadas y ✗ las perdidas.")); return; }
+  lista.forEach(b => {
+    const row = el("div", "res " + b.resultado);
+    const icon = el("div", "icon", b.resultado === "gana" ? "✓" : b.resultado === "pierde" ? "✗" : "–");
+    icon.setAttribute("aria-label", { gana: "Ganada", pierde: "Perdida", nula: "Nula" }[b.resultado]);
+    const mid = el("div");
+    mid.append(el("div", "tag " + b.cartera, (b.cartera === "bot" ? "🤖 Bot" : "🎲 Normal") + " · " + fecha(b.cerrada)),
+      el("div", "sel", b.seleccion), el("div", "meta", meta(b)));
+    const g = ganancia(b), der = el("div", "amt");
+    der.append(el("div", clase(g), b.resultado === "nula" ? "Nula" : sign(g)), el("div", "meta", "apostó " + fmt(b.monto)));
+    const re = el("button", "", "Reabrir"); re.type = "button"; re.style.cssText = "padding:4px 8px;font-size:.75rem;margin-top:4px";
+    re.onclick = () => cerrar(b.id, "pendiente");
+    der.append(re);
+    row.append(icon, mid, der); cont.append(row);
+  });
+}
+
+// ---------------------------------------------------------------- acciones
+async function cerrar(id, resultado) { await hacer("cerrar", { id, resultado }, "No se pudo guardar el resultado."); }
+async function borrar(id) { confirmando = null; await hacer("borrar", { id }, "No se pudo borrar."); }
+
+function vistaPrevia() {
+  const c = aDecimal($("f-cuota").value), p = parseFloat($("f-prob").value) / 100, m = parseFloat($("f-monto").value);
+  let t = "";
+  if (c) t = `Momio ${aAmericano(c)} = ${c.toFixed(2)}`;
+  if (c && m > 0) t += ` · si gana cobras ${fmt(m * c)} (${sign(m * (c - 1))})`;
+  if (vista === "bot" && c && p > 0 && p < 1) {
+    const ev = p * c - 1;
+    t += ` · valor ${ev >= 0 ? "+" : ""}${(ev * 100).toFixed(1)}%` + (ev < 0.03 ? " ⚠️ por debajo del mínimo del bot" : "");
+  }
+  $("f-prev").textContent = t;
+}
+["f-cuota", "f-prob", "f-monto"].forEach(id => $(id).addEventListener("input", vistaPrevia));
+
+$("f").addEventListener("submit", async e => {
+  e.preventDefault();
+  const cuota = aDecimal($("f-cuota").value), monto = parseFloat($("f-monto").value);
+  const probTxt = vista === "bot" ? $("f-prob").value.trim() : "";
+  const prob = probTxt ? parseFloat(probTxt) / 100 : null;
+  if (!cuota) { estado("El momio no es válido. Escríbelo como +175, -150 o 2.75."); return; }
+  if (!(monto > 0)) { estado("Escribe un monto mayor a cero."); return; }
+  if (prob !== null && !(prob > 0 && prob < 1)) { estado("El % del bot debe estar entre 0 y 100."); return; }
+  estado(""); $("f-btn").disabled = true;
+  const ok = await hacer("registrar", { cartera: vista === "normal" ? "libre" : "bot", partido: $("f-partido").value.trim(),
+    seleccion: $("f-sel").value.trim(), casa: $("f-casa").value, cuota, prob, monto }, "No se pudo guardar la apuesta.");
+  if (ok) { ["f-partido", "f-sel", "f-cuota", "f-prob"].forEach(id => $(id).value = ""); $("f-prev").textContent = ""; }
+  $("f-btn").disabled = false;
+});
+
+$("cfg").addEventListener("submit", async e => {
+  e.preventDefault();
+  const v = parseFloat($("cfg-banca").value);
+  if (!(v > 0)) return;
+  await hacer("banca", { valor: v }, "No se pudo guardar la banca inicial.");
+});
+
+$("refrescar").addEventListener("click", cargar);
+document.addEventListener("visibilitychange", () => { if (!document.hidden && listo) cargar(); });
+
+$("salir").addEventListener("click", async () => {
+  try { await fetch("/api/web", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ op: "salir", token }) }); } catch (e) {}
+  salirLocal(); listo = false; mostrarLogin("Cerraste sesión en este navegador.");
+});
+
+(async () => {
+  const m = location.hash.match(/^#entrar=([0-9a-f]+)$/);
+  if (m) {
+    history.replaceState(null, "", location.pathname + "#bot");
+    estado("Entrando…");
+    try {
+      const r = await fetch("/api/web", { method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ op: "entrar", codigo: m[1] }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || !j.token) { mostrarLogin(j.error || "Ese enlace ya no sirve. Pide otro escribiéndole web al bot."); return; }
+      token = j.token;
+      try { localStorage.setItem(LLAVE, token); } catch (e) {}
+    } catch (e) { mostrarLogin("No se pudo conectar. Revisa tu internet."); return; }
+  }
+  vista = (location.hash.slice(1) || "bot");
+  cargar();
+})();
+</script>
+</body>
+</html>
