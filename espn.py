@@ -200,9 +200,34 @@ def resultado_probable(seleccion, p):
     return "gana" if yo["marcador"] > otro["marcador"] else "pierde"
 
 
-if __name__ == "__main__":       # prueba rápida: python espn.py basketball_nba 20261104
+if __name__ == "__main__" and len(sys.argv) > 1 and sys.argv[1] == "noticias":
+    pass
+elif __name__ == "__main__":       # prueba rápida: python espn.py basketball_nba 20261104
     liga = sys.argv[1] if len(sys.argv) > 1 else "americanfootball_nfl"
     print(len(equipos(liga)), "equipos;", (equipos(liga) or [{}])[0])
     if len(sys.argv) > 2:
         for p in marcadores(liga, sys.argv[2])[:5]:
             print(p["evento"], p["terminado"], texto_marcador(p))
+
+
+def prueba_noticias():
+    """python espn.py noticias  -> revisa noticias en español y figuras (solo para pruebas)."""
+    import json as _j
+    for ruta in ("soccer/mex.1", "football/nfl", "basketball/nba"):
+        for params in ({"lang": "es", "region": "mx", "limit": 3}, {"limit": 3}):
+            j = _get(BASE.format(ruta=f"{ruta}/news"), **params) or {}
+            arts = j.get("articles", [])
+            print(ruta, params.get("lang", "en"), len(arts), [(a.get("headline"), bool(a.get("images"))) for a in arts[:2]])
+    j = _get(BASE.format(ruta="basketball/nba/scoreboard")) or {}
+    ev = (j.get("events") or [{}])[0]
+    comp = (ev.get("competitions") or [{}])[0]
+    print("leaders:", _j.dumps(comp.get("leaders", [])[:1])[:600])
+    print("records:", [c.get("records", [{}])[0].get("summary") for c in comp.get("competitors", [])])
+    j = _get(BASE.format(ruta="soccer/mex.1/scoreboard"), dates=sys.argv[2] if len(sys.argv) > 2 else "") or {}
+    for ev in (j.get("events") or [])[:2]:
+        comp = ev["competitions"][0]
+        print("details:", _j.dumps(comp.get("details", [])[:1])[:500])
+
+
+if __name__ == "__main__" and len(sys.argv) > 1 and sys.argv[1] == "noticias":
+    prueba_noticias()
