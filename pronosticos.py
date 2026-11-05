@@ -344,14 +344,24 @@ def calificar():
 
 def diagnostico():
     """Solo en --prueba: revisa qué contestan ESPN y Understat."""
+    j = espn._get(espn.BASE.format(ruta="soccer/eng.1/scoreboard"), dates=f"{AHORA.date() - dt.timedelta(days=5):%Y%m%d}") or {}
+    for d in range(3, 9):
+        j = espn._get(espn.BASE.format(ruta="soccer/eng.1/scoreboard"), dates=f"{AHORA.date() - dt.timedelta(days=d):%Y%m%d}") or {}
+        if j.get("events"):
+            break
+    ev = (j.get("events") or [{}])[0]
+    s = espn._get(espn.BASE.format(ruta="soccer/eng.1/summary"), event=ev.get("id")) or {}
+    for t in (s.get("boxscore") or {}).get("teams") or []:
+        print("diag espn stats:", [(x.get("name"), x.get("displayValue")) for x in t.get("statistics") or []])
     h = {"user-agent": "Mozilla/5.0", "x-requested-with": "XMLHttpRequest"}
-    for url in ["https://understat.com/getLeagueData/EPL/2025", "https://understat.com/league/EPL/2025",
-                "https://understat.com/getLeagueData/EPL/2024"]:
+    for url in ["https://understat.com/league/EPL/2025"]:
         try:
             r = requests.get(url, headers=h, timeout=25)
             print("diag understat", url, r.status_code, r.headers.get("content-type"), len(r.text), repr(r.text[:160]))
             import re as _re
-            print("   vars:", _re.findall(r"var (\w+)\s*=", r.text)[:8], "scripts:", _re.findall(r"src=\"([^\"]+\.js[^\"]*)\"", r.text)[:6])
+            print("   scripts:", _re.findall(r"<script[^>]*>", r.text)[:10])
+            print("   texto:", _re.sub(r"\s+", " ", _re.sub(r"<[^>]+>", " ", r.text))[:600])
+            i = r.text.find("<script"); print("   js:", repr(r.text[i:i + 900]))
         except Exception as e:
             print("diag understat", url, type(e).__name__, e)
     hoy = AHORA.date()
