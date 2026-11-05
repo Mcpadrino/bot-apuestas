@@ -13,7 +13,15 @@ jobs:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          curl -s -o /dev/null -w "getMe %{http_code}\n" "https://api.telegram.org/bot${TELEGRAM_TOKEN}/getMe"
-          curl -s -o /dev/null -w "mensaje %{http_code}\n" -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-            -d chat_id="${TELEGRAM_CHAT_ID}" -d text="✅ Prueba: GitHub ya tiene el token nuevo. Las alertas de las 18:00 sí van a llegar."
-          curl -s -o /dev/null -w "vercel %{http_code}\n" -H "x-bot-token: ${TELEGRAM_TOKEN}" "https://bot-apuestas-telegram.vercel.app/api/telegram?usuarios=1"
+          python3 - <<'PY'
+          import os, urllib.request, json
+          t = "".join(os.environ["TELEGRAM_TOKEN"].split())
+          print("largo", len(t), "inicio", t[:13], "tiene AAG1", "AAG1" in t, "tiene 40lJ9", "40lJ9" in t, "tiene 40IJ9", "40IJ9" in t, "espacios", len(os.environ["TELEGRAM_TOKEN"]) - len(t))
+          try:
+              print("getMe", urllib.request.urlopen(f"https://api.telegram.org/bot{t}/getMe", timeout=15).status)
+              d = json.dumps({"chat_id": os.environ["TELEGRAM_CHAT_ID"].strip(), "text": "✅ Prueba: GitHub ya tiene el token nuevo. Las alertas de las 18:00 sí van a llegar."}).encode()
+              r = urllib.request.Request(f"https://api.telegram.org/bot{t}/sendMessage", data=d, headers={"content-type": "application/json"})
+              print("mensaje", urllib.request.urlopen(r, timeout=15).status)
+          except Exception as e:
+              print("error", e)
+          PY
