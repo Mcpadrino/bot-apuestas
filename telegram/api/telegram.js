@@ -42,7 +42,7 @@ const LIBRE = new Set(["libre", "aparte", "personal", "fuera"]);
 const CASAS = { caliente: "Caliente", draftea: "Draftea", codere: "Codere", bet365: "Bet365" };
 const WEB_URL = env("WEB_URL") || "https://bot-apuestas-telegram.vercel.app";
 const TECLADO = {
-  keyboard: [[{ text: "🎯 Señales" }, { text: "💰 Saldo" }, { text: "📋 Pendientes" }], [{ text: "🌐 Mi página" }, { text: "❓ Ayuda" }]],
+  keyboard: [[{ text: "🎯 Señales" }, { text: "💰 Saldo" }, { text: "📋 Pendientes" }], [{ text: "🌐 Mi página" }, { text: "📘 Guía" }, { text: "❓ Ayuda" }]],
   resize_keyboard: true,
   is_persistent: true,
 };
@@ -119,6 +119,7 @@ const AYUDA = [
   "`inicial 300` — cambia la banca inicial",
   "`limite 300` — tope semanal para apuestas normales (opcional; `limite off` lo quita)",
   "🌐 *Mi página* — la dirección de tu bitácora web",
+  "📘 *Guía* — te mando el folleto y la guía en PDF",
   "`cuenta usuario contraseña` — crea o cambia tu acceso a la página",
   "",
   "🎲 *Apuestas fuera de la banca* (parlays, corazonadas):",
@@ -205,6 +206,20 @@ async function atenderTexto(chat, texto, esDueno, msgId) {
 
   if (["start", "ayuda", "help", "❓"].includes(cmd) || texto.includes("Ayuda"))
     return enviar(AYUDA + (esDueno ? AYUDA_ADMIN : ""), { reply_markup: TECLADO });
+
+  if (["guia", "manual", "folleto", "instrucciones", "📘"].includes(cmd) || texto.includes("Guía")) {
+    const base = "https://bot-apuestas-telegram.vercel.app/docs/";
+    const docs = [
+      ["folleto.pdf", "📄 *Folleto*: qué es el bot y todo lo que incluye. Compártelo con quien le interese."],
+      ["guia-usuario.pdf", "📘 *Guía del usuario*: todo paso a paso, explicado desde cero aunque nunca hayas apostado."],
+    ];
+    if (esDueno) docs.push(["manual-completo.pdf", "🛠 *Manual completo* (con la parte de administrador)."]);
+    for (const [f, cap] of docs) {
+      const r = await tg("sendDocument", { chat_id: chat, document: base + f + "?v=1", caption: cap, parse_mode: "Markdown" });
+      if (!r.ok) await enviar(`${cap}\n${base}${f}`);
+    }
+    return;
+  }
 
   if (esDueno && cmd === "agregar" && /^-?\d+$/.test(args[0] || "")) {
     const nombre = args.slice(1).join(" ") || "Amigo";
@@ -632,6 +647,7 @@ export default async function handler(req, res) {
         { command: "saldo", description: "Banca, récord y ganancia" },
         { command: "pendientes", description: "Apuestas sin resultado" },
         { command: "ayuda", description: "Cómo registrar apuestas" },
+        { command: "guia", description: "Folleto y guía del usuario en PDF" },
       ] });
       return res.status(200).json({ ok: r.ok, url, description: r.description });
     }
