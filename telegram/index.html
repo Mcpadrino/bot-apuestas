@@ -947,6 +947,7 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
         </div>
       </section>
       <div class="especies" id="especies" role="group" aria-label="Elige tu animal"></div>
+      <p class="hint" id="especies-txt"></p>
       <p class="hint" id="playera-txt"></p>
       <div class="cartera">
         <div><span class="label">💰 Cartera virtual</span><b class="num" id="w-saldo">$0</b></div>
@@ -2887,9 +2888,33 @@ function pintarMascota() {
     const sp = el("span", "", cat[k].e); sp.style.cssText = `left:${x}%;top:${y}%;font-size:${t}rem`; accs.append(sp);
   });
   const sel = $("especies"); sel.innerHTML = "";
-  Object.entries(ESPECIES).forEach(([k, n]) => { const b = el("button", "", n); b.type = "button"; b.setAttribute("aria-pressed", String(k === especie));
-    b.onclick = async () => { if (k === especie) return; try { await api("jugar", { accion: "especie", especie: k }); cargarMascota(); } catch (e) { estado(e.message); } };
-    sel.append(b); });
+  const elegida = !!m.mascota.especie_elegida, CAMBIO = 1000000;
+  Object.entries(ESPECIES).forEach(([k, n]) => {
+    const actual = k === especie, b = el("button", "", (elegida && !actual ? "🔒 " : "") + n); b.type = "button";
+    b.setAttribute("aria-pressed", String(actual));
+    b.onclick = async () => {
+      if (elegida && actual) return;
+      if (elegida) {
+        if (b.dataset.ok !== "1") {
+          sel.querySelectorAll("button").forEach(x => { x.dataset.ok = ""; });
+          b.dataset.ok = "1"; b.textContent = `¿Seguro? $1,000,000 y pierdes tus objetos · toca otra vez`;
+          estado(`🔒 Cambiar a ${n.split(" ")[1]} cuesta $1,000,000 virtuales y pierdes todo lo que le compraste (accesorios y fondos).`);
+          setTimeout(() => estado(""), 6000); return;
+        }
+      } else if (b.dataset.ok !== "1") {
+        sel.querySelectorAll("button").forEach(x => { x.dataset.ok = ""; });
+        b.dataset.ok = "1"; b.textContent = `Elegir ${n.split(" ")[1]} · toca otra vez`;
+        estado("Tu primera elección es gratis, pero después cambiar cuesta $1,000,000 y pierdes tus objetos. Elige bien 😉");
+        setTimeout(() => estado(""), 6000); return;
+      }
+      try { await api("jugar", { accion: "especie", especie: k }); estado(""); cargarMascota(); }
+      catch (e) { estado(e.message); setTimeout(() => estado(""), 5000); b.dataset.ok = ""; b.textContent = (elegida ? "🔒 " : "") + n; }
+    };
+    sel.append(b);
+  });
+  $("especies-txt").textContent = elegida
+    ? `🔒 Cambiar de animal cuesta $${CAMBIO.toLocaleString("es-MX")} virtuales y pierdes los objetos que le compraste.`
+    : "🎁 Elige tu animal: la primera vez es gratis. Después, cambiar cuesta $1,000,000 y pierdes tus objetos.";
   $("playera-txt").textContent = fav ? `👕 Trae la playera de ${fav.nombre}.` : "👕 Elige tu equipo favorito (menú → ⭐ Mi equipo) y tu mascota usará su playera.";
   const fondo = $("fondo-items"); fondo.innerHTML = "";
   tiene.filter(k => cat[k] && cat[k].tipo === "fondo").forEach((k, i) => {
