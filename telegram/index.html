@@ -521,6 +521,10 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
 .f3-pet { position: absolute; left: 8px; bottom: 8px; width: 74px; height: 74px; pointer-events: none; filter: drop-shadow(0 4px 6px rgba(0,0,0,.4)); transition: transform .3s; }
 .f3-pet.festeja { animation: p-gira .9s cubic-bezier(.4,1.4,.5,1) 2; }
 .f3-pet.triste { animation: tiembla .3s linear 4; filter: grayscale(.6) drop-shadow(0 4px 6px rgba(0,0,0,.4)); }
+.bol-lista { display: grid; gap: 4px; margin: 6px 0; }
+.bol-lista div { display: flex; justify-content: space-between; gap: 8px; padding: 6px 10px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); font-size: .85rem; }
+.bol-lista small { display: block; color: var(--muted); font-size: .72rem; }
+.bol-res { font-size: .85rem; margin-top: 2px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip-op { display: grid; gap: 1px; padding: 7px 11px; border-radius: 12px; font-size: .8rem; text-align: left; min-width: 0;
   transition: background .2s, color .2s, transform .15s cubic-bezier(.3,1.6,.5,1); }
@@ -1066,7 +1070,7 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
       <h2 id="f-titulo">Nueva apuesta</h2>
       <form id="f">
         <div class="ocr"><label class="foto" for="f-foto">📷 Llenar con foto del boleto</label><input id="f-foto" type="file" accept="image/*" hidden>
-          <span class="hint" id="f-ocr-txt">Sube la captura de Caliente o Draftea y la leo por ti.</span></div>
+          <div class="hint" id="f-ocr-txt" style="margin:0">Sube la captura de Caliente o Draftea (sencilla o parlay) y la leo por ti.</div></div>
         <label>Partido<input id="f-partido" placeholder="Jaguars @ Ravens" autocomplete="off"></label>
         <div class="row">
           <label>Selección<input id="f-sel" required placeholder="Jaguars ganador" autocomplete="off"></label>
@@ -4691,6 +4695,41 @@ function abrirEquipo(ruta, id) { abrirModalFicha("Equipo"); paginaEquipo($("fc-a
 
 // ---------------------------------------------------------------- 📷 llenar la apuesta con la foto del boleto (se lee en tu celular)
 let tesseract = null;
+// ===== LECTOR DE BOLETOS (inicio)
+function boletoLeer(txt) {
+  const T = String(txt || "").replace(/[“”"'`’|]/g, " ").replace(/[—–]/g, "-");
+  const num = (s) => { if (!s) return null; s = s.replace(/\s/g, ""); if (/,\d{2}$/.test(s)) s = s.replace(/\./g, "").replace(",", "."); else s = s.replace(/,/g, ""); const n = Number(s); return isFinite(n) ? n : null; };
+  const aDec = (m) => { if (!m) return null; m = m.replace(/\s/g, "").replace(",", "."); if (/^[+-]\d{3,5}$/.test(m)) { const n = Number(m); return n > 0 ? 1 + n / 100 : 1 + 100 / -n; } const d = Number(m); return d > 1 && d < 1000 ? d : null; };
+  const r = { casa: /draftea/i.test(T) ? "Draftea" : /caliente/i.test(T) ? "Caliente" : null, piernas: [] };
+  // monto apostado
+  let m = T.match(/(?:entrada|apuesta|monto|importe|stake|apostado|cantidad)\s*(?:total)?\s*:?\s*\$?\s*(\d{1,6}(?:[.,]\d{1,2})?)/i);
+  r.monto = m ? num(m[1]) : null;
+  // momio total
+  m = T.match(/(?:momio|cuota|odds)\s*(?:total|combinad[ao])?\s*:?\s*([+-]\s?\d{3,5}|\d{1,3}[.,]\d{2})/i);
+  r.momioTxt = m ? m[1].replace(/\s/g, "") : null; r.momio = aDec(r.momioTxt);
+  // ganancia / pago potencial (puede venir antes o después del texto)
+  m = T.match(/\$\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2})|\d+(?:\.\d{2}))\s*(?:ganancia|pago|premio|cobro)/i) || T.match(/(?:ganancia|pago|premio|cobro|ganar[ií]as)\s*(?:potencial|posible|estimad[ao])?\s*:?\s*\$?\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2})|\d+(?:\.\d{2})?)/i);
+  r.ganancia = m ? num(m[1]) : null;
+  if (!r.momio && r.ganancia && r.monto) r.momio = r.ganancia / r.monto;            // si solo trae el pago total
+  // selecciones: líneas que terminan con un momio americano
+  const lin = T.split(/\n+/).map(x => x.trim()).filter(Boolean);
+  const limpiaNombre = (s) => { const t = s.replace(/[^\p{L}\p{N} .&-]/gu, " ").replace(/\s+/g, " ").trim().split(" ");
+    while (t.length > 1 && t[0].length <= 3 && !/^(fc|cf|ac|as|rb|sv|cd|ca|1\.)$/i.test(t[0])) t.shift(); return t.join(" ").replace(/\.\.\.$/, "").trim(); };
+  lin.forEach((l, i) => {
+    const k = l.match(/^(.*?[\p{L}].*?)\s+([+-]\d{3,4})\s*$/u);
+    if (!k || /momio|cuota|entrada|ganancia|balance/i.test(l)) return;
+    let sel = k[1].replace(/\b(gana(dor)?|resultado|final|1x2|pa|90)\b/gi, " ").replace(/[()'’]/g, " ").replace(/\s+/g, " ").trim();
+    sel = limpiaNombre(sel).replace(/\s*\.{2,}$/, "");
+    const equipos = [];
+    for (let j = i + 1; j < lin.length && equipos.length < 2; j++) {
+      if (/[+-]\d{3,4}\s*$/.test(lin[j]) || /^\W*-?\d+h|^\W*o\s*-?0h/i.test(lin[j])) break;
+      const n = limpiaNombre(lin[j]); if (n.length >= 3 && /\p{L}{3}/u.test(n)) equipos.push(n);
+    }
+    r.piernas.push({ seleccion: sel, momioTxt: k[2], momio: aDec(k[2]), partido: equipos.length === 2 ? `${equipos[0]} vs ${equipos[1]}` : equipos[0] || "" });
+  });
+  r.parlay = r.piernas.length >= 2 || /parlay|combinada|m[uú]ltiple/i.test(T);
+  return r;
+}
 $("f-foto").addEventListener("change", async () => {
   const file = $("f-foto").files[0]; if (!file) return;
   const tx = $("f-ocr-txt");
@@ -4698,28 +4737,34 @@ $("f-foto").addEventListener("change", async () => {
     tx.textContent = "⏳ Cargando el lector (solo la primera vez tarda)…";
     if (!tesseract) { await cargarScript("https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"); tesseract = window.Tesseract; }
     tx.textContent = "🔎 Leyendo tu boleto…";
-    const { data } = await tesseract.recognize(file, "spa+eng", { logger: m => { if (m.status === "recognizing text") tx.textContent = `🔎 Leyendo… ${Math.round(m.progress * 100)}%`; } });
-    const txt = data.text || "", lin = txt.split(/\n+/).map(x => x.trim()).filter(Boolean);
-    // momio: americano (+150 / -200) o decimal (2.50)
-    const am = txt.match(/(^|\s)([+-]\d{3,4})(?=\s|$)/m), de = txt.match(/(?:momio|cuota|odds|@)\s*:?\s*(\d{1,2}[.,]\d{2})/i);
-    const momio = am ? am[2] : de ? de[1].replace(",", ".") : null;
-    // monto: "Apuesta $50", "Monto: 50.00", "Importe"
-    const mo = txt.match(/(?:apuesta|monto|importe|stake|apostado)[^\d$]{0,15}\$?\s*(\d{1,6}(?:[.,]\d{2})?)/i) || txt.match(/\$\s?(\d{1,6}(?:[.,]\d{2})?)/);
-    const monto = mo ? mo[1].replace(",", ".") : null;
-    // partido: una línea con "vs", "v", "@" o "-" entre dos nombres
-    const pa = lin.find(l => /\S+\s+(vs\.?|v\.?|@|-)\s+\S+/i.test(l) && !/\d{3,}/.test(l));
-    // selección: la línea donde viene el momio (sin el momio) o la anterior
-    let sel = null;
-    if (momio) { const i = lin.findIndex(l => l.includes(momio)); if (i >= 0) { sel = lin[i].replace(momio, "").replace(/[|@]/g, "").trim(); if (sel.length < 3 && i > 0) sel = lin[i - 1]; } }
-    const casa = /caliente/i.test(txt) ? "Caliente" : /draftea/i.test(txt) ? "Draftea" : null;
-    if (pa) $("f-partido").value = pa.slice(0, 80);
-    if (sel) $("f-sel").value = sel.slice(0, 60);
-    if (momio) $("f-cuota").value = momio;
-    if (monto) $("f-monto").value = monto;
-    if (casa) $("f-casa").value = casa;
+    const imagen = await capPreparar(file).catch(() => file);
+    const { data } = await tesseract.recognize(imagen, "spa+eng", { logger: m => { if (m.status === "recognizing text") tx.textContent = `🔎 Leyendo… ${Math.round(m.progress * 100)}%`; } });
+    const b = boletoLeer(data.text || "");
+    // si la selección salió cortada ("Bayer Leverkus..."), usa el nombre completo del partido
+    b.piernas.forEach(q => { const eq = (q.partido || "").split(" vs ").find(e => capNorm(e).startsWith(capNorm(q.seleccion)) && q.seleccion.length >= 4); if (eq) q.seleccion = eq; });
+    const momioTxt = b.momioTxt || (b.momio ? aAmericano(b.momio) : b.piernas.length === 1 ? b.piernas[0].momioTxt : null);
+    if (b.parlay && b.piernas.length >= 2) {
+      if (vista === "bot") irA("normal");                                   // los parlays van a apuestas normales
+      $("f-sel").value = `Parlay de ${b.piernas.length}: ${b.piernas.map(q => q.seleccion).join(" + ")}`.slice(0, 120);
+      let pt = ""; for (const q of b.piernas) { const n = (pt ? pt + " · " : "") + (q.partido || q.seleccion); if (n.length > 116) { pt += " …"; break; } pt = n; }
+      $("f-partido").value = pt;
+    } else if (b.piernas.length === 1) {
+      $("f-sel").value = b.piernas[0].seleccion.slice(0, 60); if (b.piernas[0].partido) $("f-partido").value = b.piernas[0].partido.slice(0, 80);
+    }
+    if (momioTxt) $("f-cuota").value = momioTxt;
+    if (b.monto) $("f-monto").value = b.monto;
+    if (b.casa) $("f-casa").value = b.casa;
     vistaPrevia();
-    const leido = [pa && "partido", sel && "selección", momio && "momio", monto && "monto", casa && "casa"].filter(Boolean);
-    tx.textContent = leido.length ? `✅ Leí: ${leido.join(", ")}. Revisa que esté bien antes de guardar.` : "😕 No pude leer bien el boleto. Llénalo a mano o prueba con una captura más clara.";
+    const leido = [b.piernas.length && (b.parlay ? `parlay de ${b.piernas.length}` : "selección"), momioTxt && "momio", b.monto && "monto", b.casa && "casa"].filter(Boolean);
+    if (!leido.length) { tx.textContent = "😕 No pude leer bien el boleto. Llénalo a mano o prueba con una captura más clara."; }
+    else {
+      const cuadra = b.ganancia && b.monto && b.momio ? Math.abs(b.monto * b.momio - b.ganancia) < Math.max(0.6, b.ganancia * 0.02) : null;
+      let h = `✅ Leí: ${leido.join(", ")}. Revisa antes de guardar.`;
+      if (b.parlay && b.piernas.length) h += `<div class="bol-lista">${b.piernas.map(q => `<div><span>${admEsc(q.seleccion)}<small>${admEsc(q.partido || "")}</small></span><b class="num">${q.momio ? aAmericano(q.momio) : admEsc(q.momioTxt)}</b></div>`).join("")}</div>`;
+      if (b.monto || b.ganancia) h += `<div class="bol-res">${b.monto ? `Apuesta <b>$${b.monto.toFixed(2)}</b>` : ""}${momioTxt ? ` · momio <b>${admEsc(momioTxt)}</b>` : ""}${b.ganancia ? ` · paga <b>$${b.ganancia.toFixed(2)}</b>` : ""}${cuadra === true ? " ✓" : cuadra === false ? " ⚠️ no cuadra, revisa" : ""}</div>`;
+      if (b.parlay) { const prod = b.piernas.reduce((x, q) => x * (q.momio || 1), 1); if (b.momio && prod > 1 && Math.abs(prod - b.momio) / b.momio > 0.05) h += `<small class="hint" style="display:block;margin:0">Se ven ${b.piernas.length} selecciones; si tu parlay tiene más (o un "boost"), se guarda con el momio total del boleto.</small>`; }
+      tx.innerHTML = h;
+    }
   } catch (e) { tx.textContent = "No se pudo leer la foto. Llénalo a mano."; }
   $("f-foto").value = "";
 });
