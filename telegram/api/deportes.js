@@ -88,7 +88,8 @@ async function tabla(ruta) {
     if (!/goal|assist/i.test(cat.name || "")) continue;
     lideres.push({ cat: /assist/i.test(cat.name) ? "Asistencias" : "Goleadores", jugadores: (cat.leaders || []).slice(0, 10).map((l) => ({
       n: l.athlete?.displayName, equipo: l.athlete?.team?.displayName || l.team?.displayName || "",
-      logo: l.athlete?.team?.logos?.[0]?.href || logoDe(l.team) || null, valor: l.displayValue || l.value })) , nom });
+      logo: l.athlete?.team?.logos?.[0]?.href || logoDe(l.team) || null,
+      valor: (String(l.displayValue || "").match(/(\d+)\s*$/) || [])[1] || l.value })) , nom });
   }
   return { grupos, lideres };
 }
@@ -108,8 +109,8 @@ async function equipo(ruta, id) {
     return { id: e.id, fecha: e.date, local: yo.homeAway === "home", rival: rival.team?.displayName, logo: rival.team?.logos?.[0]?.href || logoDe(rival.team),
              mio: sc(yo), suyo: sc(rival), res, estadio: c.venue?.fullName || "" };
   };
-  const ultimos = (pas?.events || []).map(partidoCorto).filter((p) => p.res).slice(-6).reverse();
-  const proximos = (prox?.events || []).map(partidoCorto).slice(0, 4);
+  const ultimos = (pas?.events || []).map(partidoCorto).filter((p) => p.res).sort((a, b) => b.fecha.localeCompare(a.fecha)).slice(0, 6);
+  const proximos = (prox?.events || []).map(partidoCorto).sort((a, b) => a.fecha.localeCompare(b.fecha)).slice(0, 4);
   let posicion = null;
   for (const g of tab.grupos) { const f = g.filas.find((x) => String(x.id) === String(id)); if (f) { posicion = { ...f, grupo: g.nombre, total: g.filas.length }; break; } }
   const t = info?.team || {};

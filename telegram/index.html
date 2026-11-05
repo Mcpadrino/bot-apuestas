@@ -720,10 +720,119 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
 .logro.si { border-color: #c8aa6e; box-shadow: 0 0 0 1px #c8aa6e inset; }
 .general div { grid-template-columns: 30px 1fr auto; }
 .general small { display: block; color: var(--muted); font-size: .7rem; }
+
+/* ---------- 🏠 Inicio ---------- */
+.inicio { display: grid; gap: 12px; }
+.tarjeta { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 14px; display: grid; gap: 8px; position: relative;
+  animation: aparece .4s cubic-bezier(.2,.9,.25,1) both; }
+.tarjeta h3 { margin: 0; font: 700 1rem var(--font-display); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
+.tarjeta h3 a, .tarjeta h3 button { font: 600 .78rem var(--font-body); letter-spacing: 0; text-transform: none; color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; }
+.tarjeta.hero-ini { color: #fff; border: 0; background: linear-gradient(140deg, var(--h1, #1d7a52), var(--h3, #0a3324)); }
+.tarjeta.hero-ini h3 { color: rgba(255,255,255,.75); }
+.ini-banca { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ini-banca div { background: rgba(0,0,0,.2); border-radius: 12px; padding: 10px; display: grid; }
+.ini-banca b { font: 700 1.6rem var(--font-display); }
+.ini-banca small { opacity: .75; font-size: .72rem; }
+.ini-mascota { display: grid; grid-template-columns: 90px 1fr; gap: 12px; align-items: center; }
+.ini-mascota svg { width: 90px; height: 90px; }
+.ini-fila { display: flex; justify-content: space-between; gap: 8px; font-size: .88rem; padding: 6px 0; border-top: 1px dashed var(--line); align-items: center; }
+.ini-fila:first-of-type { border-top: 0; }
+.ini-fila img { width: 22px; height: 22px; object-fit: contain; vertical-align: middle; }
+.racha { display: flex; gap: 6px; }
+.racha span { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; font-weight: 700; font-size: .85rem; }
+.racha .g { background: var(--win); color: var(--accent-ink); } .racha .p { background: var(--loss); color: #fff; } .racha .e { background: var(--line); color: var(--muted); }
+.editar-bar { position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; z-index: 2; }
+.editar-bar button { width: 34px; height: 34px; padding: 0; border-radius: 10px; font-size: .9rem; }
+.tarjeta.oculta { opacity: .4; }
+.chico { padding: 6px 12px; font-size: .82rem; border-radius: 999px; }
+/* ---------- 📊 Tablas ---------- */
+.chips-ligas { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+.chips-ligas button { flex: 0 0 auto; padding: 7px 12px; border-radius: 999px; font-size: .82rem; }
+.chips-ligas button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.tabla-pos { width: 100%; border-collapse: collapse; font-size: .85rem; background: var(--surface); border-radius: 14px; overflow: hidden; }
+.tabla-pos th { text-align: center; font-size: .68rem; letter-spacing: .06em; color: var(--muted); padding: 8px 4px; border-bottom: 1px solid var(--line); }
+.tabla-pos td { padding: 7px 4px; text-align: center; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.tabla-pos td.eq { text-align: left; display: flex; gap: 8px; align-items: center; min-width: 0; }
+.tabla-pos td.eq img { width: 20px; height: 20px; object-fit: contain; }
+.tabla-pos td.eq span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 34vw; }
+.tabla-pos tr.mio { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.tabla-pos tr { cursor: pointer; } .tabla-pos tr:active { background: var(--bg); }
+.tabla-pos td.pts { font-weight: 700; }
+.pos-mark { display: inline-block; width: 4px; height: 18px; border-radius: 2px; vertical-align: middle; margin-right: 4px; }
+/* ---------- ficha del partido ---------- */
+.fc-marc { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; text-align: center; padding: 14px; border-radius: 18px;
+  background: linear-gradient(140deg, var(--h1, #1d7a52), var(--h3, #0a3324)); color: #fff; }
+.fc-marc img { width: 54px; height: 54px; object-fit: contain; display: block; margin: 0 auto 4px; }
+.fc-marc .num { font: 700 2.6rem/1 var(--font-display); }
+.fc-marc small { display: block; opacity: .8; font-size: .78rem; }
+.timeline { display: grid; gap: 6px; }
+.ev { display: grid; grid-template-columns: 46px 26px 1fr; gap: 8px; align-items: center; font-size: .86rem; padding: 6px 8px; border-radius: 10px; background: var(--surface); }
+.ev.der { grid-template-columns: 1fr 26px 46px; text-align: right; }
+.ev.der .min { order: 3; } .ev.der .ico { order: 2; } .ev.der .txt { order: 1; }
+.ev .min { font: 600 .8rem var(--font-mono); color: var(--muted); }
+.ev .ico { font-size: 1.1rem; text-align: center; }
+.ev small { display: block; color: var(--muted); font-size: .72rem; }
+.ev.gol { background: var(--win-bg); }
+.stat { display: grid; gap: 4px; font-size: .82rem; }
+.stat .n { display: flex; justify-content: space-between; } .stat .n span:nth-child(2) { color: var(--muted); }
+.stat .b { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--line); gap: 2px; }
+.stat .b i { display: block; height: 100%; } .stat .b i:first-child { background: var(--accent); } .stat .b i:last-child { background: #e0567a; margin-left: auto; }
+.alin { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: .82rem; }
+.alin div { background: var(--surface); border-radius: 12px; padding: 10px; display: grid; gap: 3px; align-content: start; }
+.alin b { font-size: .85rem; } .alin .num { color: var(--muted); display: inline-block; min-width: 22px; }
+/* ---------- página del equipo ---------- */
+.eq-cab { display: grid; grid-template-columns: 70px 1fr; gap: 12px; align-items: center; padding: 14px; border-radius: 18px; color: #fff;
+  background: linear-gradient(140deg, var(--h1, #1d7a52), var(--h3, #0a3324)); }
+.eq-cab img { width: 64px; height: 64px; object-fit: contain; }
+.eq-cab b { font: 700 1.4rem var(--font-display); text-transform: uppercase; display: block; }
+.eq-cab small { opacity: .8; }
+.forma { display: flex; gap: 6px; }
+.forma span { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; font-weight: 700; font-size: .85rem; }
+.forma .G { background: var(--win); color: var(--accent-ink); } .forma .P { background: var(--loss); color: #fff; } .forma .E { background: var(--line); color: var(--fg); }
+.pt-fila { display: grid; grid-template-columns: 28px 1fr auto; gap: 10px; align-items: center; padding: 8px 10px; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 12px; font-size: .86rem; cursor: pointer; }
+.pt-fila img { width: 26px; height: 26px; object-fit: contain; }
+.pt-fila small { display: block; color: var(--muted); font-size: .72rem; }
+/* ---------- 🎨 Mi diseño ---------- */
+.presets { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
+.preset { height: 84px; border-radius: 14px; padding: 8px; display: flex; align-items: flex-end; color: #fff; font-weight: 700; font-size: .85rem;
+  border: 2px solid transparent; background-size: cover; background-position: center; text-shadow: 0 1px 4px rgba(0,0,0,.6); transition: transform .15s; }
+.preset[aria-pressed="true"] { border-color: var(--fg); transform: scale(1.03); }
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.swatches button { width: 38px; height: 38px; border-radius: 50%; padding: 0; border: 3px solid transparent; transition: transform .15s; }
+.swatches button[aria-pressed="true"] { border-color: var(--fg); transform: scale(1.12); }
+.swatches input[type=color] { width: 44px; height: 40px; padding: 2px; border-radius: 10px; }
+.chips button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.estadios { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.estadio { position: relative; height: 92px; border-radius: 12px; overflow: hidden; padding: 0; border: 3px solid transparent; background: var(--surface); }
+.estadio img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.estadio span { position: absolute; left: 0; right: 0; bottom: 0; padding: 4px 6px; font-size: .72rem; color: #fff; text-align: left;
+  background: linear-gradient(transparent, rgba(0,0,0,.75)); }
+.estadio[aria-pressed="true"] { border-color: var(--accent); }
+.menu-ed { display: grid; grid-template-columns: 1fr auto auto; gap: 6px; align-items: center; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 12px; padding: 6px 10px; font-size: .9rem; }
+.menu-ed button { width: 38px; height: 34px; padding: 0; border-radius: 10px; }
+.menu-ed button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.menu-ed.off { opacity: .45; }
+/* fondo de la página */
+.fondo-pag { position: fixed; inset: 0; z-index: 0; pointer-events: none; background-size: cover; background-position: center; opacity: 0; transition: opacity .6s; }
+body.con-fondo .fondo-pag { opacity: var(--fondo-fuerza, .35); }
+body.con-fondo .fondo-pag.foto { filter: blur(2px) saturate(1.1); }
+.credito-fondo { position: fixed; z-index: 1; right: 8px; bottom: calc(4px + env(safe-area-inset-bottom, 0px)); font-size: .6rem; color: var(--muted);
+  margin: 0; opacity: .75; pointer-events: none; max-width: 70vw; text-align: right; }
+.rk span small { display: block; color: var(--muted); font-size: .72rem; }
+body.cuadradas .summary, body.cuadradas .bet, body.cuadradas .res, body.cuadradas .juego, body.cuadradas .g-card, body.cuadradas .tarjeta,
+body.cuadradas .serie, body.cuadradas .senal, body.cuadradas .cv-partido, body.cuadradas .linea, body.cuadradas .q-partido, body.cuadradas .reto,
+body.cuadradas .corral, body.cuadradas .cartera, body.cuadradas button:not(.burger):not(.menu-cerrar):not(.swatches button),
+body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cuadradas .eq-cab, body.cuadradas .fc-marc { border-radius: 4px !important; }
+.ocr { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.ocr label.foto { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; padding: 9px 12px; border: 1px dashed var(--accent); border-radius: 10px;
+  color: var(--accent); font-weight: 600; cursor: pointer; font-size: .88rem; }
 </style>
 </head>
 <body>
 
+<div class="fondo-pag" id="fondo-pag" aria-hidden="true"></div>
 <div class="marca-agua" aria-hidden="true"></div>
 <div class="wrap">
   <header>
@@ -839,6 +948,8 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
     <section class="section">
       <h2 id="f-titulo">Nueva apuesta</h2>
       <form id="f">
+        <div class="ocr"><label class="foto" for="f-foto">📷 Llenar con foto del boleto</label><input id="f-foto" type="file" accept="image/*" hidden>
+          <span class="hint" id="f-ocr-txt">Sube la captura de Caliente o Draftea y la leo por ti.</span></div>
         <label>Partido<input id="f-partido" placeholder="Jaguars @ Ravens" autocomplete="off"></label>
         <div class="row">
           <label>Selección<input id="f-sel" required placeholder="Jaguars ganador" autocomplete="off"></label>
@@ -898,6 +1009,11 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
     <div class="jm-cab"><b id="jm-tit">Juego</b><span class="num" id="jm-score"></span><button type="button" id="jm-x" aria-label="Cerrar juego">✕</button></div>
     <div class="jm-area" id="jm-area"></div>
   </div>
+  <div class="juego-modal ficha-modal" id="ficha" hidden role="dialog" aria-modal="true" aria-labelledby="fc-tit">
+    <div class="jm-cab"><b id="fc-tit">Partido</b><button type="button" id="fc-x" aria-label="Cerrar">✕</button></div>
+    <div class="jm-area" id="fc-area"></div>
+  </div>
+  <p class="credito-fondo" id="credito-fondo" hidden></p>
   <div class="toast" id="toast" hidden role="status"><span id="toast-txt"></span><button type="button" id="toast-x" aria-label="Cerrar">✕</button></div>
   <div class="visor" id="visor" hidden><img id="visor-img" alt="Foto ampliada"></div>
 
@@ -1025,6 +1141,41 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
       el bot no tiene momios de LoL porque la API de cuotas no cubre esports.</p>
   </div>
 
+
+  <!-- ===================== INICIO ===================== -->
+  <div id="v-inicio" class="vista section" hidden>
+    <div class="head"><span class="hint" id="ini-fecha"></span><button type="button" id="ini-editar" class="chico">✏️ Editar inicio</button></div>
+    <div class="inicio" id="inicio"></div>
+  </div>
+
+  <!-- ===================== TABLAS ===================== -->
+  <div id="v-tablas" class="vista section" hidden>
+    <div class="chips-ligas" id="tb-ligas"></div>
+    <div id="tb-cont"><p class="empty">Cargando…</p></div>
+  </div>
+
+  <!-- ===================== MI DISEÑO ===================== -->
+  <div id="v-diseno" class="vista section" hidden>
+    <h2>✨ Estilos listos</h2>
+    <div class="presets" id="ds-presets"></div>
+    <h2>🎨 Color principal</h2>
+    <div class="swatches" id="ds-colores"></div>
+    <h2>🌗 Modo</h2>
+    <div class="seg seg3" id="ds-modo"><button type="button" data-m="auto">Automático</button><button type="button" data-m="claro">☀️ Claro</button><button type="button" data-m="oscuro">🌙 Oscuro</button></div>
+    <h2>🖼️ Fondo</h2>
+    <div class="chips" id="ds-fondo"></div>
+    <div id="ds-estadios" class="estadios" hidden></div>
+    <label id="ds-fuerza-w">Qué tanto se ve el fondo<input type="range" id="ds-fuerza" min="10" max="80" value="35"></label>
+    <h2>🔠 Letra y forma</h2>
+    <div class="seg seg3" id="ds-letra"><button type="button" data-l="chica">Chica</button><button type="button" data-l="normal">Normal</button><button type="button" data-l="grande">Grande</button></div>
+    <div class="seg" id="ds-esquinas"><button type="button" data-e="redondas">⬭ Redondas</button><button type="button" data-e="cuadradas">▭ Cuadradas</button></div>
+    <h2>📋 Tu menú</h2>
+    <p class="hint">⭐ = sale hasta arriba del menú · 👁 = mostrar u ocultar.</p>
+    <div class="list" id="ds-menu"></div>
+    <button type="button" id="ds-reset">↺ Volver al diseño original</button>
+    <p class="hint" id="ds-guardado"></p>
+  </div>
+
   <!-- ===================== MOVIMIENTO DE LÍNEAS ===================== -->
   <div id="v-lineas" class="vista section" hidden>
     <p class="explica">📈 Cómo cambió la probabilidad de <b>Pinnacle</b> (la casa de los profesionales) entre los escaneos del bot.
@@ -1118,6 +1269,7 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
     </form>
     <div class="opciones-club" id="eq-ops"></div>
     <button type="button" id="eq-quitar" hidden>Quitar mi equipo</button>
+    <div id="eq-pagina"></div>
   </div>
 
   <!-- ===================== RESULTADOS ===================== -->
@@ -1174,6 +1326,9 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
     <button type="button" class="menu-cerrar" id="cerrar-menu" aria-label="Cerrar menú">✕</button></div>
   <div class="menu-yo" id="menu-yo"><span class="fav" id="menu-fav">⭐</span><div><small>Hola</small><b id="menu-nombre">—</b></div></div>
   <div class="menu-scroll" id="menu-items">
+    <div class="menu-grupo" id="grupo-favs" hidden>⭐ Favoritos</div>
+    <div id="menu-favs"></div>
+    <button class="menu-item" data-v="inicio"><span class="mi">🏠</span><span class="txt">Inicio<small>Tu resumen del día</small></span><span class="flecha">›</span></button>
     <div class="menu-grupo">Mis apuestas</div>
     <button class="menu-item" data-v="bot"><span class="mi">🤖</span><span class="txt">Banca del bot<small>Señales, banca y pendientes</small></span><span class="flecha">›</span></button>
     <button class="menu-item" data-v="conviene"><span class="mi">✅</span><span class="txt">¿Conviene?<small>Compara Caliente y Draftea con el bot</small></span><span class="punto" id="conv-punto" hidden></span><span class="flecha">›</span></button>
@@ -1182,6 +1337,7 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
     <div class="menu-grupo">En vivo</div>
     <button class="menu-item" data-v="hoy"><span class="mi">📺</span><span class="txt">Hoy<small>Marcadores, noticias y datos</small></span><span class="flecha">›</span></button>
     <button class="menu-item" data-v="guru"><span class="mi">🔮</span><span class="txt">Gurú<small>Pronósticos con modelos matemáticos</small></span><span class="flecha">›</span></button>
+    <button class="menu-item" data-v="tablas"><span class="mi">📊</span><span class="txt">Tablas<small>Posiciones y goleadores</small></span><span class="flecha">›</span></button>
     <button class="menu-item" data-v="lol"><span class="mi">🐉</span><span class="txt">LoL Worlds<small>Mundial de League of Legends en vivo</small></span><span class="punto" id="lol-punto" hidden>EN VIVO</span><span class="flecha">›</span></button>
     <button class="menu-item" data-v="lineas"><span class="mi">📈</span><span class="txt">Movimiento de líneas<small>Hacia dónde va Pinnacle</small></span><span class="flecha">›</span></button>
     <div class="menu-grupo">Con amigos</div>
@@ -1192,7 +1348,8 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
     <div class="menu-grupo">Para practicar</div>
     <button class="menu-item" data-v="practica"><span class="mi">🎮</span><span class="txt">Modo práctica<small>Apuestas de mentira con los momios del bot</small></span><span class="flecha">›</span></button>
     <div class="menu-grupo">Tú</div>
-    <button class="menu-item" data-v="equipo"><span class="mi">⭐</span><span class="txt">Mi equipo<small>Colores de la página y avisos</small></span><span class="flecha">›</span></button>
+    <button class="menu-item" data-v="diseno"><span class="mi">🎨</span><span class="txt">Mi diseño<small>Colores, fondo, estadio y menú</small></span><span class="flecha">›</span></button>
+    <button class="menu-item" data-v="equipo"><span class="mi">⭐</span><span class="txt">Mi equipo<small>Su página, colores y avisos</small></span><span class="flecha">›</span></button>
   </div>
   <div class="menu-pie"><span class="hint" id="menu-ver">Hecho para ti</span><button type="button" id="menu-salir">Cerrar sesión</button></div>
 </nav>
@@ -1274,11 +1431,11 @@ async function hacer(op, datos, errorTxt) {
 
 // ---------------------------------------------------------------- vistas
 const SECCIONES = {
-  bot: ["🤖", "Banca del bot"], conviene: ["✅", "¿Conviene?"], normal: ["🎲", "Normales"], resultados: ["📜", "Historial"], hoy: ["📺", "Hoy"],
+  inicio: ["🏠", "Inicio"], tablas: ["📊", "Tablas"], diseno: ["🎨", "Mi diseño"], bot: ["🤖", "Banca del bot"], conviene: ["✅", "¿Conviene?"], normal: ["🎲", "Normales"], resultados: ["📜", "Historial"], hoy: ["📺", "Hoy"],
   lineas: ["📈", "Líneas"], guru: ["🔮", "Gurú"], lol: ["🐉", "LoL Worlds"], comunidad: ["💬", "Comunidad"], quiniela: ["🏆", "Quiniela"], retos: ["⚔️", "Retos"],
   practica: ["🎮", "Práctica"], juegos: ["🕹️", "Minijuegos"], equipo: ["⭐", "Mi equipo"] };
 function irA(v) {
-  vista = SECCIONES[v] ? v : "bot";
+  vista = SECCIONES[v] ? v : "inicio";
   if (!listo) return;
   const cambio = !$("v-" + vista) || $("v-" + vista).hidden;
   document.querySelectorAll(".menu-item").forEach(t => t.dataset.v === vista ? t.setAttribute("aria-current", "page") : t.removeAttribute("aria-current"));
@@ -1297,10 +1454,13 @@ function irA(v) {
   if (vista === "guru") cargarGuru();
   if (vista === "juegos") cargarMascota();
   if (vista === "lol") cargarLol(); else { clearTimeout(lolTimer); }
+  if (vista === "inicio") pintarInicio();
+  if (vista === "tablas") cargarTablas();
+  if (vista === "diseno") pintarDiseno();
   if (vista === "quiniela") cargarQuiniela();
   if (vista === "retos") cargarRetos();
   if (vista === "practica") cargarPractica();
-  if (vista === "equipo") pintarEquipo();
+  if (vista === "equipo") { pintarEquipo(); const fv = perfil && perfil.equipo_fav; if (fv && fv.ruta && fv.id) paginaEquipo($("eq-pagina"), fv.ruta, fv.id, false); else $("eq-pagina").innerHTML = ""; }
   $("v-reg").classList.toggle("vista-normal", vista === "normal");
   $("f-prob-wrap").hidden = vista !== "bot";
   $("ajustes").hidden = vista !== "bot";
@@ -1763,6 +1923,7 @@ function pintarHoy() {
       cab.append(document.createTextNode(p.liga)); cont.append(cab);
     }
     const yo = mio(p), card = el("div", "juego" + (yo.length ? " mio" : ""));
+    card.style.cursor = "pointer"; card.title = "Ver ficha del partido"; card.onclick = () => { abrirModalFicha("Partido"); abrirFicha(p.ruta, p.id); };
     [p.visita, p.local].forEach(t => {
       const res = p.estado === "post" ? (t.ganador ? " gano" : " perdio") : "";
       const fila = el("div", "eq" + res);
@@ -1944,7 +2105,12 @@ function aplicarTema() {
   document.querySelector('meta[name="theme-color"]').content = e.intensidad === "mucho" ? mezclar(base, "#000000", .3) : (oscuro() ? "#0d1411" : "#eef2ef");
 }
 async function cargarPerfil() {
-  try { perfil = await api("perfil"); aplicarTema(); pintarEquipo(); } catch (e) {}
+  try {
+    perfil = await api("perfil");
+    if (perfil && perfil.tema) { tema = { ...TEMA_BASE, ...perfil.tema }; try { localStorage.setItem("mi-tema", JSON.stringify(tema)); } catch (e) {} }
+    aplicarDiseno(); pintarEquipo();
+    if (vista === "inicio") pintarInicio();
+  } catch (e) {}
 }
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", aplicarTema);
 
@@ -3491,6 +3657,415 @@ $("tarjeta-btn").addEventListener("click", async () => {
   $("tarjeta-btn").disabled = false;
 });
 
+// ---------------------------------------------------------------- 🎨 Mi diseño (se guarda en tu cuenta)
+const TEMA_BASE = { preset: "original", acento: null, modo: "auto", fondo: { tipo: "ninguno" }, fuerza: 35, letra: "normal", esquinas: "redondas",
+  favs: [], ocultos: [], inicio: null, inicioOcultas: [] };
+let tema = { ...TEMA_BASE };
+try { tema = { ...TEMA_BASE, ...(JSON.parse(localStorage.getItem("mi-tema")) || {}) }; } catch (e) {}
+const COLORES = ["#39c08c", "#0d7a57", "#1e88e5", "#5b6cff", "#8e44ad", "#e0567a", "#e53935", "#ff7a00", "#f2c200", "#00bcd4", "#795548", "#607d8b"];
+const PRESETS = {
+  original: { n: "Original", acento: null, modo: "auto", fondo: { tipo: "ninguno" }, bg: "linear-gradient(140deg,#1d7a52,#0a3324)" },
+  estadio: { n: "🏟️ Estadio", acento: null, modo: "oscuro", fondo: { tipo: "club" }, fuerza: 40, bg: "linear-gradient(140deg,#234,#0b1720)" },
+  neon: { n: "⚡ Neón", acento: "#39ff14", modo: "oscuro", fondo: { tipo: "degradado" }, fuerza: 45, bg: "linear-gradient(140deg,#0f0c29,#39ff14)" },
+  clasico: { n: "📰 Clásico", acento: "#0d7a57", modo: "claro", fondo: { tipo: "ninguno" }, bg: "linear-gradient(140deg,#eef2ef,#0d7a57)" },
+  retro: { n: "📻 Retro", acento: "#e07a2b", modo: "claro", fondo: { tipo: "degradado" }, fuerza: 30, bg: "linear-gradient(140deg,#f3e3c3,#e07a2b)" },
+  equipo: { n: "⭐ Tu equipo", acento: null, modo: "oscuro", fondo: { tipo: "escudo" }, fuerza: 30, bg: "linear-gradient(140deg,var(--h1,#1d7a52),var(--h3,#0a3324))" },
+};
+let guardarTimer = null;
+function guardarTema() {
+  try { localStorage.setItem("mi-tema", JSON.stringify(tema)); } catch (e) {}
+  clearTimeout(guardarTimer);
+  guardarTimer = setTimeout(async () => {
+    try { await api("tema", { tema }); $("ds-guardado") && ($("ds-guardado").textContent = "✓ Guardado en tu cuenta (lo verás igual en cualquier celular)."); }
+    catch (e) { $("ds-guardado") && ($("ds-guardado").textContent = "No se pudo guardar en tu cuenta; quedó en este celular."); }
+  }, 700);
+}
+function aplicarDiseno() {
+  const raiz = document.documentElement, b = document.body;
+  // modo claro / oscuro
+  if (tema.modo === "claro") raiz.dataset.theme = "light"; else if (tema.modo === "oscuro") raiz.dataset.theme = "dark"; else delete raiz.dataset.theme;
+  // color principal (si eligió uno, gana sobre el del equipo favorito)
+  aplicarTema();
+  if (tema.acento && /^#[0-9a-f]{6}$/i.test(tema.acento)) {
+    let a = tema.acento;
+    if (oscuro() && luz(a) < .12) a = mezclar(a, "#ffffff", .35);
+    if (!oscuro() && luz(a) > .45) a = mezclar(a, "#000000", .3);
+    raiz.style.setProperty("--accent", a); raiz.style.setProperty("--accent-ink", luz(a) > .35 ? "#0b0f0d" : "#ffffff");
+    if (!(perfil && perfil.equipo_fav)) {
+      const base = luz(tema.acento) <= .2 ? tema.acento : mezclar(tema.acento, "#000000", .5);
+      raiz.style.setProperty("--h1", mezclar(base, "#ffffff", .08)); raiz.style.setProperty("--h2", mezclar(base, "#000000", .3)); raiz.style.setProperty("--h3", mezclar(base, "#000000", .6));
+    }
+  }
+  raiz.style.fontSize = { chica: "14px", normal: "", grande: "17px" }[tema.letra] || "";
+  b.classList.toggle("cuadradas", tema.esquinas === "cuadradas");
+  // fondo
+  const f = $("fondo-pag"), fo = tema.fondo || { tipo: "ninguno" }, cred = $("credito-fondo");
+  f.className = "fondo-pag"; f.style.backgroundImage = ""; cred.hidden = true;
+  b.classList.remove("con-fondo");
+  raiz.style.setProperty("--fondo-fuerza", (tema.fuerza || 35) / 100);
+  if (fo.tipo === "degradado") { f.style.backgroundImage = "radial-gradient(90% 60% at 80% 0%, var(--accent), transparent 70%), radial-gradient(70% 60% at 0% 100%, var(--h1, #5b6cff), transparent 70%)"; b.classList.add("con-fondo"); }
+  else if (fo.tipo === "escudo") { b.classList.add("con-equipo"); }
+  else if ((fo.tipo === "club" || fo.tipo === "galeria") && fo.foto && /^https:\/\//.test(fo.foto)) {
+    f.style.backgroundImage = `linear-gradient(rgba(0,0,0,.25), rgba(0,0,0,.55)), url("${fo.foto.replace(/"/g, "")}")`; f.classList.add("foto"); b.classList.add("con-fondo");
+    cred.textContent = `🏟️ ${fo.nombre || "Estadio"} · ${fo.credito || ""}`; cred.hidden = false;
+  }
+  if (fo.tipo !== "escudo" && !(perfil && perfil.equipo_fav)) b.classList.remove("con-equipo");
+  pintarMenuFavs();
+}
+// menú: favoritos arriba y secciones ocultas
+function pintarMenuFavs() {
+  const favs = (tema.favs || []).filter(v => SECCIONES[v]), cont = $("menu-favs");
+  cont.innerHTML = "";
+  favs.forEach(v => {
+    const orig = document.querySelector(`#menu-items > .menu-item[data-v="${v}"]`); if (!orig) return;
+    const c = orig.cloneNode(true); c.classList.add("fav-copia");
+    c.addEventListener("click", () => { irA(v); setTimeout(cerrarMenu, 120); });
+    if (v === vista) c.setAttribute("aria-current", "page");
+    cont.append(c);
+  });
+  $("grupo-favs").hidden = !favs.length;
+  document.querySelectorAll("#menu-items > .menu-item").forEach(it => { it.hidden = (tema.ocultos || []).includes(it.dataset.v); });
+}
+let estadiosDatos = null;
+async function cargarEstadios() {
+  const fav = perfil && perfil.equipo_fav;
+  const q = fav && fav.ruta && fav.id ? `&ruta=${encodeURIComponent(fav.ruta)}&id=${encodeURIComponent(fav.id)}` : "";
+  try { const r = await fetch("/api/deportes?op=estadios" + q); estadiosDatos = await r.json(); } catch (e) { estadiosDatos = { galeria: [] }; }
+  return estadiosDatos;
+}
+async function elegirFondo(tipo) {
+  tema.preset = "propio";
+  if (tipo === "club") {
+    if (!(perfil && perfil.equipo_fav)) { estado("Primero elige tu equipo favorito en ⭐ Mi equipo."); setTimeout(() => estado(""), 4000); return; }
+    const d = estadiosDatos || await cargarEstadios();
+    if (!d.club || !d.club.foto) { estado("No encontré foto del estadio de tu equipo; elige uno de la galería."); setTimeout(() => estado(""), 4000); tipo = "galeria"; }
+    else tema.fondo = { tipo: "club", foto: d.club.foto, nombre: d.club.nombre, credito: d.club.credito };
+  }
+  if (tipo !== "club") tema.fondo = tipo === "galeria" ? (tema.fondo.tipo === "galeria" ? tema.fondo : { tipo: "galeria" }) : { tipo };
+  aplicarDiseno(); guardarTema(); pintarDiseno();
+}
+async function pintarDiseno() {
+  // estilos listos
+  const pr = $("ds-presets"); pr.innerHTML = "";
+  Object.entries(PRESETS).forEach(([k, p]) => {
+    const b = el("button", "preset", p.n); b.type = "button"; b.style.background = p.bg; b.setAttribute("aria-pressed", String(tema.preset === k));
+    b.onclick = async () => {
+      tema = { ...tema, preset: k, acento: p.acento, modo: p.modo, fuerza: p.fuerza || 35 };
+      if (p.fondo.tipo === "club") { await elegirFondo("club"); tema.preset = k; } else tema.fondo = { ...p.fondo };
+      aplicarDiseno(); guardarTema(); pintarDiseno();
+    };
+    pr.append(b);
+  });
+  // colores
+  const sw = $("ds-colores"); sw.innerHTML = "";
+  const auto = el("button", "", "⭐"); auto.type = "button"; auto.title = "Color de mi equipo"; auto.style.background = "var(--bg)";
+  auto.setAttribute("aria-pressed", String(!tema.acento)); auto.onclick = () => { tema.acento = null; tema.preset = "propio"; aplicarDiseno(); guardarTema(); pintarDiseno(); };
+  sw.append(auto);
+  COLORES.forEach(c => { const b = el("button"); b.type = "button"; b.style.background = c; b.setAttribute("aria-label", "Color " + c);
+    b.setAttribute("aria-pressed", String((tema.acento || "").toLowerCase() === c)); b.onclick = () => { tema.acento = c; tema.preset = "propio"; aplicarDiseno(); guardarTema(); pintarDiseno(); }; sw.append(b); });
+  const libre = el("input"); libre.type = "color"; libre.value = tema.acento || "#39c08c"; libre.setAttribute("aria-label", "Otro color");
+  libre.oninput = () => { tema.acento = libre.value; tema.preset = "propio"; aplicarDiseno(); guardarTema(); }; sw.append(libre);
+  // modo, letra, esquinas
+  document.querySelectorAll("#ds-modo [data-m]").forEach(b => { b.setAttribute("aria-selected", String(b.dataset.m === tema.modo));
+    b.onclick = () => { tema.modo = b.dataset.m; aplicarDiseno(); guardarTema(); pintarDiseno(); }; });
+  document.querySelectorAll("#ds-letra [data-l]").forEach(b => { b.setAttribute("aria-selected", String(b.dataset.l === tema.letra));
+    b.onclick = () => { tema.letra = b.dataset.l; aplicarDiseno(); guardarTema(); pintarDiseno(); }; });
+  document.querySelectorAll("#ds-esquinas [data-e]").forEach(b => { b.setAttribute("aria-selected", String(b.dataset.e === tema.esquinas));
+    b.onclick = () => { tema.esquinas = b.dataset.e; aplicarDiseno(); guardarTema(); pintarDiseno(); }; });
+  // fondo
+  const fc = $("ds-fondo"); fc.innerHTML = "";
+  [["ninguno", "Liso"], ["degradado", "🌈 Degradado"], ["escudo", "🛡️ Escudo de mi equipo"], ["club", "🏟️ Estadio de mi club"], ["galeria", "🌍 Estadios famosos"]].forEach(([k, n]) => {
+    const b = el("button", "", n); b.type = "button"; b.setAttribute("aria-pressed", String((tema.fondo || {}).tipo === k)); b.onclick = () => elegirFondo(k); fc.append(b);
+  });
+  $("ds-fuerza").value = tema.fuerza || 35;
+  $("ds-fuerza-w").hidden = !["degradado", "club", "galeria"].includes((tema.fondo || {}).tipo);
+  const es = $("ds-estadios"); es.hidden = (tema.fondo || {}).tipo !== "galeria";
+  if (!es.hidden) {
+    es.innerHTML = ""; es.append(el("p", "hint", "Cargando estadios…"));
+    const d = estadiosDatos || await cargarEstadios(); es.innerHTML = "";
+    const lista = [...(d.club && d.club.foto ? [{ ...d.club, pedido: "⭐ " + d.club.nombre }] : []), ...(d.galeria || [])];
+    lista.forEach(e => { const b = el("button", "estadio"); b.type = "button"; b.setAttribute("aria-pressed", String(tema.fondo.foto === e.foto));
+      const im = el("img"); im.src = e.foto; im.alt = e.nombre; im.loading = "lazy"; b.append(im, el("span", "", e.pedido || e.nombre));
+      b.onclick = () => { tema.fondo = { tipo: "galeria", foto: e.foto, nombre: e.nombre, credito: e.credito }; aplicarDiseno(); guardarTema(); pintarDiseno(); };
+      es.append(b); });
+    if (!lista.length) es.append(el("p", "empty", "No se pudieron cargar los estadios."));
+  }
+  // menú
+  const mm = $("ds-menu"); mm.innerHTML = "";
+  Object.entries(SECCIONES).forEach(([v, [ico, n]]) => {
+    const fijo = ["inicio", "diseno"].includes(v), oculto = (tema.ocultos || []).includes(v), fav = (tema.favs || []).includes(v);
+    const r = el("div", "menu-ed" + (oculto ? " off" : "")); r.append(el("span", "", `${ico} ${n}`));
+    const bf = el("button", "", "⭐"); bf.type = "button"; bf.setAttribute("aria-pressed", String(fav)); bf.setAttribute("aria-label", "Favorito: " + n);
+    bf.onclick = () => { tema.favs = fav ? tema.favs.filter(x => x !== v) : [...(tema.favs || []), v]; aplicarDiseno(); guardarTema(); pintarDiseno(); };
+    const bo = el("button", "", oculto ? "🙈" : "👁"); bo.type = "button"; bo.disabled = fijo; bo.setAttribute("aria-label", (oculto ? "Mostrar " : "Ocultar ") + n);
+    bo.onclick = () => { tema.ocultos = oculto ? tema.ocultos.filter(x => x !== v) : [...(tema.ocultos || []), v]; aplicarDiseno(); guardarTema(); pintarDiseno(); };
+    r.append(bf, bo); mm.append(r);
+  });
+}
+$("ds-fuerza").addEventListener("input", () => { tema.fuerza = Number($("ds-fuerza").value); aplicarDiseno(); guardarTema(); });
+$("ds-reset").addEventListener("click", () => { tema = { ...TEMA_BASE, inicio: tema.inicio, inicioOcultas: tema.inicioOcultas }; aplicarDiseno(); guardarTema(); pintarDiseno(); });
+
+// ---------------------------------------------------------------- 🏠 Inicio (tarjetas que puedes mover y ocultar)
+const TARJETAS = { banca: "💰 Mis bancas", mascota: "🐾 Mi mascota", pendientes: "⏳ Pendientes", senales: "🎯 Señales del bot", equipo: "⭐ Mi equipo",
+  hoy: "📺 Mis partidos de hoy", racha: "📏 Mi racha", lol: "🐉 LoL Worlds" };
+let editandoInicio = false, cacheIni = {};
+function ordenInicio() { const o = (tema.inicio || []).filter(k => TARJETAS[k]); Object.keys(TARJETAS).forEach(k => { if (!o.includes(k)) o.push(k); }); return o; }
+$("ini-editar").addEventListener("click", () => { editandoInicio = !editandoInicio; $("ini-editar").textContent = editandoInicio ? "✓ Listo" : "✏️ Editar inicio"; pintarInicio(); });
+async function pintarInicio() {
+  const cont = $("inicio"); cont.innerHTML = "";
+  const hora = new Date().getHours();
+  $("ini-fecha").textContent = `${hora < 12 ? "☀️ Buenos días" : hora < 19 ? "🌤️ Buenas tardes" : "🌙 Buenas noches"}${perfil && perfil.nombre ? ", " + perfil.nombre : ""} · ${new Date().toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" })}`;
+  const orden = ordenInicio(), ocultas = tema.inicioOcultas || [];
+  orden.forEach((k, i) => {
+    if (!editandoInicio && ocultas.includes(k)) return;
+    const t = el("section", "tarjeta" + (k === "banca" ? " hero-ini" : "") + (ocultas.includes(k) ? " oculta" : "")); t.dataset.k = k;
+    const h = el("h3", "", TARJETAS[k]); t.append(h);
+    if (editandoInicio) {
+      const bar = el("div", "editar-bar");
+      [["▲", -1], ["▼", 1]].forEach(([s, d]) => { const b = el("button", "", s); b.type = "button"; b.disabled = (d < 0 && i === 0) || (d > 0 && i === orden.length - 1);
+        b.onclick = () => { const o = ordenInicio(); [o[i], o[i + d]] = [o[i + d], o[i]]; tema.inicio = o; guardarTema(); pintarInicio(); }; bar.append(b); });
+      const ver = el("button", "", ocultas.includes(k) ? "🙈" : "👁"); ver.type = "button";
+      ver.onclick = () => { tema.inicioOcultas = ocultas.includes(k) ? ocultas.filter(x => x !== k) : [...ocultas, k]; guardarTema(); pintarInicio(); };
+      bar.append(ver); t.append(bar);
+    }
+    const cuerpo = el("div"); t.append(cuerpo); cont.append(t);
+    try { RENDER_INI[k](cuerpo, h); } catch (e) { cuerpo.append(el("p", "hint", "No se pudo cargar.")); }
+  });
+}
+const irBtn = (h, txt, v) => { const b = el("button", "", txt); b.type = "button"; b.onclick = () => irA(v); h.append(b); };
+const RENDER_INI = {
+  banca(c, h) {
+    const bot = bancaBotActual(), en = apuestas.filter(b => b.cartera === "bot" && b.resultado === "pendiente").reduce((s, b) => s + b.monto, 0);
+    const g = el("div", "ini-banca"), a = el("div"), n = el("div");
+    a.append(el("small", "", "🤖 Banca del bot"), el("b", "", fmt(bot)), el("small", "", en ? `${fmt(en)} en juego` : "Nada en juego"));
+    const gn = gananciaNormal(); n.append(el("small", "", "🎲 Normales"), el("b", "", sign(gn)), el("small", "", (movs.libre && (movs.libre.depositado || movs.libre.retirado)) ? `Saldo ${fmt(saldoNormal())}` : "ganancia total"));
+    g.append(a, n); c.append(g); irBtn(h, "Ver →", "bot");
+  },
+  async mascota(c, h) {
+    irBtn(h, "Ir →", "juegos");
+    if (!mascota) { try { mascota = await api("jugar", { accion: "estado" }); } catch (e) { c.append(el("p", "hint", "Sin datos.")); return; } }
+    const fav = perfil && perfil.equipo_fav, hex = x => /^#[0-9a-f]{6}$/i.test(x || "") ? x : null, est = estadoMascota(mascota);
+    const w = el("div", "ini-mascota"), d = el("div");
+    w.innerHTML = animalSVG(mascota.mascota.especie || "perro", est, (fav && hex(fav.color)) || "#c0392b", (fav && hex(fav.color2)) || "#ffffff");
+    d.append(el("b", "", mascota.mascota.nombre || "Momio"), el("p", "hint", { feliz: "😄 Feliz", hambre: "😐 Tiene hambre", huesos: "🦴 ¡En los huesos!" }[est] + ` · cartera $${Number(mascota.saldo).toLocaleString("es-MX")}`));
+    w.append(d); c.append(w);
+  },
+  pendientes(c, h) {
+    irBtn(h, "Todas →", "bot");
+    const p = apuestas.filter(b => b.resultado === "pendiente").sort((a, b) => b.creada - a.creada);
+    if (!p.length) { c.append(el("p", "hint", "Sin apuestas pendientes. 👌")); return; }
+    p.slice(0, 4).forEach(b => { const f = el("div", "ini-fila"), x = el("span"); if (b.logo) x.append(imagen(b.logo), " ");
+      x.append(`${b.seleccion} ${aAmericano(b.cuota)}`); f.append(x, el("b", "num", fmt(b.monto))); c.append(f); });
+    if (p.length > 4) c.append(el("p", "hint", `y ${p.length - 4} más`));
+  },
+  async senales(c, h) {
+    irBtn(h, "Comparar →", "conviene");
+    if (Date.now() - senalesCargadas > 120000) { try { senalesDatos = await api("senales"); senalesCargadas = Date.now(); } catch (e) {} }
+    const ops = senalesDatos.filter(p => Date.parse(p.inicio) > Date.now())
+      .flatMap(p => (p.mercados.h2h || []).map(o => ({ ...o, partido: p.partido, deporte: p.deporte, inicio: p.inicio }))).sort((a, b) => b.prob - a.prob).slice(0, 3);
+    if (!ops.length) { c.append(el("p", "hint", "Sin señales vigentes. El bot escanea a las 7:00 y 18:00.")); return; }
+    ops.forEach(o => { const f = el("div", "ini-fila"); f.append(el("span", "", `${DEP(o.deporte)} ${o.seleccion} · ${(o.prob * 100).toFixed(0)}%`), el("b", "num", aAmericano(o.minima) + " o mejor")); c.append(f); });
+  },
+  async equipo(c, h) {
+    const fav = perfil && perfil.equipo_fav;
+    if (!fav || !fav.ruta) { c.append(el("p", "hint", "Elige tu equipo favorito para ver sus partidos aquí.")); irBtn(h, "Elegir →", "equipo"); return; }
+    irBtn(h, "Su página →", "equipo");
+    if (!cacheIni.equipo) { try { cacheIni.equipo = await (await fetch(`/api/deportes?op=equipo&ruta=${encodeURIComponent(fav.ruta)}&id=${encodeURIComponent(fav.id)}`)).json(); } catch (e) { return; } }
+    const d = cacheIni.equipo, p = (d.proximos || [])[0];
+    const fo = el("div", "forma"); (d.ultimos || []).slice(0, 5).reverse().forEach(u => fo.append(el("span", u.res, u.res))); c.append(fo);
+    if (p) { const f = el("div", "ini-fila"), x = el("span"); if (okUrl(p.logo)) x.append(imagen(p.logo), " ");
+      x.append(`${p.local ? "vs" : "@"} ${p.rival}`); f.append(x, el("span", "hint", cuando(p.fecha))); c.append(f); }
+    if (d.posicion) c.append(el("p", "hint", `${d.posicion.pos}° de ${d.posicion.total} · ${d.posicion.pts || d.posicion.g + "-" + d.posicion.p} pts`));
+  },
+  async hoy(c, h) {
+    irBtn(h, "Todos →", "hoy");
+    if (!cacheIni.hoy || Date.now() - cacheIni.hoyT > 60000) { try { cacheIni.hoy = (await (await fetch("/api/hoy?fecha=" + fechaDia(0))).json()).partidos || []; cacheIni.hoyT = Date.now(); } catch (e) { cacheIni.hoy = []; } }
+    const fav = perfil && perfil.equipo_fav, mias = apuestas.filter(b => b.resultado === "pendiente" && b.logo);
+    const lista = cacheIni.hoy.filter(p => (fav && [p.local.nombre, p.visita.nombre].some(n => n && fav.nombre && (fav.nombre.includes(n) || n.includes(fav.nombre))))
+      || mias.some(b => [p.local.logo, p.visita.logo].some(l => l && llaveLogo(l) === llaveLogo(b.logo))));
+    if (!lista.length) { c.append(el("p", "hint", "Hoy no juegan tu equipo ni tus apuestas.")); return; }
+    lista.slice(0, 5).forEach(p => { const f = el("div", "ini-fila"); f.style.cursor = "pointer"; f.onclick = () => abrirFicha(p.ruta, p.id);
+      f.append(el("span", "", `${p.visita.nombre} ${p.estado === "pre" ? "" : p.visita.marcador} – ${p.estado === "pre" ? "" : p.local.marcador} ${p.local.nombre}`),
+        el("span", p.estado === "in" ? "vivo" : "hint", p.estado === "in" ? p.detalle : p.estado === "post" ? "Final" : new Date(p.inicio).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })));
+      c.append(f); });
+  },
+  racha(c, h) {
+    irBtn(h, "Historial →", "resultados");
+    const cer = apuestas.filter(b => b.resultado !== "pendiente").sort((a, b) => (b.cerrada || b.creada) - (a.cerrada || a.creada)).slice(0, 8).reverse();
+    if (!cer.length) { c.append(el("p", "hint", "Todavía no hay apuestas cerradas.")); return; }
+    const r = el("div", "racha"); cer.forEach(b => r.append(el("span", { gana: "g", pierde: "p", nula: "e" }[b.resultado], { gana: "✓", pierde: "✗", nula: "–" }[b.resultado]))); c.append(r);
+    const cl = apuestas.filter(b => b.clv != null);
+    if (cl.length) c.append(el("p", "hint", `CLV promedio ${((cl.reduce((s, b) => s + b.clv, 0) / cl.length) * 100).toFixed(1)}% en ${cl.length} apuestas`));
+  },
+  async lol(c, h) {
+    irBtn(h, "Ver →", "lol");
+    if (!lolDatos) { try { lolDatos = await (await fetch("/api/lol")).json(); } catch (e) { return; } }
+    if ((lolDatos.enVivo || []).length) c.append(el("p", "vivo", "EN VIVO ahora"));
+    const p = (lolDatos.eventos || []).filter(e => e.estado !== "completed")[0];
+    if (p) c.append(el("div", "ini-fila", `${p.a?.code || "?"} vs ${p.b?.code || "?"} · ${p.fase}`), el("p", "hint", new Date(p.inicio).toLocaleString("es-MX", { weekday: "long", hour: "2-digit", minute: "2-digit" })));
+  },
+};
+
+// ---------------------------------------------------------------- 📊 Tablas de posiciones
+const LIGAS_TABLA = [["soccer/mex.1", "Liga MX"], ["soccer/eng.1", "Premier"], ["soccer/esp.1", "LaLiga"], ["soccer/ita.1", "Serie A"],
+  ["soccer/ger.1", "Bundesliga"], ["soccer/fra.1", "Ligue 1"], ["soccer/uefa.champions", "Champions"], ["football/nfl", "NFL"], ["basketball/nba", "NBA"], ["baseball/mlb", "MLB"]];
+let ligaTabla = null;
+async function cargarTablas() {
+  const fav = perfil && perfil.equipo_fav;
+  if (!ligaTabla) ligaTabla = fav && LIGAS_TABLA.some(l => l[0] === fav.ruta) ? fav.ruta : "soccer/mex.1";
+  const ch = $("tb-ligas"); ch.innerHTML = "";
+  LIGAS_TABLA.forEach(([r, n]) => { const b = el("button", "", n); b.type = "button"; b.setAttribute("aria-pressed", String(r === ligaTabla));
+    b.onclick = () => { ligaTabla = r; cargarTablas(); }; ch.append(b); });
+  const cont = $("tb-cont"); cont.innerHTML = ""; cont.append(el("p", "hint", "Cargando tabla…"));
+  try {
+    const d = await (await fetch("/api/deportes?op=tabla&ruta=" + encodeURIComponent(ligaTabla))).json();
+    cont.innerHTML = "";
+    const futbol = ligaTabla.startsWith("soccer");
+    (d.grupos || []).forEach(g => {
+      if ((d.grupos || []).length > 1 || g.nombre) cont.append(el("div", "liga-cab", g.nombre));
+      const t = el("table", "tabla-pos"), th = el("tr");
+      (futbol ? ["#", "Equipo", "PJ", "G", "E", "P", "DIF", "PTS"] : ["#", "Equipo", "G", "P", "%", "Racha"]).forEach(x => th.append(el("th", "", x)));
+      t.append(th);
+      g.filas.forEach(f => {
+        const tr = el("tr", fav && String(fav.id) === String(f.id) && fav.ruta === ligaTabla ? "mio" : "");
+        const pos = el("td"); if (f.color) { const m = el("span", "pos-mark"); m.style.background = f.color; pos.append(m); } pos.append(String(f.pos || ""));
+        const eq = el("td", "eq"); if (okUrl(f.logo)) eq.append(imagen(f.logo)); eq.append(el("span", "", f.nombre));
+        tr.append(pos, eq);
+        (futbol ? [f.pj, f.g, f.e, f.p, f.dif] : [f.g, f.p, f.pct, f.racha]).forEach(v => tr.append(el("td", "", v ?? "")));
+        if (futbol) tr.append(el("td", "pts", f.pts ?? ""));
+        tr.onclick = () => abrirEquipo(ligaTabla, f.id);
+        t.append(tr);
+      });
+      cont.append(t);
+    });
+    (d.lideres || []).forEach(l => {
+      cont.append(el("h2", "", l.cat === "Goleadores" ? "⚽ Goleadores" : "🅰️ Asistencias"));
+      const r = el("div", "rk"); l.jugadores.forEach((j, i) => { const x = el("div"), n = el("span", "", j.n);
+        n.append(el("small", "", j.equipo)); x.append(el("span", "", ["🥇", "🥈", "🥉"][i] || `${i + 1}.`), n, el("b", "num", String(j.valor))); r.append(x); });
+      cont.append(r);
+    });
+    if (!(d.grupos || []).length) cont.append(el("p", "empty", "Esta liga no tiene tabla ahorita (fuera de temporada)."));
+  } catch (e) { cont.innerHTML = ""; cont.append(el("p", "empty", "No se pudo cargar la tabla.")); }
+}
+
+// ---------------------------------------------------------------- ficha del partido y página de equipo (ventana)
+let fichaTimer = null;
+function abrirModalFicha(tit) { $("fc-tit").textContent = tit; $("fc-area").innerHTML = ""; $("fc-area").append(el("p", "hint", "Cargando…")); $("ficha").hidden = false; document.body.style.overflow = "hidden"; }
+$("fc-x").addEventListener("click", () => { clearTimeout(fichaTimer); $("ficha").hidden = true; document.body.style.overflow = ""; });
+async function abrirFicha(ruta, id, sub = "resumen") {
+  if (!ruta || !id) return;
+  clearTimeout(fichaTimer);
+  if ($("ficha").hidden) abrirModalFicha("Partido");
+  let d;
+  try { const r = await fetch(`/api/deportes?op=partido&ruta=${encodeURIComponent(ruta)}&id=${encodeURIComponent(id)}`); d = await r.json(); if (!r.ok) throw new Error(d.error); }
+  catch (e) { $("fc-area").innerHTML = ""; $("fc-area").append(el("p", "empty", e.message || "No se pudo cargar el partido.")); return; }
+  const a = $("fc-area"); a.innerHTML = "";
+  const loc = d.equipos.find(e => e.lado === "home") || d.equipos[0] || {}, vis = d.equipos.find(e => e.lado === "away") || d.equipos[1] || {};
+  $("fc-tit").textContent = `${vis.corto || ""} vs ${loc.corto || ""}`;
+  const m = el("div", "fc-marc"), lado = t => { const x = el("div"); if (okUrl(t.logo)) x.append(imagen(t.logo)); x.append(el("span", "", t.nombre || "")); return x; };
+  const mid = el("div"); mid.append(el("div", "num", d.estado === "pre" ? "VS" : `${vis.marcador ?? ""} – ${loc.marcador ?? ""}`), el("small", d.estado === "in" ? "vivo" : "", d.detalle));
+  m.append(lado(vis), mid, lado(loc)); a.append(m);
+  if (d.estadio) a.append(el("p", "hint", `🏟️ ${d.estadio}${d.ciudad ? ", " + d.ciudad : ""}`));
+  // ¿tengo apuesta en este partido?
+  apuestas.filter(b => b.logo && [loc.logo, vis.logo].some(l => l && llaveLogo(l) === llaveLogo(b.logo))).slice(0, 3)
+    .forEach(b => a.append(el("div", "tu-apuesta", `🎯 Tu apuesta: ${b.seleccion} ${aAmericano(b.cuota)} · ${fmt(b.monto)} · ${b.resultado === "pendiente" ? "⏳ en juego" : b.resultado === "gana" ? "✅ ganó" : b.resultado === "pierde" ? "❌ perdió" : "➖ nula"}`)));
+  const tabs = el("div", "seg seg3"), cont = el("div", "section");
+  const subs = [["resumen", "Resumen"], ["stats", "Estadísticas"], [d.alineaciones.length ? "alin" : "lideres", d.alineaciones.length ? "Alineaciones" : "Líderes"]];
+  subs.forEach(([k, n]) => { const b = el("button", "", n); b.type = "button"; b.setAttribute("aria-selected", String(k === sub)); b.onclick = () => { sub = k; pintarSub(); tabs.querySelectorAll("button").forEach(x => x.setAttribute("aria-selected", String(x === b))); }; tabs.append(b); });
+  a.append(tabs, cont);
+  const pintarSub = () => {
+    cont.innerHTML = "";
+    if (sub === "resumen") {
+      if (!d.eventos.length) { cont.append(el("p", "empty", d.estado === "pre" ? "El partido no ha empezado." : "Sin eventos todavía.")); return; }
+      const tl = el("div", "timeline");
+      d.eventos.forEach(e => { const der = String(e.equipo) === String(loc.id);
+        const ico = e.gol ? (/own/i.test(e.tipo) ? "🔄⚽" : "⚽") : /red/i.test(e.tipo) ? "🟥" : /yellow/i.test(e.tipo) ? "🟨" : /subst/i.test(e.tipo) ? "🔁" : "•";
+        const r = el("div", "ev" + (der ? " der" : "") + (e.gol ? " gol" : "")), t = el("div", "txt");
+        t.append(el("b", "", e.jugador || e.texto), el("small", "", (e.marcador ? e.marcador + " · " : "") + (e.detalle || "").slice(0, 110)));
+        const icoUS = /nfl/.test(ruta) ? "🏈" : /nba/.test(ruta) ? "🏀" : /mlb/.test(ruta) ? "⚾" : null;
+        r.append(el("span", "min", e.min), el("span", "ico", icoUS || ico), t); tl.append(r); });
+      cont.append(tl);
+    } else if (sub === "stats") {
+      if (!d.stats.length) { cont.append(el("p", "empty", "Sin estadísticas todavía.")); return; }
+      d.stats.forEach(s => { const va = s.valores[vis.id], vl = s.valores[loc.id], na = parseFloat(va) || 0, nl = parseFloat(vl) || 0, tot = na + nl || 1;
+        const x = el("div", "stat"), n = el("div", "n"); n.append(el("b", "", va), el("span", "", s.nombre), el("b", "", vl));
+        const b = el("div", "b"), i1 = el("i"), i2 = el("i"); i1.style.width = (na / tot * 100) + "%"; i2.style.width = (nl / tot * 100) + "%"; b.append(i1, i2);
+        x.append(n, b); cont.append(x); });
+    } else if (sub === "alin") {
+      const g = el("div", "alin");
+      [vis, loc].forEach(t => { const r = d.alineaciones.find(x => String(x.equipo) === String(t.id)); const c = el("div");
+        c.append(el("b", "", `${t.corto || t.nombre}${r && r.formacion ? " · " + r.formacion : ""}`));
+        (r ? r.titulares : []).forEach(p => { const f = el("span"); f.append(el("span", "num", p.num || ""), ` ${p.n}`); c.append(f); });
+        if (r && r.suplentes.length) { c.append(el("small", "hint", "Entraron:")); r.suplentes.forEach(p => c.append(el("span", "", `🔁 ${p.n}`))); }
+        if (!r) c.append(el("span", "hint", "Sin alineación todavía.")); g.append(c); });
+      cont.append(g);
+    } else {
+      if (!d.lideres.length) { cont.append(el("p", "empty", "Sin líderes todavía.")); return; }
+      d.lideres.forEach(l => { const t = d.equipos.find(e => String(e.id) === String(l.equipo)) || {}; cont.append(el("div", "liga-cab", t.nombre || ""));
+        l.cats.forEach(c => { const f = el("div", "ini-fila"); f.append(el("span", "", `${c.cat}: ${c.jugador || "—"}`), el("b", "num", c.valor || "")); cont.append(f); }); });
+    }
+  };
+  pintarSub();
+  if (d.estado === "in" && !$("ficha").hidden) fichaTimer = setTimeout(() => { if (!$("ficha").hidden) abrirFicha(ruta, id, sub); }, 30000);
+}
+async function paginaEquipo(cont, ruta, id, enModal) {
+  cont.innerHTML = ""; cont.append(el("p", "hint", "Cargando…"));
+  let d;
+  try { d = await (await fetch(`/api/deportes?op=equipo&ruta=${encodeURIComponent(ruta)}&id=${encodeURIComponent(id)}`)).json(); } catch (e) { cont.innerHTML = ""; cont.append(el("p", "empty", "No se pudo cargar.")); return; }
+  cont.innerHTML = "";
+  if (enModal) $("fc-tit").textContent = d.nombre || "Equipo";
+  const cab = el("div", "eq-cab"); if (okUrl(d.logo)) cab.append(imagen(d.logo)); else cab.append(el("span"));
+  const t = el("div"); t.append(el("b", "", d.nombre || ""), el("small", "", [d.record && `Récord ${d.record}`, d.posicion && `${d.posicion.pos}° de ${d.posicion.total}${d.posicion.pts ? " · " + d.posicion.pts + " pts" : ""}`].filter(Boolean).join(" · ")));
+  cab.append(t); cont.append(cab);
+  if ((d.ultimos || []).length) { cont.append(el("h2", "", "📈 Forma (últimos)")); const f = el("div", "forma"); d.ultimos.slice(0, 6).reverse().forEach(u => f.append(el("span", u.res, u.res))); cont.append(f); }
+  const lista = (tit, ps, jugado) => { if (!ps.length) return; cont.append(el("h2", "", tit));
+    ps.forEach(p => { const r = el("div", "pt-fila"); r.append(okUrl(p.logo) ? imagen(p.logo) : el("span")); const x = el("div");
+      x.append(el("b", "", `${p.local ? "vs" : "@"} ${p.rival}`), el("small", "", `${cuando(p.fecha)}${p.estadio ? " · " + p.estadio : ""}`));
+      r.append(x, el("b", "num " + (p.res === "G" ? "pos" : p.res === "P" ? "neg" : ""), jugado ? `${p.mio}-${p.suyo}` : ""));
+      r.onclick = () => { if (!enModal) abrirModalFicha("Partido"); abrirFicha(ruta, p.id); }; cont.append(r); }); };
+  lista("⏭️ Próximos partidos", d.proximos || [], false);
+  lista("🕑 Últimos resultados", d.ultimos || [], true);
+  if ((d.noticias || []).length) { cont.append(el("h2", "", "📰 Noticias"));
+    d.noticias.filter(n => /^https:\/\//.test(n.link || "")).forEach(n => { const a = el("a", "nota"); a.href = n.link; a.target = "_blank"; a.rel = "noopener noreferrer";
+      a.append(n.imagen && /^https:\/\//.test(n.imagen) ? imagen(n.imagen) : el("span", "sin-img", "📰")); const x = el("div"); x.append(el("b", "", n.titulo), el("small", "", n.fecha ? hace(Date.parse(n.fecha)) : "")); a.append(x); cont.append(a); }); }
+}
+function abrirEquipo(ruta, id) { abrirModalFicha("Equipo"); paginaEquipo($("fc-area"), ruta, id, true); }
+
+// ---------------------------------------------------------------- 📷 llenar la apuesta con la foto del boleto (se lee en tu celular)
+let tesseract = null;
+$("f-foto").addEventListener("change", async () => {
+  const file = $("f-foto").files[0]; if (!file) return;
+  const tx = $("f-ocr-txt");
+  try {
+    tx.textContent = "⏳ Cargando el lector (solo la primera vez tarda)…";
+    if (!tesseract) { await cargarScript("https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"); tesseract = window.Tesseract; }
+    tx.textContent = "🔎 Leyendo tu boleto…";
+    const { data } = await tesseract.recognize(file, "spa+eng", { logger: m => { if (m.status === "recognizing text") tx.textContent = `🔎 Leyendo… ${Math.round(m.progress * 100)}%`; } });
+    const txt = data.text || "", lin = txt.split(/\n+/).map(x => x.trim()).filter(Boolean);
+    // momio: americano (+150 / -200) o decimal (2.50)
+    const am = txt.match(/(^|\s)([+-]\d{3,4})(?=\s|$)/m), de = txt.match(/(?:momio|cuota|odds|@)\s*:?\s*(\d{1,2}[.,]\d{2})/i);
+    const momio = am ? am[2] : de ? de[1].replace(",", ".") : null;
+    // monto: "Apuesta $50", "Monto: 50.00", "Importe"
+    const mo = txt.match(/(?:apuesta|monto|importe|stake|apostado)[^\d$]{0,15}\$?\s*(\d{1,6}(?:[.,]\d{2})?)/i) || txt.match(/\$\s?(\d{1,6}(?:[.,]\d{2})?)/);
+    const monto = mo ? mo[1].replace(",", ".") : null;
+    // partido: una línea con "vs", "v", "@" o "-" entre dos nombres
+    const pa = lin.find(l => /\S+\s+(vs\.?|v\.?|@|-)\s+\S+/i.test(l) && !/\d{3,}/.test(l));
+    // selección: la línea donde viene el momio (sin el momio) o la anterior
+    let sel = null;
+    if (momio) { const i = lin.findIndex(l => l.includes(momio)); if (i >= 0) { sel = lin[i].replace(momio, "").replace(/[|@]/g, "").trim(); if (sel.length < 3 && i > 0) sel = lin[i - 1]; } }
+    const casa = /caliente/i.test(txt) ? "Caliente" : /draftea/i.test(txt) ? "Draftea" : null;
+    if (pa) $("f-partido").value = pa.slice(0, 80);
+    if (sel) $("f-sel").value = sel.slice(0, 60);
+    if (momio) $("f-cuota").value = momio;
+    if (monto) $("f-monto").value = monto;
+    if (casa) $("f-casa").value = casa;
+    vistaPrevia();
+    const leido = [pa && "partido", sel && "selección", momio && "momio", monto && "monto", casa && "casa"].filter(Boolean);
+    tx.textContent = leido.length ? `✅ Leí: ${leido.join(", ")}. Revisa que esté bien antes de guardar.` : "😕 No pude leer bien el boleto. Llénalo a mano o prueba con una captura más clara.";
+  } catch (e) { tx.textContent = "No se pudo leer la foto. Llénalo a mano."; }
+  $("f-foto").value = "";
+});
+
 $("login").addEventListener("submit", async e => {
   e.preventDefault();
   $("l-btn").disabled = true; estado("Entrando…");
@@ -3509,7 +4084,8 @@ $("login").addEventListener("submit", async e => {
   $("l-btn").disabled = false;
 });
 
-vista = location.hash.slice(1) || "bot";
+vista = location.hash.slice(1) || "inicio";
+try { aplicarDiseno(); } catch (e) {}
 cargar();
 </script>
 </body>

@@ -118,6 +118,8 @@ gastan. Guarda 15 créditos de reserva y te avisa por Telegram si se acaban.
 - **🧪 Gurú xG**: modelo aparte con xG estimado con los tiros de ESPN (Liga MX y 5 grandes).
 - **🕹️ Minijuegos**: mascota con tienda (cartera virtual = lo ganado en apuestas + premios, no es dinero real), Adivina el logo, Penales, Canasta y Gol de campo.
 - **🏆 Pick'em del Mundial de LoL**, **🐾 mascota que festeja o se pone triste** con tus apuestas (y avisa si tiene hambre), **🏅 logros** con premio, **🏆 tabla general** y **📸 tarjeta semanal** para compartir.
+- **🏠 Inicio editable**, **🎨 Mi diseño** (colores, modo, fondo con estadios reales de ESPN/Wikipedia, letra, esquinas, menú con favoritos), **📋 ficha del partido**, **📊 tablas y goleadores**, **⭐ página de tu equipo** y **📷 llenar apuesta con foto** (Tesseract.js en el celular).
+- **🙋 Solicitudes de acceso**: quien escribe al bot sin acceso comparte su número y al dueño le llegan botones para aceptarlo.
 - **🐉 LoL Worlds**: calendario y resultados de la API pública de LoL Esports, Elo por equipo y transmisión en vivo.
 - **⏰ Horarios**: los dispara Supabase (pg_cron + pg_net) con un token de GitHub guardado en `privado.secretos`.
 - **📈 Movimiento de líneas**: cómo cambió la probabilidad de Pinnacle entre escaneos.

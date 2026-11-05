@@ -465,6 +465,19 @@ async function atenderBoton(q) {
     if (res === "pendiente")
       await tg("editMessageReplyMarkup", { chat_id: chat, message_id: msgId, reply_markup: botones(id) });
     await tg("answerCallbackQuery", { callback_query_id: q.id, text: ETIQUETA[res] });
+  } else if (tipo === "a") {
+    // el dueño acepta o rechaza una solicitud de acceso
+    if (String(chat) !== env("TELEGRAM_CHAT_ID")) { await tg("answerCallbackQuery", { callback_query_id: q.id }); return; }
+    if (res === "si") {
+      const nombre = (q.message.text || "").match(/👤 ([^\n(]+)/)?.[1]?.trim() || (q.message.text || "").match(/👀 ([^\n(]+?) (?:\(|le escribió)/)?.[1]?.trim() || "Amigo";
+      await db("agregar", { usuario: id, nombre: nombre.slice(0, 40) });
+      await editar(`✅ Aceptaste a *${limpiar(nombre)}* (\`${id}\`).`);
+      await tg("sendMessage", { chat_id: id, parse_mode: "Markdown", reply_markup: TECLADO,
+        text: "🎉 *¡Ya tienes acceso al bot!*\n\nToca ❓ Ayuda para ver cómo funciona, o 🌐 Mi página para crear tu usuario de la página web." });
+    } else {
+      await editar(`❌ Rechazaste la solicitud de \`${id}\`.`);
+    }
+    await tg("answerCallbackQuery", { callback_query_id: q.id });
   } else if (tipo === "r") {
     // Respuesta a un reto 1 vs 1
     const r = await mas("reto_responder", { usuario: String(chat), id: Number(id), acepta: res === "si" });
@@ -526,6 +539,34 @@ async function atenderBoton(q) {
     await tg("answerCallbackQuery", { callback_query_id: q.id });
   }
 }
+
+// ---------------------------------------------------------------- solicitudes de acceso
+// Alguien que no tiene acceso escribe al bot: le pedimos que comparta su número y te avisamos con botones para aceptarlo.
+async function pedirAcceso(u, chatId) {
+  const m = u.message;
+  if (!m) return;
+  const quien = m.from || {};
+  const nombre = [quien.first_name, quien.last_name].filter(Boolean).join(" ") || "Alguien";
+  if (m.contact) {
+    const tel = m.contact.phone_number ? (m.contact.phone_number.startsWith("+") ? m.contact.phone_number : "+" + m.contact.phone_number) : "sin número";
+    const propio = String(m.contact.user_id || "") === String(chatId);
+    await tg("sendMessage", { chat_id: env("TELEGRAM_CHAT_ID"), parse_mode: "Markdown",
+      text: `🙋 *Solicitud de acceso al bot*\n\n👤 ${limpiar(nombre)}${quien.username ? ` (@${limpiar(quien.username)})` : ""}\n📱 ${limpiar(tel)}${propio ? "" : " _(número de otra persona)_"}\n🆔 \`${chatId}\`\n\n¿Le das acceso?`,
+      reply_markup: { inline_keyboard: [[{ text: "✅ Aceptar", callback_data: `a:${chatId}:si` }, { text: "❌ No", callback_data: `a:${chatId}:no` }]] } });
+    await tg("sendMessage", { chat_id: chatId, text: "📨 Listo, le avisé al dueño del bot. Te llega un mensaje aquí cuando te acepte.",
+      reply_markup: { remove_keyboard: true } });
+    return;
+  }
+  // primera vez (o cualquier mensaje): pedir el número con un botón
+  const nuevo = await mas("aviso", { usuario: env("TELEGRAM_CHAT_ID"), clave: `solicitud:${chatId}` }).catch(() => true);
+  await tg("sendMessage", { chat_id: chatId,
+    text: "🔒 Este bot es privado.\n\nToca el botón de abajo 👇 para pedir acceso: le llega tu nombre y tu número al dueño para que te acepte.",
+    reply_markup: { keyboard: [[{ text: "📱 Pedir acceso (compartir mi número)", request_contact: true }]], resize_keyboard: true, one_time_keyboard: true } });
+  if (nuevo) await tg("sendMessage", { chat_id: env("TELEGRAM_CHAT_ID"), parse_mode: "Markdown",
+    text: `👀 ${limpiar(nombre)}${quien.username ? ` (@${limpiar(quien.username)})` : ""} le escribió al bot y no tiene acceso. Ya le pedí que comparta su número.\n🆔 \`${chatId}\``,
+    reply_markup: { inline_keyboard: [[{ text: "✅ Aceptar sin número", callback_data: `a:${chatId}:si` }]] } });
+}
+const limpiar = (t) => String(t || "").replace(/[_*\x60[\]]/g, "");
 
 // ---------------------------------------------------------------- entrada HTTP
 export default async function handler(req, res) {
@@ -607,9 +648,7 @@ export default async function handler(req, res) {
 
   try {
     if (!esDueno && !(await db("usuario", { usuario: chatId }))) {
-      if (u.message?.text)
-        await tg("sendMessage", { chat_id: chatId, parse_mode: "Markdown",
-          text: `Este bot es privado. Pásale este número a quien te invitó para que te dé acceso:\n\n\`${chatId}\`` });
+      await pedirAcceso(u, chatId);
       return res.status(200).send("ok");
     }
     if (u.callback_query) await atenderBoton(u.callback_query);
