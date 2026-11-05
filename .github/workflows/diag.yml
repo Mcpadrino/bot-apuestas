@@ -4,13 +4,12 @@ jobs:
   d:
     runs-on: ubuntu-latest
     steps:
-      - name: Mandar folleto, guía y manual al dueño
-        env:
-          T: ${{ secrets.TELEGRAM_TOKEN }}
-          C: ${{ secrets.TELEGRAM_CHAT_ID }}
+      - name: Probar LoL
         run: |
-          B=https://bot-apuestas-telegram.vercel.app/docs
-          curl -s -o /dev/null -w "%{http_code} folleto-url\n" $B/folleto.pdf
-          for f in "folleto.pdf|📄 Folleto: qué es el bot y todo lo que incluye." "guia-usuario.pdf|📘 Guía del usuario (explicada desde cero)." "manual-completo.pdf|🛠 Manual completo con la parte de administrador. Tip: escribe guía al bot cuando quieras volver a recibirlos."; do
-            curl -s -X POST "https://api.telegram.org/bot$T/sendDocument" -d chat_id="$C" --data-urlencode document="$B/${f%%|*}?v=3" --data-urlencode caption="${f#*|}" | head -c 80; echo
-          done
+          K=0TvQnueqKa5mxJntVWt0w4LpLfEkrV1Ta8rQBb9Z
+          G=https://esports-api.lolesports.com/persisted/gw
+          echo "--- schedule"; curl -s -m 20 -w "\nHTTP %{http_code}\n" -H "x-api-key: $K" "$G/getSchedule?hl=es-MX&leagueId=98767975604431411" | tail -c 400
+          echo "--- live"; curl -s -m 20 -w "\nHTTP %{http_code}\n" -H "x-api-key: $K" "$G/getLive?hl=es-MX" | tail -c 300
+          echo "--- leagues"; curl -s -m 20 -o /dev/null -w "HTTP %{http_code}\n" -H "x-api-key: $K" "$G/getLeagues?hl=es-MX"
+          echo "--- nuestra api"; curl -s -m 30 -w "\nHTTP %{http_code}\n" https://bot-apuestas-telegram.vercel.app/api/lol | head -c 600
+          echo "--- sin key"; curl -s -m 20 -o /dev/null -w "HTTP %{http_code}\n" "$G/getSchedule?hl=es-MX"
