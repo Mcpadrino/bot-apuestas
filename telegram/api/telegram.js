@@ -4,7 +4,7 @@
 // SUPABASE_URL, SUPABASE_KEY (publishable/anon), BOT_CLAVE (clave de la función bot en la BD).
 
 import { buscarLogo, sugerencias, equipoPorClave } from "../lib/espn.js";
-import { jugar } from "../lib/mas.js";
+import { jugar, opinion, avisarOpinion, avisarAutor, botonesOpinion, ESTADO_OP, TIPO_OP } from "../lib/mas.js";
 import { mas, avisarRespuesta, textoSenales, botonesSenales, sacarMomio, casaDe, buscarSenal, veredicto, conv, guru } from "../lib/mas.js";
 
 const env = (k) => (process.env[k] || "").replace(/\s/g, "");
@@ -42,7 +42,7 @@ const LIBRE = new Set(["libre", "aparte", "personal", "fuera"]);
 const CASAS = { caliente: "Caliente", draftea: "Draftea", codere: "Codere", bet365: "Bet365" };
 const WEB_URL = env("WEB_URL") || "https://bot-apuestas-telegram.vercel.app";
 const TECLADO = {
-  keyboard: [[{ text: "🎯 Señales" }, { text: "💰 Saldo" }, { text: "📋 Pendientes" }], [{ text: "🌐 Mi página" }, { text: "📘 Guía" }, { text: "❓ Ayuda" }]],
+  keyboard: [[{ text: "🎯 Señales" }, { text: "💰 Saldo" }, { text: "📋 Pendientes" }], [{ text: "🌐 Mi página" }, { text: "📘 Guía" }, { text: "📝 Opinar" }, { text: "❓ Ayuda" }]],
   resize_keyboard: true,
   is_persistent: true,
 };
@@ -120,6 +120,7 @@ const AYUDA = [
   "`limite 300` — tope semanal para apuestas normales (opcional; `limite off` lo quita)",
   "🌐 *Mi página* — la dirección de tu bitácora web",
   "📘 *Guía* — te mando el folleto y la guía en PDF",
+  "📝 `idea ...` · `error ...` · `opinion ... 5` — mándame ideas, fallas o tu calificación",
   "`cuenta usuario contraseña` — crea o cambia tu acceso a la página",
   "",
   "🎲 *Apuestas fuera de la banca* (parlays, corazonadas):",
@@ -134,6 +135,7 @@ const AYUDA_ADMIN = [
   "`agregar 123456789 Pepe` — da acceso (el número te lo manda tu amigo)",
   "`quitar 123456789` — quita el acceso",
   "`usuarios` — lista quién tiene acceso",
+  "`opiniones` — ideas y fallas pendientes · `responder 12 texto` — contestarle a alguien",
 ].join("\n");
 
 async function resumen(dbu) {
@@ -219,6 +221,36 @@ async function atenderTexto(chat, texto, esDueno, msgId) {
       if (!r.ok) await enviar(`${cap}\n${base}${f}`);
     }
     return;
+  }
+
+  // 📝 Opiniones: idea / error / opinión + texto
+  const TIPOS = { idea: "idea", sugerencia: "idea", mejora: "idea", error: "error", falla: "error", bug: "error", opinion: "opinion", opinar: "opinion", comentario: "opinion" };
+  if (TIPOS[cmd] || texto.includes("Opinar")) {
+    const cuerpo = texto.includes("Opinar") ? "" : args.join(" ").trim();
+    if (cuerpo.length < 3)
+      return enviar("📝 *Ayúdame a mejorar el bot*\nEscribe una de estas palabras y luego tu comentario:\n\n" +
+        "`idea` — algo que te gustaría que tuviera\n`error` — algo que no funciona bien\n`opinion` — lo que piensas (puedes calificar con 1 a 5 estrellas al final, ej. `opinion me encanta 5`)\n\n" +
+        "Ejemplo: `idea que avise cuando juega mi equipo`\n\nTambién en la página: menú > Opiniones, donde ves las de todos y en qué van.");
+    let estrellas = null, t = cuerpo;
+    const m = cuerpo.match(/\s([1-5])\s*(?:estrellas?|★)?$/i);
+    if (TIPOS[cmd] === "opinion" && m) { estrellas = Number(m[1]); t = cuerpo.slice(0, m.index).trim(); }
+    const o = await opinion("crear", { usuario: chat, tipo: TIPOS[cmd], texto: t, estrellas });
+    if (!esDueno) await avisarOpinion(o);
+    return enviar(`🙌 ¡Gracias! Guardé tu ${TIPO_OP[o.tipo].slice(2).toLowerCase()} (#${o.id}). Te aviso cuando la revise o la haga.`);
+  }
+  if (esDueno && cmd === "responder" && /^\d+$/.test(args[0] || "") && args.length > 1) {
+    const o = await opinion("estado", { id: Number(args[0]), respuesta: args.slice(1).join(" ").slice(0, 600),
+      estado: "vista" });
+    await avisarAutor(o, "respuesta");
+    return enviar(`✅ Le respondí a la #${o.id}.`);
+  }
+  if (esDueno && ["opiniones", "ideas"].includes(cmd)) {
+    const l = (await opinion("lista", { usuario: chat })).filter((o) => !["hecha", "no"].includes(o.estado)).slice(0, 15);
+    if (!l.length) return enviar("No hay opiniones pendientes. 🎉");
+    for (const o of l.slice(0, 8))
+      await enviar(`${TIPO_OP[o.tipo]} *#${o.id}* · ${ESTADO_OP[o.estado]}${o.votos ? ` · 👍 ${o.votos}` : ""}\nDe ${o.nombre}: ${o.texto.replace(/[_*\x60[\]]/g, "")}`,
+        { reply_markup: botonesOpinion(o.id) });
+    return l.length > 8 ? enviar(`…y ${l.length - 8} más en la página (menú > Opiniones).`) : null;
   }
 
   if (esDueno && cmd === "agregar" && /^-?\d+$/.test(args[0] || "")) {
@@ -480,6 +512,18 @@ async function atenderBoton(q) {
     if (res === "pendiente")
       await tg("editMessageReplyMarkup", { chat_id: chat, message_id: msgId, reply_markup: botones(id) });
     await tg("answerCallbackQuery", { callback_query_id: q.id, text: ETIQUETA[res] });
+  } else if (tipo === "o") {
+    // el dueño cambia el estado de una opinión
+    if (String(chat) !== env("TELEGRAM_CHAT_ID")) { await tg("answerCallbackQuery", { callback_query_id: q.id }); return; }
+    if (res === "menu") {
+      await tg("editMessageReplyMarkup", { chat_id: chat, message_id: msgId, reply_markup: botonesOpinion(id) });
+      await tg("answerCallbackQuery", { callback_query_id: q.id }); return;
+    }
+    const o = await opinion("estado", { id: Number(id), estado: res });
+    await avisarAutor(o, "estado");
+    await tg("editMessageReplyMarkup", { chat_id: chat, message_id: msgId, reply_markup: { inline_keyboard: [
+      [{ text: `${ESTADO_OP[res]} · cambiar`, callback_data: `o:${id}:menu` }]] } });
+    await tg("answerCallbackQuery", { callback_query_id: q.id, text: `${ESTADO_OP[res]} · le avisé` });
   } else if (tipo === "a") {
     // el dueño acepta o rechaza una solicitud de acceso
     if (String(chat) !== env("TELEGRAM_CHAT_ID")) { await tg("answerCallbackQuery", { callback_query_id: q.id }); return; }
@@ -648,6 +692,7 @@ export default async function handler(req, res) {
         { command: "pendientes", description: "Apuestas sin resultado" },
         { command: "ayuda", description: "Cómo registrar apuestas" },
         { command: "guia", description: "Folleto y guía del usuario en PDF" },
+        { command: "opinar", description: "Mandar una idea, error u opinión" },
       ] });
       return res.status(200).json({ ok: r.ok, url, description: r.description });
     }

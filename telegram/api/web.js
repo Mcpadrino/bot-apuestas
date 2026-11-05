@@ -3,6 +3,7 @@
 
 import { buscarLogo, sugerencias, equipoPorClave, proximos, PRINCIPALES, equiposDe, LIGAS_JUEGO } from "../lib/espn.js";
 import { datosLol } from "../lib/lol.js";
+import { opinion, avisarOpinion, avisarAutor } from "../lib/mas.js";
 import { mas, tg, textoReto, botonesReto, avisarRespuesta, agruparSenales, conv, avisarValor, sacarMomio, buscarSenal, veredicto, guru, jugar } from "../lib/mas.js";
 
 // Ligas para la quiniela, en orden: se usa la primera que tenga partidos en los próximos días
@@ -300,6 +301,34 @@ export default async function handler(req, res) {
       }
       case "practica_reiniciar":
         return res.status(200).json(await mas("practica_reiniciar", { usuario }));
+      case "opiniones": {
+        const lista = await opinion("lista", { usuario });
+        const dueno = String(usuario) === env("TELEGRAM_CHAT_ID");
+        return res.status(200).json({ lista, dueno, resumen: await opinion("resumen") });
+      }
+      case "opinar": {
+        const d = b.datos || {};
+        if (!["idea", "error", "opinion"].includes(d.tipo)) return res.status(400).json({ error: "Elige el tipo." });
+        if (txt(d.texto, 1000).length < 3) return res.status(400).json({ error: "Escribe tu comentario." });
+        const e = num(d.estrellas);
+        try {
+          const o = await opinion("crear", { usuario, tipo: d.tipo, texto: txt(d.texto, 1000), seccion: txt(d.seccion, 40),
+            estrellas: e >= 1 && e <= 5 ? Math.round(e) : null });
+          if (String(usuario) !== env("TELEGRAM_CHAT_ID")) await avisarOpinion(o);
+          return res.status(200).json(o);
+        } catch (err) { return res.status(400).json({ error: err.message }); }
+      }
+      case "opinion_votar":
+        return res.status(200).json(await opinion("votar", { usuario, id: num((b.datos || {}).id) }));
+      case "opinion_estado": {
+        if (String(usuario) !== env("TELEGRAM_CHAT_ID")) return res.status(403).json({ error: "Solo el dueño." });
+        const d = b.datos || {};
+        const estado = ["nueva", "vista", "en_proceso", "hecha", "no"].includes(d.estado) ? d.estado : null;
+        const respuesta = txt(d.respuesta, 600);
+        const o = await opinion("estado", { id: num(d.id), estado, respuesta });
+        if (respuesta) await avisarAutor(o, "respuesta"); else if (estado) await avisarAutor(o, "estado");
+        return res.status(200).json(o);
+      }
       case "banca": {
         const v = num((b.datos || {}).valor);
         if (!(v > 0)) return res.status(400).json({ error: "La banca debe ser mayor a cero." });

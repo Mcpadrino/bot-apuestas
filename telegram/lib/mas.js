@@ -228,3 +228,44 @@ export async function jugar(accion, datos = {}) {
   if (!r.ok) throw new Error(j.message || "error de base de datos");
   return j;
 }
+
+// ---------------------------------------------------------------- 📝 Opiniones (retroalimentación)
+export async function opinion(accion, datos = {}) {
+  const r = await fetch(`${env("SUPABASE_URL")}/rest/v1/rpc/opinion`, {
+    method: "POST",
+    headers: { "content-type": "application/json", apikey: env("SUPABASE_KEY"), authorization: `Bearer ${env("SUPABASE_KEY")}` },
+    body: JSON.stringify({ p_clave: env("BOT_CLAVE"), p_accion: accion, p_datos: datos }),
+  });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.message || "error de base de datos");
+  return j;
+}
+
+export const TIPO_OP = { idea: "💡 Idea", error: "🐞 Error", opinion: "💬 Opinión" };
+export const ESTADO_OP = { nueva: "🆕 Nueva", vista: "👀 Vista", en_proceso: "🔧 En proceso", hecha: "✅ Hecha", no: "🚫 No se hará" };
+
+export function botonesOpinion(id) {
+  return { inline_keyboard: [
+    [{ text: "👀 Vista", callback_data: `o:${id}:vista` }, { text: "🔧 En proceso", callback_data: `o:${id}:en_proceso` }],
+    [{ text: "✅ Hecha", callback_data: `o:${id}:hecha` }, { text: "🚫 No", callback_data: `o:${id}:no` }],
+  ] };
+}
+
+// Le avisa al dueño que llegó una opinión nueva
+export async function avisarOpinion(o) {
+  const estrellas = o.estrellas ? " " + "★".repeat(o.estrellas) + "☆".repeat(5 - o.estrellas) : "";
+  await tg("sendMessage", { chat_id: env("TELEGRAM_CHAT_ID"), parse_mode: "Markdown", reply_markup: botonesOpinion(o.id),
+    text: `📝 *${TIPO_OP[o.tipo] || "Opinión"} #${o.id}*${estrellas}\nDe: *${limpio(o.nombre || "Alguien")}*${o.seccion ? ` · sección ${limpio(o.seccion)}` : ""}\n\n${limpio(o.texto)}\n\n` +
+      `Para contestarle: \`responder ${o.id} tu mensaje\`` });
+}
+
+// Le avisa al usuario que su opinión cambió de estado o recibió respuesta
+export async function avisarAutor(o, cambio) {
+  if (!o || !o.usuario || String(o.usuario) === env("TELEGRAM_CHAT_ID")) return;
+  const corto = limpio(o.texto).slice(0, 90) + (o.texto.length > 90 ? "…" : "");
+  const txt = cambio === "respuesta"
+    ? `💬 *Te respondieron tu ${TIPO_OP[o.tipo]?.slice(2).toLowerCase() || "opinión"}*\n“${corto}”\n\n${limpio(o.respuesta)}`
+    : `📝 Tu ${TIPO_OP[o.tipo]?.slice(2).toLowerCase() || "opinión"} “${corto}” ahora está: *${ESTADO_OP[o.estado]}*` +
+      (o.estado === "hecha" ? "\n¡Gracias por ayudar a mejorar el bot! 🙌" : "");
+  await tg("sendMessage", { chat_id: o.usuario, parse_mode: "Markdown", text: txt });
+}
