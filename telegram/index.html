@@ -51,13 +51,6 @@ h2 { font: 700 1.15rem/1.2 var(--font-display); letter-spacing: .06em; text-tran
 .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .pos { color: var(--win); } .neg { color: var(--loss); }
 
-.tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; background: var(--surface); border: 1px solid var(--line);
-  border-radius: 10px; padding: 4px; }
-.tab { border: 0; border-radius: 7px; padding: 9px 1px; background: transparent; color: var(--muted); font-size: .72rem; line-height: 1.2; }
-.tab .ico { display: block; font-size: 1.15rem; }
-.tab[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
-.tab[data-v="normal"][aria-selected="true"] { background: var(--normal); color: #fff; }
-
 .summary { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 14px; }
 .bank { display: flex; justify-content: space-between; align-items: end; gap: 12px; flex-wrap: wrap; }
 .big { font: 700 2.6rem/1 var(--font-display); }
@@ -272,14 +265,207 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
 .sel-logo img { width: 26px; height: 26px; object-fit: contain; flex: 0 0 auto; }
 .marcador { font-size: .82rem; font-family: var(--font-mono); color: var(--fg); }
 .totbar { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: .9rem; }
+
+/* ---------- Menú lateral (☰) ---------- */
+.burger { width: 44px; height: 44px; flex: 0 0 44px; padding: 0; border-radius: 12px; display: grid; place-items: center;
+  background: var(--surface); border: 1px solid var(--line); transition: transform .15s ease, background .2s; }
+.burger:active { transform: scale(.92); }
+.burger span { display: block; width: 20px; height: 2px; border-radius: 2px; background: var(--fg); position: relative; }
+.burger span::before, .burger span::after { content: ""; position: absolute; left: 0; width: 20px; height: 2px; border-radius: 2px;
+  background: var(--fg); transition: transform .25s ease; }
+.burger span::before { top: -6px; } .burger span::after { top: 6px; width: 13px; }
+.burger:hover span::after { transform: scaleX(1.5); transform-origin: left; }
+header .izq { display: flex; gap: 10px; align-items: center; min-width: 0; }
+.seccion-actual { display: flex; align-items: center; gap: 10px; font: 700 1.35rem/1.1 var(--font-display); letter-spacing: .03em;
+  text-transform: uppercase; }
+.seccion-actual .ico { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; font-size: 1.2rem;
+  background: var(--accent); color: var(--accent-ink); box-shadow: 0 6px 16px -8px var(--accent); }
+.menu-fondo { position: fixed; inset: 0; z-index: 60; background: rgba(5, 12, 9, .55); backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px); opacity: 0; pointer-events: none; transition: opacity .3s ease; }
+.menu { position: fixed; z-index: 61; top: 0; bottom: 0; left: 0; width: min(86vw, 340px); background: var(--bg);
+  border-right: 1px solid var(--line); display: flex; flex-direction: column; transform: translateX(-104%);
+  transition: transform .38s cubic-bezier(.2, .9, .25, 1); box-shadow: 20px 0 50px -20px rgba(0,0,0,.45);
+  padding: calc(14px + env(safe-area-inset-top, 0px)) 0 calc(14px + env(safe-area-inset-bottom, 0px)); }
+body.menu-abierto .menu { transform: none; }
+body.menu-abierto .menu-fondo { opacity: 1; pointer-events: auto; }
+body.menu-abierto { overflow: hidden; }
+.menu-cab { display: flex; align-items: center; gap: 10px; padding: 0 16px 12px; }
+.menu-cab img { width: 34px; height: 34px; border-radius: 9px; }
+.menu-cab b { font: 700 1.25rem/1 var(--font-display); text-transform: uppercase; letter-spacing: .03em; flex: 1; }
+.menu-cerrar { width: 40px; height: 40px; padding: 0; border-radius: 50%; font-size: 1.3rem; line-height: 1; background: transparent; border: 0;
+  color: var(--muted); transition: transform .3s ease, background .2s; }
+.menu-cerrar:hover { background: var(--surface); transform: rotate(90deg); }
+.menu-yo { margin: 0 12px 6px; padding: 12px; border-radius: 14px; display: flex; gap: 12px; align-items: center; color: #fff;
+  background: linear-gradient(135deg, var(--h1, #1d7a52), var(--h3, #0a3324)); position: relative; overflow: hidden; }
+.menu-yo .fav { width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,.14); display: grid; place-items: center; font-size: 1.3rem; flex: 0 0 42px; }
+.menu-yo .fav img { width: 32px; height: 32px; object-fit: contain; }
+.menu-yo small { display: block; opacity: .75; font-size: .75rem; }
+.menu-yo b { font-size: 1rem; }
+.menu-scroll { overflow-y: auto; flex: 1; padding: 4px 10px 10px; overscroll-behavior: contain; }
+.menu-grupo { font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); font-weight: 700; margin: 14px 8px 6px; }
+.menu-item { width: 100%; display: flex; align-items: center; gap: 12px; padding: 9px 10px; border: 0; border-radius: 12px;
+  background: transparent; color: var(--fg); text-align: left; font: 600 .98rem var(--font-body); position: relative; overflow: hidden;
+  transition: background .2s ease, color .2s ease, transform .12s ease; }
+.menu-item .mi { width: 36px; height: 36px; flex: 0 0 36px; border-radius: 10px; display: grid; place-items: center; font-size: 1.15rem;
+  background: var(--surface); border: 1px solid var(--line); transition: background .2s, border-color .2s, transform .3s cubic-bezier(.3,1.6,.5,1); }
+.menu-item .txt { flex: 1; min-width: 0; }
+.menu-item small { display: block; color: var(--muted); font: 500 .74rem var(--font-body); }
+.menu-item .flecha { color: var(--muted); font-size: 1.1rem; transition: transform .2s; }
+.menu-item:hover { background: var(--surface); }
+.menu-item:hover .mi { transform: scale(1.08) rotate(-4deg); }
+.menu-item:hover .flecha { transform: translateX(3px); }
+.menu-item:active { transform: scale(.97); }
+.menu-item[aria-current="page"] { background: var(--accent); color: var(--accent-ink); }
+.menu-item[aria-current="page"] small, .menu-item[aria-current="page"] .flecha { color: var(--accent-ink); opacity: .8; }
+.menu-item[aria-current="page"] .mi { background: rgba(255,255,255,.2); border-color: transparent; }
+.menu-item[data-v="normal"][aria-current="page"] { background: var(--normal); color: #fff; }
+.menu-item[data-v="practica"][aria-current="page"] { background: #d48a16; color: #1b1203; }
+.menu-item .punto { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--loss); color: #fff;
+  font: 700 .7rem/20px var(--font-body); text-align: center; }
+.menu-pie { padding: 10px 16px 0; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.menu-pie button { padding: 8px 12px; font-size: .85rem; }
+.ripple { position: absolute; border-radius: 50%; transform: scale(0); background: currentColor; opacity: .18; pointer-events: none;
+  animation: onda .55s ease-out; }
+@keyframes onda { to { transform: scale(4); opacity: 0; } }
+@media (prefers-reduced-motion: no-preference) {
+  body.menu-abierto .menu-item, body.menu-abierto .menu-grupo { animation: entra .42s cubic-bezier(.2,.9,.25,1) both;
+    animation-delay: calc(var(--i, 0) * 28ms + 60ms); }
+  .vista-anim { animation: aparece .35s cubic-bezier(.2,.9,.25,1) both; }
+}
+@keyframes entra { from { opacity: 0; transform: translateX(-18px); } }
+@keyframes aparece { from { opacity: 0; transform: translateY(10px); } }
+@media (prefers-reduced-motion: reduce) { .menu, .menu-fondo { transition: none; } }
+
+/* ---------- Equipo favorito: colores y escudo de fondo ---------- */
+body.con-equipo .marca-agua { position: fixed; z-index: 0; pointer-events: none; right: -12vw; bottom: -6vh; width: min(80vw, 520px);
+  aspect-ratio: 1; background: var(--fav-logo) center / contain no-repeat; opacity: .05; transform: rotate(-12deg); }
+body.equipo-mucho .marca-agua { opacity: .09; }
+.marca-agua { display: none; }
+body.con-equipo .marca-agua { display: block; }
+.wrap { position: relative; z-index: 1; }
+body.con-equipo .summary.hero:not(.morado):not(.dorado) { background:
+    radial-gradient(120% 80% at 50% -10%, rgba(255,255,255,.16), transparent 60%),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 42px, transparent 42px 84px),
+    linear-gradient(160deg, var(--h1) 0%, var(--h2) 55%, var(--h3) 100%); }
+body.con-equipo .summary.hero:not(.morado):not(.dorado) .escudo-fondo { display: block; }
+.escudo-fondo { display: none; position: absolute !important; right: -24px; bottom: -30px; width: 150px; height: 150px; opacity: .16;
+  background: var(--fav-logo) center / contain no-repeat; transform: rotate(-10deg); z-index: 0 !important; pointer-events: none; }
+body.equipo-mucho .escudo-fondo { opacity: .26; width: 190px; height: 190px; }
+body.equipo-mucho header { background: linear-gradient(90deg, var(--h1), var(--h3)); margin: -16px -16px 0; padding: 14px 16px;
+  border-radius: 0 0 18px 18px; color: #fff; }
+body.equipo-mucho header .seccion-actual .ico { background: rgba(255,255,255,.2); color: #fff; box-shadow: none; }
+body.equipo-mucho header .burger, body.equipo-mucho header #refrescar { background: rgba(255,255,255,.14); border-color: transparent; color: #fff; }
+body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::before, body.equipo-mucho header .burger span::after { background: #fff; }
+
+/* ---------- Mi equipo ---------- */
+.mi-equipo { display: flex; gap: 14px; align-items: center; padding: 16px; border-radius: 16px; color: #fff; position: relative; overflow: hidden;
+  background: linear-gradient(135deg, var(--h1, #1d7a52), var(--h3, #0a3324)); }
+.mi-equipo img { width: 64px; height: 64px; object-fit: contain; filter: drop-shadow(0 4px 10px rgba(0,0,0,.35)); }
+.mi-equipo b { font: 700 1.5rem/1 var(--font-display); text-transform: uppercase; display: block; }
+.mi-equipo small { opacity: .8; }
+.colores { display: flex; gap: 6px; margin-top: 6px; } .colores i { width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(255,255,255,.6); }
+.opciones-club { display: grid; gap: 8px; }
+.opciones-club button { display: flex; gap: 12px; align-items: center; text-align: left; }
+.opciones-club img { width: 34px; height: 34px; object-fit: contain; }
+
+/* ---------- Movimiento de líneas ---------- */
+.linea { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px;
+  display: grid; grid-template-columns: 1fr 110px auto; gap: 10px; align-items: center; }
+.linea .sel { font-size: .92rem; } .linea .meta { font-size: .75rem; }
+.linea svg { width: 110px; height: 36px; display: block; overflow: visible; }
+.linea .mov { text-align: right; font: 600 .95rem var(--font-mono); white-space: nowrap; }
+.linea .mov small { display: block; font: 500 .7rem var(--font-body); color: var(--muted); }
+.sube { color: var(--win); } .baja { color: var(--loss); } .igual { color: var(--muted); }
+.linea.fuerte { border-color: var(--win); box-shadow: 0 0 0 1px var(--win) inset; }
+.explica { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; font-size: .86rem; margin: 0; }
+
+/* ---------- Quiniela ---------- */
+.q-partido { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px; display: grid; gap: 8px; }
+.q-partido .cuando { font-size: .72rem; color: var(--muted); text-align: center; }
+.q-picks { display: grid; grid-template-columns: 1fr 74px 1fr; gap: 6px; }
+.q-picks button { display: grid; justify-items: center; gap: 4px; padding: 8px 4px; border-radius: 12px; font-size: .8rem;
+  transition: background .2s, color .2s, transform .15s cubic-bezier(.3,1.6,.5,1), border-color .2s; }
+.q-picks button img { width: 34px; height: 34px; object-fit: contain; }
+.q-picks button span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.q-picks button:active { transform: scale(.94); }
+.q-picks button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); transform: scale(1.03); }
+.q-picks .emp { align-content: center; font: 600 .82rem var(--font-body); color: var(--muted); }
+.q-otros { display: flex; flex-wrap: wrap; gap: 4px; font-size: .72rem; color: var(--muted); }
+.q-otros span { background: var(--bg); border-radius: 999px; padding: 2px 8px; }
+.tabla-q { display: grid; gap: 6px; }
+.tabla-q div { display: grid; grid-template-columns: 30px 1fr auto; gap: 8px; align-items: center; background: var(--surface);
+  border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+.tabla-q div.yo { border-color: var(--accent); }
+.tabla-q .pts { font: 700 1.1rem var(--font-mono); }
+
+/* ---------- Retos ---------- */
+.reto { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: grid; gap: 10px; }
+.reto .vs { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; text-align: center; font-size: .82rem; }
+.reto .vs img { width: 38px; height: 38px; object-fit: contain; display: block; margin: 0 auto 4px; }
+.reto .vs .lado.mio { color: var(--accent); font-weight: 700; }
+.reto .vs .x { font: 700 1.3rem var(--font-display); color: var(--muted); }
+.reto .quien-r { font-size: .8rem; color: var(--muted); }
+.reto.gane { background: var(--win-bg); border-color: transparent; } .reto.perdi { background: var(--loss-bg); border-color: transparent; }
+.elige-lado { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.elige-lado button { display: grid; justify-items: center; gap: 4px; padding: 10px; border-radius: 12px; transition: transform .15s, background .2s; }
+.elige-lado button img { width: 40px; height: 40px; object-fit: contain; }
+.elige-lado button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); transform: scale(1.03); }
+.marcador-retos { display: flex; justify-content: space-around; text-align: center; }
+.marcador-retos b { display: block; font: 700 1.8rem/1 var(--font-display); }
+
+/* ---------- Modo práctica ---------- */
+.summary.hero.dorado { background:
+    radial-gradient(120% 80% at 50% -10%, rgba(255,255,255,.18), transparent 60%),
+    repeating-linear-gradient(45deg, rgba(255,255,255,.04) 0 12px, transparent 12px 24px),
+    linear-gradient(160deg, #c2790f 0%, #8a4c06 55%, #4d2a02 100%);
+  box-shadow: 0 10px 30px -12px rgba(120, 70, 5, .6); --hpos: #ffe9a8; }
+.opc-partido { display: grid; gap: 6px; }
+.opc-partido .t { font-size: .78rem; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
+.opc-partido .t b { color: var(--fg); font-size: .85rem; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip-op { display: grid; gap: 1px; padding: 7px 11px; border-radius: 12px; font-size: .8rem; text-align: left; min-width: 0;
+  transition: background .2s, color .2s, transform .15s cubic-bezier(.3,1.6,.5,1); }
+.chip-op small { color: var(--muted); font: 500 .72rem var(--font-mono); }
+.chip-op[aria-pressed="true"] { background: #d48a16; color: #1b1203; border-color: #d48a16; transform: scale(1.04); }
+.chip-op[aria-pressed="true"] small { color: #3b2604; }
+.boleto { position: sticky; bottom: 0; z-index: 5; background: var(--surface); border: 1px solid var(--line); border-radius: 16px 16px 0 0;
+  padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 8px;
+  box-shadow: 0 -12px 30px -16px rgba(0,0,0,.4); animation: aparece .3s ease both; }
+.boleto .sels { display: flex; flex-wrap: wrap; gap: 4px; font-size: .78rem; }
+.boleto .sels span { background: var(--bg); border-radius: 999px; padding: 2px 8px; }
+.boleto .fila { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: end; }
+.boleto .premio { font: 600 1.05rem var(--font-mono); }
+.prac { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--pend); border-radius: 10px; padding: 10px 12px;
+  display: grid; gap: 4px; font-size: .88rem; }
+.prac.gana { border-left-color: var(--win); background: var(--win-bg); } .prac.pierde { border-left-color: var(--loss); background: var(--loss-bg); }
+.prac .pierna { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: .8rem; }
+
+/* ---------- Señales del bot ---------- */
+#v-bot:not([hidden]) { display: grid; gap: 18px; }
+.senal { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; display: grid; gap: 6px; }
+.senal .cab { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.senal .cab b { font-size: .95rem; } .senal .cab span { font-size: .75rem; color: var(--muted); white-space: nowrap; }
+.senal .mk { font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin-top: 4px; }
+.op-sen { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 7px 9px; border-radius: 10px;
+  background: var(--bg); transition: background .2s, transform .12s; }
+.op-sen.top { background: var(--win-bg); }
+.op-sen .s { font-weight: 600; font-size: .9rem; } .op-sen small { display: block; color: var(--muted); font-size: .75rem; }
+.op-sen .paga { font-family: var(--font-mono); color: var(--fg); }
+.op-sen button { padding: 6px 10px; font-size: .78rem; border-radius: 999px; }
+.mas-ops { justify-self: start; padding: 4px 10px; font-size: .78rem; border-radius: 999px; }
 </style>
 </head>
 <body>
 
+<div class="marca-agua" aria-hidden="true"></div>
 <div class="wrap">
   <header>
-    <div class="marca"><img src="/icon-192.png" alt=""><h1>Bitácora de Apuestas</h1></div>
-    <div class="quien" id="quien" hidden><span id="q-nombre"></span><button type="button" id="refrescar">Actualizar</button></div>
+    <div class="izq">
+      <button type="button" class="burger" id="abrir-menu" aria-label="Abrir menú" aria-controls="menu" aria-expanded="false" hidden><span></span></button>
+      <div class="marca" id="marca"><img src="/icon-192.png" alt=""><h1>Bitácora de Apuestas</h1></div>
+      <div class="seccion-actual" id="sec-actual" hidden><span class="ico" id="sec-ico">🤖</span><span id="sec-nombre">Banca del bot</span></div>
+    </div>
+    <div class="quien" id="quien" hidden><span id="q-nombre"></span><button type="button" id="refrescar" aria-label="Actualizar">↻</button></div>
   </header>
   <div class="instalar" id="instalar" hidden>
     <span id="inst-txt">📲 Instala la bitácora como app en tu celular.</span>
@@ -301,18 +487,12 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
     </details>
   </section>
 
-  <nav class="tabs" role="tablist" aria-label="Secciones" id="tabs" hidden>
-    <button class="tab" role="tab" data-v="bot" id="t-bot"><span class="ico">🤖</span>Bot</button>
-    <button class="tab" role="tab" data-v="normal" id="t-normal"><span class="ico">🎲</span>Normal</button>
-    <button class="tab" role="tab" data-v="resultados" id="t-res"><span class="ico">📜</span>Resultados</button>
-    <button class="tab" role="tab" data-v="hoy" id="t-hoy"><span class="ico">📺</span>Hoy</button>
-    <button class="tab" role="tab" data-v="comunidad" id="t-com"><span class="ico">💬</span>Comunidad</button>
-  </nav>
   <p class="status" id="status" hidden></p>
 
   <!-- ===================== BANCA BOT ===================== -->
   <div id="v-bot" class="vista" hidden>
     <section class="summary hero" aria-label="Banca del bot">
+      <div class="escudo-fondo"></div>
       <div class="hero-saludo" id="b-saludo">🤖 Banca del bot</div>
       <div class="bank">
         <div><div class="label">Banca actual</div><div class="big num" id="b-banca">$200.00</div></div>
@@ -326,6 +506,11 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
         <div><span class="label">En juego</span><span class="num" id="b-juego">$0.00</span></div>
       </div>
       <p class="verdict" id="b-verdict"></p>
+    </section>
+    <section class="section" id="sen-sec">
+      <div class="head"><h2>🎯 Señales del bot</h2><span class="label" id="sen-cuando"></span></div>
+      <p class="hint">Lo último que mandó el bot por Telegram, para que no se te pierda. Apuesta solo si tu casa paga igual o mejor.</p>
+      <div class="list" id="senales"><p class="empty">Cargando…</p></div>
     </section>
   </div>
 
@@ -408,6 +593,102 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
   </div>
   <div class="visor" id="visor" hidden><img id="visor-img" alt="Foto ampliada"></div>
 
+
+  <!-- ===================== MOVIMIENTO DE LÍNEAS ===================== -->
+  <div id="v-lineas" class="vista section" hidden>
+    <p class="explica">📈 Cómo cambió la probabilidad de <b>Pinnacle</b> (la casa de los profesionales) entre los escaneos del bot.
+      Si una selección <span class="sube">sube</span> mucho, es que el dinero fuerte le está entrando; si <span class="baja">baja</span>, se está alejando.</p>
+    <div class="filters" role="group" aria-label="Mostrar">
+      <button type="button" data-l="mueven" aria-pressed="true">Las que más se mueven</button>
+      <button type="button" data-l="todas" aria-pressed="false">Todas</button>
+    </div>
+    <div class="list" id="lineas"><p class="empty">Cargando…</p></div>
+  </div>
+
+  <!-- ===================== QUINIELA ===================== -->
+  <div id="v-quiniela" class="vista section" hidden>
+    <section class="summary hero" aria-label="Quiniela">
+      <div class="escudo-fondo"></div>
+      <div class="hero-saludo">🏆 Quiniela de la jornada</div>
+      <div class="bank"><div><div class="label" id="q-liga">—</div><div class="big num" id="q-mis">0 / 0</div></div>
+        <div style="text-align:right"><div class="label">Tus puntos (10 días)</div><div class="num" id="q-pts" style="font-size:1.3rem">0</div></div></div>
+      <p class="verdict">Elige quién gana o si empatan. Sin dinero: 1 punto por acierto. Los picks de tus amigos se ven cuando empieza cada partido.</p>
+    </section>
+    <h2>Tabla</h2>
+    <div class="tabla-q" id="q-tabla"></div>
+    <h2>Próximos partidos</h2>
+    <div class="list" id="q-partidos"><p class="empty">Cargando…</p></div>
+    <h2 id="q-pas-tit" hidden>Ya jugados</h2>
+    <div class="list" id="q-pasados"></div>
+  </div>
+
+  <!-- ===================== RETOS ===================== -->
+  <div id="v-retos" class="vista section" hidden>
+    <section class="summary hero morado" aria-label="Retos">
+      <div class="hero-saludo">⚔️ Retos 1 vs 1</div>
+      <div class="marcador-retos"><div><b class="pos" id="rt-g">0</b><span class="label">Ganados</span></div>
+        <div><b id="rt-e">0</b><span class="label">Empates</span></div><div><b class="neg" id="rt-p">0</b><span class="label">Perdidos</span></div></div>
+      <p class="verdict">Reta a un amigo a un partido: tú eliges equipo y él se queda con el otro. Sin dinero; si quieren, pongan un castigo (los tacos, la cheve…). El bot avisa a los dos quién ganó.</p>
+    </section>
+    <details id="rt-nuevo" open>
+      <summary><b>➕ Nuevo reto</b></summary>
+      <form id="rt-form" style="margin-top:10px">
+        <label>¿A quién retas?<select id="rt-rival"></select></label>
+        <label>Partido<select id="rt-partido"></select></label>
+        <div class="elige-lado" id="rt-lado"></div>
+        <label>Castigo para el que pierda (opcional)<input id="rt-premio" maxlength="80" placeholder="Invita los tacos" autocomplete="off"></label>
+        <button class="primary" type="submit" id="rt-btn">Mandar reto</button>
+      </form>
+    </details>
+    <h2>Mis retos</h2>
+    <div class="list" id="rt-lista"><p class="empty">Cargando…</p></div>
+  </div>
+
+  <!-- ===================== PRÁCTICA ===================== -->
+  <div id="v-practica" class="vista section" hidden>
+    <section class="summary hero dorado" aria-label="Modo práctica">
+      <div class="hero-saludo">🎮 Modo práctica · dinero de mentira</div>
+      <div class="bank"><div><div class="label">Banca de práctica</div><div class="big num" id="pr-banca">$1,000</div></div>
+        <div style="text-align:right"><div class="label">En juego</div><div class="num" id="pr-juego" style="font-size:1.3rem">$0</div></div></div>
+      <div class="stats"><div><span class="label">Ganancia</span><span class="num" id="pr-gan">$0</span></div>
+        <div><span class="label">Récord</span><span class="num" id="pr-rec">0–0</span></div>
+        <div><span class="label">Parlays</span><span class="num" id="pr-par">0</span></div>
+        <div><span class="label">Simples</span><span class="num" id="pr-sim">0</span></div></div>
+      <p class="verdict">Usa los momios mínimos del bot. Toca una opción para una apuesta simple o varias para armar un parlay. Las apuestas cerradas se borran solas a los 7 días.</p>
+    </section>
+    <h2>Arma tu jugada</h2>
+    <div class="list" id="pr-opciones"><p class="empty">Cargando…</p></div>
+    <h2>Mis apuestas de práctica</h2>
+    <div class="list" id="pr-lista"></div>
+    <button type="button" id="pr-reset">🔄 Empezar de cero ($1,000)</button>
+    <div class="boleto" id="boleto" hidden>
+      <div class="head"><b id="bo-tit">Boleto</b><button type="button" id="bo-limpiar" style="padding:4px 10px;font-size:.8rem">Limpiar</button></div>
+      <div class="sels" id="bo-sels"></div>
+      <div class="fila">
+        <label>Momio<span class="num" id="bo-cuota" style="font-size:1.05rem;color:var(--fg)">—</span></label>
+        <label>Monto $<input id="bo-monto" inputmode="decimal" value="50"></label>
+        <button class="primary" type="button" id="bo-btn" style="background:#d48a16;border-color:#d48a16;color:#1b1203">Apostar</button>
+      </div>
+      <span class="hint">Posible premio: <b class="premio" id="bo-premio">$0</b></span>
+    </div>
+  </div>
+
+  <!-- ===================== MI EQUIPO ===================== -->
+  <div id="v-equipo" class="vista section" hidden>
+    <div class="mi-equipo" id="eq-actual"><span style="font-size:2.4rem">⭐</span><div><b>Sin equipo</b><small>Elige tu equipo favorito</small></div></div>
+    <p class="hint">La página toma los colores y el escudo de tu equipo, y el bot te avisa por Telegram poco antes de cada partido suyo.</p>
+    <div class="seg" role="group" aria-label="Cuánto cambia el diseño" id="eq-int">
+      <button type="button" data-i="poco" aria-selected="true">🎨 Un poco</button>
+      <button type="button" data-i="mucho" aria-selected="false">🔥 Mucho</button>
+    </div>
+    <form id="eq-form" style="grid-template-columns:1fr auto;display:grid">
+      <input id="eq-q" placeholder="Busca tu equipo: América, Chiefs, Lakers…" autocomplete="off" aria-label="Buscar equipo">
+      <button type="submit" class="primary">Buscar</button>
+    </form>
+    <div class="opciones-club" id="eq-ops"></div>
+    <button type="button" id="eq-quitar" hidden>Quitar mi equipo</button>
+  </div>
+
   <!-- ===================== RESULTADOS ===================== -->
   <div id="v-resultados" class="vista section" hidden>
     <div class="filters" role="group" aria-label="Filtrar">
@@ -455,6 +736,31 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
   </div>
 </div>
 
+<div class="menu-fondo" id="menu-fondo"></div>
+<nav class="menu" id="menu" aria-label="Secciones" aria-hidden="true">
+  <div class="menu-cab"><img src="/icon-192.png" alt=""><b>Bitácora</b>
+    <button type="button" class="menu-cerrar" id="cerrar-menu" aria-label="Cerrar menú">✕</button></div>
+  <div class="menu-yo" id="menu-yo"><span class="fav" id="menu-fav">⭐</span><div><small>Hola</small><b id="menu-nombre">—</b></div></div>
+  <div class="menu-scroll" id="menu-items">
+    <div class="menu-grupo">Mis apuestas</div>
+    <button class="menu-item" data-v="bot"><span class="mi">🤖</span><span class="txt">Banca del bot<small>Señales, banca y pendientes</small></span><span class="flecha">›</span></button>
+    <button class="menu-item" data-v="normal"><span class="mi">🎲</span><span class="txt">Apuestas normales<small>Parlays y por tu cuenta</small></span><span class="flecha">›</span></button>
+    <button class="menu-item" data-v="resultados"><span class="mi">📜</span><span class="txt">Historial<small>Resultados, estadísticas y Excel</small></span><span class="flecha">›</span></button>
+    <div class="menu-grupo">En vivo</div>
+    <button class="menu-item" data-v="hoy"><span class="mi">📺</span><span class="txt">Hoy<small>Marcadores, noticias y datos</small></span><span class="flecha">›</span></button>
+    <button class="menu-item" data-v="lineas"><span class="mi">📈</span><span class="txt">Movimiento de líneas<small>Hacia dónde va Pinnacle</small></span><span class="flecha">›</span></button>
+    <div class="menu-grupo">Con amigos</div>
+    <button class="menu-item" data-v="comunidad"><span class="mi">💬</span><span class="txt">Comunidad<small>Fotos, links y opiniones</small></span><span class="flecha">›</span></button>
+    <button class="menu-item" data-v="quiniela"><span class="mi">🏆</span><span class="txt">Quiniela<small>Pronostica la jornada, sin dinero</small></span><span class="flecha">›</span></button>
+    <button class="menu-item" data-v="retos"><span class="mi">⚔️</span><span class="txt">Retos 1 vs 1<small>Por el orgullo</small></span><span class="punto" id="retos-punto" hidden></span><span class="flecha">›</span></button>
+    <div class="menu-grupo">Para practicar</div>
+    <button class="menu-item" data-v="practica"><span class="mi">🎮</span><span class="txt">Modo práctica<small>Apuestas de mentira con los momios del bot</small></span><span class="flecha">›</span></button>
+    <div class="menu-grupo">Tú</div>
+    <button class="menu-item" data-v="equipo"><span class="mi">⭐</span><span class="txt">Mi equipo<small>Colores de la página y avisos</small></span><span class="flecha">›</span></button>
+  </div>
+  <div class="menu-pie"><span class="hint" id="menu-ver">Hecho para ti</span><button type="button" id="menu-salir">Cerrar sesión</button></div>
+</nav>
+
 <script>
 const $ = id => document.getElementById(id);
 const fmt = n => (n < 0 ? "-$" : "$") + Math.abs(n).toFixed(2);
@@ -490,7 +796,8 @@ async function api(op, datos) {
 }
 function estado(msg) { const s = $("status"); s.textContent = msg || ""; s.hidden = !msg; }
 function mostrarLogin(msg) {
-  ["tabs", "v-bot", "v-normal", "v-reg", "v-resultados", "v-comunidad", "v-hoy", "quien"].forEach(id => $(id).hidden = true);
+  [...["v-bot", "v-normal", "v-reg", "v-resultados", "v-comunidad", "v-hoy", "v-lineas", "v-quiniela", "v-retos", "v-practica", "v-equipo"], "quien", "abrir-menu", "sec-actual"].forEach(id => $(id).hidden = true);
+  $("marca").hidden = false; cerrarMenu();
   $("v-login").hidden = false; estado(msg || "");
 }
 function salirLocal() { token = null; try { localStorage.removeItem(LLAVE); } catch (e) {} }
@@ -513,7 +820,10 @@ async function cargar() {
       resultado: String(x.resultado || "pendiente"), creada: Date.parse(x.creada) || 0,
       cerrada: x.cerrada ? Date.parse(x.cerrada) : null }));
     listo = true; estado("");
-    $("v-login").hidden = true; $("tabs").hidden = false; $("quien").hidden = false;
+    $("v-login").hidden = true; $("quien").hidden = false; $("abrir-menu").hidden = false;
+    $("marca").hidden = true; $("sec-actual").hidden = false;
+    $("menu-nombre").textContent = r.nombre || "—";
+    if (!perfil) cargarPerfil();
     irA(vista);
   } catch (e) { e.auth ? mostrarLogin(e.message) : estado(e.message || "No se pudo cargar. Toca Actualizar."); }
 }
@@ -523,18 +833,30 @@ async function hacer(op, datos, errorTxt) {
 }
 
 // ---------------------------------------------------------------- vistas
+const SECCIONES = {
+  bot: ["🤖", "Banca del bot"], normal: ["🎲", "Normales"], resultados: ["📜", "Historial"], hoy: ["📺", "Hoy"],
+  lineas: ["📈", "Líneas"], comunidad: ["💬", "Comunidad"], quiniela: ["🏆", "Quiniela"], retos: ["⚔️", "Retos"],
+  practica: ["🎮", "Práctica"], equipo: ["⭐", "Mi equipo"] };
 function irA(v) {
-  vista = ["bot", "normal", "resultados", "hoy", "comunidad"].includes(v) ? v : "bot";
+  vista = SECCIONES[v] ? v : "bot";
   if (!listo) return;
-  document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.v === vista)));
-  $("v-bot").hidden = vista !== "bot";
-  $("v-normal").hidden = vista !== "normal";
-  $("v-resultados").hidden = vista !== "resultados";
-  $("v-comunidad").hidden = vista !== "comunidad";
-  $("v-hoy").hidden = vista !== "hoy";
-  $("v-reg").hidden = ["resultados", "comunidad", "hoy"].includes(vista);
+  const cambio = !$("v-" + vista) || $("v-" + vista).hidden;
+  document.querySelectorAll(".menu-item").forEach(t => t.dataset.v === vista ? t.setAttribute("aria-current", "page") : t.removeAttribute("aria-current"));
+  Object.keys(SECCIONES).forEach(k => { const d = $("v-" + k); if (d) d.hidden = k !== vista; });
+  $("v-reg").hidden = !["bot", "normal"].includes(vista);
+  $("sec-ico").textContent = SECCIONES[vista][0]; $("sec-nombre").textContent = SECCIONES[vista][1];
+  if (cambio) {
+    [$("v-" + vista), $("sec-actual")].forEach(d => { d.classList.remove("vista-anim"); void d.offsetWidth; d.classList.add("vista-anim"); });
+    window.scrollTo({ top: 0 });
+  }
   if (vista === "hoy") cargarHoy();
+  if (vista === "bot") cargarSenales();
   if (vista === "comunidad") cargarFeed();
+  if (vista === "lineas") cargarLineas();
+  if (vista === "quiniela") cargarQuiniela();
+  if (vista === "retos") cargarRetos();
+  if (vista === "practica") cargarPractica();
+  if (vista === "equipo") pintarEquipo();
   $("v-reg").classList.toggle("vista-normal", vista === "normal");
   $("f-prob-wrap").hidden = vista !== "bot";
   $("ajustes").hidden = vista !== "bot";
@@ -544,7 +866,39 @@ function irA(v) {
   confirmando = null;
   render();
 }
-document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => irA(t.dataset.v)));
+// ---- menú lateral
+function abrirMenu() {
+  document.body.classList.add("menu-abierto");
+  $("menu").setAttribute("aria-hidden", "false"); $("abrir-menu").setAttribute("aria-expanded", "true");
+  setTimeout(() => (document.querySelector('.menu-item[aria-current="page"]') || $("cerrar-menu")).focus({ preventScroll: true }), 300);
+}
+function cerrarMenu() {
+  document.body.classList.remove("menu-abierto");
+  $("menu").setAttribute("aria-hidden", "true"); $("abrir-menu").setAttribute("aria-expanded", "false");
+}
+$("abrir-menu").addEventListener("click", abrirMenu);
+$("cerrar-menu").addEventListener("click", cerrarMenu);
+$("menu-fondo").addEventListener("click", cerrarMenu);
+document.addEventListener("keydown", e => { if (e.key === "Escape") cerrarMenu(); });
+document.querySelectorAll("#menu-items > *").forEach((x, i) => x.style.setProperty("--i", i));
+// onda de color al tocar
+document.addEventListener("pointerdown", e => {
+  const b = e.target.closest(".menu-item, .q-picks button, .chip-op, .elige-lado button, button.primary");
+  if (!b) return;
+  const r = b.getBoundingClientRect(), d = Math.max(r.width, r.height), o = document.createElement("span");
+  o.className = "ripple"; o.style.cssText = `width:${d}px;height:${d}px;left:${e.clientX - r.left - d / 2}px;top:${e.clientY - r.top - d / 2}px`;
+  if (getComputedStyle(b).position === "static") b.style.position = "relative";
+  b.style.overflow = "hidden"; b.append(o); setTimeout(() => o.remove(), 600);
+});
+document.querySelectorAll(".menu-item").forEach(t => t.addEventListener("click", () => { irA(t.dataset.v); setTimeout(cerrarMenu, 120); }));
+// deslizar a la izquierda para cerrar
+let toqueX = null;
+$("menu").addEventListener("touchstart", e => { toqueX = e.touches[0].clientX; }, { passive: true });
+$("menu").addEventListener("touchend", e => { if (toqueX != null && toqueX - e.changedTouches[0].clientX > 60) cerrarMenu(); toqueX = null; });
+// deslizar desde el borde izquierdo para abrir
+let bordeX = null;
+document.addEventListener("touchstart", e => { bordeX = listo && e.touches[0].clientX < 22 ? e.touches[0].clientX : null; }, { passive: true });
+document.addEventListener("touchend", e => { if (bordeX != null && e.changedTouches[0].clientX - bordeX > 70) abrirMenu(); bordeX = null; });
 window.addEventListener("hashchange", () => irA(location.hash.slice(1)));
 document.querySelectorAll("[data-f]").forEach(b => b.addEventListener("click", () => {
   filtro = b.dataset.f;
@@ -861,6 +1215,7 @@ $("cfg").addEventListener("submit", async e => {
 $("refrescar").addEventListener("click", cargar);
 document.addEventListener("visibilitychange", () => { if (!document.hidden && listo) cargar(); });
 
+$("menu-salir").addEventListener("click", () => $("salir").click());
 $("salir").addEventListener("click", async () => {
   try { await fetch("/api/web", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ op: "salir", token }) }); } catch (e) {}
   salirLocal(); listo = false; mostrarLogin("Cerraste sesión en este navegador.");
@@ -1109,6 +1464,449 @@ $("pub").addEventListener("submit", async e => {
 });
 document.addEventListener("visibilitychange", () => { if (!document.hidden && vista === "comunidad" && listo) cargarFeed(); });
 
+// ---------------------------------------------------------------- perfil y equipo favorito (tema)
+let perfil = null;
+const okUrl = u => /^https:\/\//.test(u || "") ? u : "";
+const hexOk = c => /^#[0-9a-f]{6}$/i.test(c || "") ? c : null;
+function mezclar(hex, otro, t) {
+  const a = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)), b = [1, 3, 5].map(i => parseInt(otro.slice(i, i + 2), 16));
+  return "#" + a.map((x, i) => Math.round(x + (b[i] - x) * t).toString(16).padStart(2, "0")).join("");
+}
+const luz = hex => { const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255).map(c => c <= .03928 ? c / 12.92 : ((c + .055) / 1.055) ** 2.4); return .2126 * r + .7152 * g + .0722 * b; };
+const oscuro = () => document.documentElement.dataset.theme === "dark" || (document.documentElement.dataset.theme !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+function aplicarTema() {
+  const e = perfil && perfil.equipo_fav, raiz = document.documentElement.style, b = document.body;
+  ["--accent", "--accent-ink", "--win", "--h1", "--h2", "--h3", "--fav-logo"].forEach(v => raiz.removeProperty(v));
+  b.classList.remove("con-equipo", "equipo-mucho");
+  $("menu-fav").textContent = "⭐";
+  if (!e) return;
+  let c = hexOk(e.color) || "#1d7a52", c2 = hexOk(e.color2) || c;
+  // Si el color principal casi no se ve (muy oscuro en modo oscuro o muy claro en modo claro), usar el secundario
+  const ve = x => oscuro() ? luz(x) > .06 : luz(x) < .6;
+  if (!ve(c) && ve(c2)) [c, c2] = [c2, c];
+  let acento = c;
+  if (oscuro() && luz(acento) < .12) acento = mezclar(acento, "#ffffff", .35);
+  if (!oscuro() && luz(acento) > .45) acento = mezclar(acento, "#000000", .35);
+  raiz.setProperty("--accent", acento);
+  raiz.setProperty("--accent-ink", luz(acento) > .35 ? "#0b0f0d" : "#ffffff");
+  // La portada necesita un color oscuro para que se lea el texto blanco (p. ej. América: azul de fondo, amarillo de acento)
+  const base = luz(c) <= .2 ? c : luz(c2) <= .2 ? c2 : mezclar(c, "#000000", .5);
+  raiz.setProperty("--h1", mezclar(base, "#ffffff", .08)); raiz.setProperty("--h2", mezclar(base, "#000000", .3)); raiz.setProperty("--h3", mezclar(base, "#000000", .6));
+  if (okUrl(e.logo)) { raiz.setProperty("--fav-logo", `url("${e.logo}")`); $("menu-fav").innerHTML = ""; $("menu-fav").append(imagen(e.logo)); }
+  b.classList.add("con-equipo");
+  if (e.intensidad === "mucho") b.classList.add("equipo-mucho");
+  document.querySelector('meta[name="theme-color"]').content = e.intensidad === "mucho" ? mezclar(base, "#000000", .3) : (oscuro() ? "#0d1411" : "#eef2ef");
+}
+async function cargarPerfil() {
+  try { perfil = await api("perfil"); aplicarTema(); pintarEquipo(); } catch (e) {}
+}
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", aplicarTema);
+
+let intensidad = "poco";
+function pintarEquipo() {
+  const e = perfil && perfil.equipo_fav, cont = $("eq-actual");
+  cont.innerHTML = "";
+  if (e) {
+    intensidad = e.intensidad || "poco";
+    cont.append(okUrl(e.logo) ? imagen(e.logo) : el("span", "", "⭐"));
+    const t = el("div"); t.append(el("b", "", e.nombre), el("small", "", e.liga || ""));
+    const col = el("div", "colores");
+    [e.color, e.color2].map(hexOk).filter(Boolean).forEach(x => { const i = el("i"); i.style.background = x; col.append(i); });
+    t.append(col); cont.append(t);
+  } else {
+    cont.append(el("span", "", "⭐"));
+    const t = el("div"); t.append(el("b", "", "Sin equipo"), el("small", "", "Búscalo abajo y tócalo")); cont.append(t);
+  }
+  $("eq-quitar").hidden = !e;
+  document.querySelectorAll("[data-i]").forEach(x => x.setAttribute("aria-selected", String(x.dataset.i === intensidad)));
+}
+async function fijarEquipo(k) {
+  estado("Guardando tu equipo…");
+  try { const r = await api("fav", { k, intensidad }); perfil = { ...(perfil || {}), equipo_fav: r.equipo_fav }; aplicarTema(); pintarEquipo(); estado(""); $("eq-ops").innerHTML = ""; }
+  catch (e) { estado(e.message || "No se pudo guardar."); }
+}
+$("eq-form").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const q = $("eq-q").value.trim(); if (!q) return;
+  const cont = $("eq-ops"); cont.innerHTML = ""; cont.append(el("p", "hint", "Buscando…"));
+  try {
+    const ops = await api("sugerir", { texto: q }); cont.innerHTML = "";
+    if (!ops.length) cont.append(el("p", "empty", "No encontré ese equipo. Prueba con otro nombre."));
+    ops.forEach(o => {
+      const bt = el("button"); bt.type = "button";
+      if (okUrl(o.logo)) bt.append(imagen(o.logo));
+      const t = el("span"); t.append(el("b", "", o.nombre), el("br"), el("small", "hint", o.liga)); bt.append(t);
+      bt.onclick = () => fijarEquipo(o.k); cont.append(bt);
+    });
+  } catch (e) { cont.innerHTML = ""; estado(e.message || "No se pudo buscar."); }
+});
+document.querySelectorAll("[data-i]").forEach(b => b.addEventListener("click", () => {
+  intensidad = b.dataset.i;
+  document.querySelectorAll("[data-i]").forEach(x => x.setAttribute("aria-selected", String(x === b)));
+  const e = perfil && perfil.equipo_fav;
+  if (e && e.k) fijarEquipo(e.k);
+}));
+$("eq-quitar").addEventListener("click", async () => {
+  try { await api("fav", { k: "" }); perfil = { ...(perfil || {}), equipo_fav: null }; aplicarTema(); pintarEquipo(); }
+  catch (e) { estado(e.message || "No se pudo quitar."); }
+});
+
+// ---------------------------------------------------------------- movimiento de líneas
+let lineasDatos = [], lineasFiltro = "mueven", lineasCargadas = 0;
+const NOMBRE_MK = { h2h: "Ganador", totals: "Total", spreads: "Hándicap" };
+const DEP = d => /nfl/.test(d) ? "🏈" : /nba/.test(d) ? "🏀" : /mlb/.test(d) ? "⚾" : "⚽";
+async function cargarLineas() {
+  if (Date.now() - lineasCargadas < 120000 && lineasDatos.length) return pintarLineas();
+  try { lineasDatos = await api("lineas"); lineasCargadas = Date.now(); pintarLineas(); }
+  catch (e) { $("lineas").innerHTML = ""; $("lineas").append(el("p", "empty", e.message || "No se pudieron cargar las líneas.")); }
+}
+function grafica(serie, color) {
+  const ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg");
+  svg.setAttribute("viewBox", "0 0 110 36"); svg.setAttribute("aria-hidden", "true");
+  const ys = serie.map(p => Number(p[1])), min = Math.min(...ys), max = Math.max(...ys), rango = Math.max(max - min, 0.02);
+  const pts = ys.map((y, i) => [ys.length === 1 ? 55 : 4 + i * 102 / (ys.length - 1), 32 - ((y - min) / rango) * 28]);
+  const base = document.createElementNS(ns, "line");
+  base.setAttribute("x1", 0); base.setAttribute("x2", 110); base.setAttribute("y1", pts[0][1]); base.setAttribute("y2", pts[0][1]);
+  base.setAttribute("stroke", "currentColor"); base.setAttribute("stroke-opacity", ".18"); base.setAttribute("stroke-dasharray", "3 3");
+  svg.append(base);
+  const path = document.createElementNS(ns, "polyline");
+  path.setAttribute("points", pts.map(p => p.join(",")).join(" ")); path.setAttribute("fill", "none");
+  path.setAttribute("stroke", color); path.setAttribute("stroke-width", "2.2"); path.setAttribute("stroke-linejoin", "round"); path.setAttribute("stroke-linecap", "round");
+  svg.append(path);
+  const u = pts[pts.length - 1], c = document.createElementNS(ns, "circle");
+  c.setAttribute("cx", u[0]); c.setAttribute("cy", u[1]); c.setAttribute("r", "3.2"); c.setAttribute("fill", color);
+  svg.append(c);
+  return svg;
+}
+function pintarLineas() {
+  const cont = $("lineas"); cont.innerHTML = "";
+  const ahora = Date.now();
+  let lista = lineasDatos.filter(l => Date.parse(l.inicio) > ahora - 3 * 3600000).map(l => {
+    const s = l.serie || [], mov = s.length > 1 ? Number(s[s.length - 1][1]) - Number(s[0][1]) : 0;
+    return { ...l, mov, n: s.length };
+  });
+  if (lineasFiltro === "mueven") lista = lista.filter(l => l.n > 1 && Math.abs(l.mov) >= 0.005).sort((a, b) => Math.abs(b.mov) - Math.abs(a.mov)).slice(0, 40);
+  else lista.sort((a, b) => a.inicio.localeCompare(b.inicio) || a.partido.localeCompare(b.partido));
+  if (!lista.length) {
+    cont.append(el("p", "empty", lineasFiltro === "mueven"
+      ? "Todavía no hay movimientos: se necesitan al menos 2 escaneos del mismo partido (el bot escanea 7:00 y 18:00)."
+      : "No hay líneas guardadas de partidos próximos."));
+    return;
+  }
+  lista.forEach(l => {
+    const pts = l.mov * 100, cls = pts >= 0.5 ? "sube" : pts <= -0.5 ? "baja" : "igual";
+    const c = el("div", "linea" + (Math.abs(pts) >= 3 ? " fuerte" : ""));
+    const t = el("div"); t.append(el("div", "sel", l.seleccion),
+      el("div", "meta", `${DEP(l.deporte)} ${l.partido} · ${NOMBRE_MK[l.mercado] || l.mercado} · ${new Date(l.inicio).toLocaleString("es-MX", { weekday: "short", hour: "2-digit", minute: "2-digit" })}`));
+    const color = getComputedStyle(document.documentElement).getPropertyValue(cls === "sube" ? "--win" : cls === "baja" ? "--loss" : "--muted").trim();
+    const g = el("div"); g.append(grafica(l.serie || [[0, 0]], color)); g.style.color = "var(--fg)";
+    const m = el("div", "mov " + cls, l.n > 1 ? `${pts > 0 ? "▲ +" : pts < 0 ? "▼ " : ""}${pts.toFixed(1)}` : "—");
+    m.append(el("small", "", `${(Number(l.serie[l.serie.length - 1][1]) * 100).toFixed(1)}% · ${l.n} esc.`));
+    c.append(t, g, m); cont.append(c);
+  });
+}
+document.querySelectorAll("[data-l]").forEach(b => b.addEventListener("click", () => {
+  lineasFiltro = b.dataset.l;
+  document.querySelectorAll("[data-l]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  pintarLineas();
+}));
+
+// ---------------------------------------------------------------- quiniela
+let quiniela = null;
+const cuando = t => new Date(t).toLocaleString("es-MX", { weekday: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+async function cargarQuiniela() {
+  try { quiniela = await api("quiniela"); pintarQuiniela(); }
+  catch (e) { $("q-partidos").innerHTML = ""; $("q-partidos").append(el("p", "empty", e.message || "No se pudo cargar la quiniela.")); }
+}
+function pintarQuiniela() {
+  const q = quiniela, cont = $("q-partidos"); cont.innerHTML = "";
+  const mios = {}; (q.picks || []).filter(p => p.mio).forEach(p => mios[p.evento] = p.pick);
+  const partidos = q.partidos || [];
+  $("q-liga").textContent = partidos[0] ? `${partidos[0].liga} · próximos ${partidos.length}` : "Sin jornada";
+  $("q-mis").textContent = `${partidos.filter(p => mios[`${p.ruta}:${p.id}`]).length} / ${partidos.length}`;
+  const yo = (q.tabla || []).find(t => t.yo); $("q-pts").textContent = yo ? `${yo.puntos} de ${yo.jugados}` : "0";
+  if (!partidos.length) cont.append(el("p", "empty", "No hay partidos de la jornada en los próximos días."));
+  partidos.forEach(p => {
+    const ev = `${p.ruta}:${p.id}`, c = el("div", "q-partido");
+    c.append(el("div", "cuando", `${p.liga} · ${cuando(p.inicio)}`));
+    const fila = el("div", "q-picks");
+    const boton = (pick, equipo) => {
+      const b = el("button"); b.type = "button"; b.setAttribute("aria-pressed", String(mios[ev] === pick));
+      if (equipo) { if (okUrl(equipo.logo)) b.append(imagen(equipo.logo)); b.append(el("span", "", equipo.nombre)); }
+      else { b.className = "emp"; b.textContent = "Empate"; }
+      b.onclick = async () => {
+        fila.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+        try { await api("quiniela_pick", { ruta: p.ruta, evento: p.id, pick }); mios[ev] = pick;
+          quiniela.picks = (quiniela.picks || []).filter(x => !(x.mio && x.evento === ev)).concat([{ mio: true, evento: ev, pick }]);
+          $("q-mis").textContent = `${partidos.filter(x => mios[`${x.ruta}:${x.id}`]).length} / ${partidos.length}`;
+          if (navigator.vibrate) navigator.vibrate(12);
+        } catch (e) { estado(e.message || "No se pudo guardar tu pick."); cargarQuiniela(); }
+      };
+      return b;
+    };
+    fila.append(boton("L", p.local), boton("E"), boton("V", p.visita));
+    c.append(fila);
+    const otros = (q.picks || []).filter(x => !x.mio && x.evento === ev);
+    if (otros.length) { const o = el("div", "q-otros"); otros.forEach(x => o.append(el("span", "", `${x.nombre}: ${x.pick ? { L: "local", E: "empate", V: "visita" }[x.pick] : "🔒"}`))); c.append(o); }
+    cont.append(c);
+  });
+  // tabla
+  const tab = $("q-tabla"); tab.innerHTML = "";
+  if (!(q.tabla || []).length) tab.append(el("p", "empty", "Aún nadie juega. ¡Sé el primero!"));
+  (q.tabla || []).forEach((t, i) => {
+    const d = el("div", t.yo ? "yo" : ""); d.append(el("span", "", ["🥇", "🥈", "🥉"][i] || `${i + 1}.`),
+      el("span", "", (t.yo ? "Tú" : t.nombre) + ` · ${t.jugados} jugados`), el("span", "pts", String(t.puntos))); tab.append(d);
+  });
+  // ya jugados (mis picks con resultado)
+  const pas = $("q-pasados"); pas.innerHTML = "";
+  const res = q.res || {};
+  const jugados = (q.picks || []).filter(x => x.mio && res[x.evento] && x.partido);
+  $("q-pas-tit").hidden = !jugados.length;
+  jugados.sort((a, b) => String(b.inicio).localeCompare(String(a.inicio))).forEach(x => {
+    const ok = res[x.evento].res === x.pick, d = el("div", "res " + (ok ? "gana" : "pierde"));
+    const t = el("div"); t.append(el("div", "sel", x.partido), el("div", "meta", `Tu pick: ${{ L: "local", E: "empate", V: "visita" }[x.pick]} · ${res[x.evento].marcador || ""}`));
+    d.append(t, el("div", "amt num", ok ? "✓ +1" : "✗"));
+    pas.append(d);
+  });
+}
+
+// ---------------------------------------------------------------- retos 1 vs 1
+let retosDatos = null, retoLado = null;
+async function cargarRetos() {
+  if (!perfil) await cargarPerfil();
+  try { retosDatos = await api("retos"); pintarRetos(); }
+  catch (e) { $("rt-lista").innerHTML = ""; $("rt-lista").append(el("p", "empty", e.message || "No se pudieron cargar los retos.")); }
+}
+function partidoSel() { return (retosDatos.partidos || []).find(p => `${p.ruta}|${p.id}` === $("rt-partido").value); }
+function pintarLados() {
+  const p = partidoSel(), cont = $("rt-lado"); cont.innerHTML = ""; retoLado = null;
+  if (!p) return;
+  [["visita", p.visita], ["local", p.local]].forEach(([lado, t]) => {
+    const b = el("button"); b.type = "button"; b.setAttribute("aria-pressed", "false");
+    if (okUrl(t.logo)) b.append(imagen(t.logo)); b.append(el("span", "", "Voy con " + t.nombre));
+    b.onclick = () => { retoLado = lado; cont.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b))); };
+    cont.append(b);
+  });
+}
+$("rt-partido").addEventListener("change", pintarLados);
+function pintarRetos() {
+  const d = retosDatos, yo = String(chatPropio());
+  const rv = $("rt-rival"), pv = rv.value; rv.innerHTML = "";
+  (d.amigos || []).forEach(a => { const o = el("option", "", a.nombre); o.value = a.chat_id; rv.append(o); });
+  if (!(d.amigos || []).length) { const o = el("option", "", "No hay amigos con acceso todavía"); o.value = ""; rv.append(o); }
+  if (pv) rv.value = pv;
+  const ps = $("rt-partido"), pp = ps.value; ps.innerHTML = "";
+  let liga = null, grupo = null;
+  (d.partidos || []).forEach(p => {
+    if (p.liga !== liga) { liga = p.liga; grupo = el("optgroup"); grupo.label = p.liga; ps.append(grupo); }
+    const o = el("option", "", `${p.visita.nombre} vs ${p.local.nombre} · ${cuando(p.inicio)}`); o.value = `${p.ruta}|${p.id}`; grupo.append(o);
+  });
+  if (pp) ps.value = pp;
+  pintarLados();
+  // marcador
+  const term = (d.retos || []).filter(r => r.estado === "terminado");
+  $("rt-g").textContent = term.filter(r => r.ganador === yo).length;
+  $("rt-e").textContent = term.filter(r => r.ganador === "empate").length;
+  $("rt-p").textContent = term.filter(r => r.ganador && r.ganador !== yo && r.ganador !== "empate").length;
+  const cont = $("rt-lista"); cont.innerHTML = "";
+  const pend = (d.retos || []).filter(r => r.estado === "pendiente" && r.rival === yo).length;
+  $("retos-punto").hidden = !pend; $("retos-punto").textContent = pend;
+  if (!(d.retos || []).length) { cont.append(el("p", "empty", "Aún no tienes retos. ¡Reta a alguien!")); return; }
+  (d.retos || []).forEach(r => {
+    const soyRetador = r.retador === yo, miLado = soyRetador ? r.lado : (r.lado === "local" ? "visita" : "local");
+    const otro = soyRetador ? r.rival_nombre : r.retador_nombre;
+    const c = el("div", "reto" + (r.estado === "terminado" ? (r.ganador === yo ? " gane" : r.ganador === "empate" ? "" : " perdi") : ""));
+    const est = { pendiente: soyRetador ? "⏳ Esperando que acepte" : "🔔 Falta que respondas", aceptado: "🔥 Aceptado · en juego", rechazado: "🙅 Rechazado",
+      terminado: r.ganador === yo ? "🏆 Ganaste" : r.ganador === "empate" ? "🤝 Empate" : "😬 Perdiste", cancelado: "Cancelado" }[r.estado] || r.estado;
+    c.append(el("div", "quien-r", `${soyRetador ? "Tú retaste a" : "Te retó"} ${otro || "un amigo"} · ${est}`));
+    const vs = el("div", "vs");
+    const lado = (k, nombre, logo) => { const x = el("div", "lado" + (k === miLado ? " mio" : "")); if (okUrl(logo)) x.append(imagen(logo)); x.append(el("span", "", nombre + (k === miLado ? " (tú)" : ""))); return x; };
+    vs.append(lado("visita", r.visita, r.logo_visita), el("span", "x", r.marcador ? "" : "VS"), lado("local", r.local, r.logo_local));
+    c.append(vs);
+    c.append(el("div", "meta", r.marcador ? `🏁 ${r.marcador}` : `🕒 ${cuando(r.inicio)}`));
+    if (r.premio) c.append(el("div", "meta", `🎁 El que pierda: ${r.premio}`));
+    const acc = el("div", "actions");
+    if (r.estado === "pendiente" && !soyRetador) {
+      const si = el("button", "primary", "✅ Acepto"), no = el("button", "", "🙅 Paso"); si.type = no.type = "button";
+      si.onclick = () => responderReto(r.id, true); no.onclick = () => responderReto(r.id, false); acc.append(si, no);
+    }
+    if (r.estado === "pendiente" && soyRetador) {
+      const x = el("button", "", "Cancelar reto"); x.type = "button";
+      x.onclick = async () => { try { await api("reto_cancelar", { id: r.id }); cargarRetos(); } catch (e) { estado(e.message); } };
+      acc.append(x);
+    }
+    if (acc.childElementCount) c.append(acc);
+    cont.append(c);
+  });
+}
+async function responderReto(id, acepta) {
+  try { await api("reto_responder", { id, acepta }); if (navigator.vibrate) navigator.vibrate(20); cargarRetos(); }
+  catch (e) { estado(e.message || "No se pudo responder."); }
+}
+$("rt-form").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const p = partidoSel();
+  if (!$("rt-rival").value) { estado("Elige a quién retas."); return; }
+  if (!p) { estado("Elige un partido."); return; }
+  if (!retoLado) { estado("Toca el equipo con el que vas."); return; }
+  $("rt-btn").disabled = true; estado("Mandando reto…");
+  try {
+    await api("reto_crear", { rival: $("rt-rival").value, ruta: p.ruta, evento: p.id, lado: retoLado, premio: $("rt-premio").value.trim() });
+    $("rt-premio").value = ""; estado("✅ Reto enviado: le llegó a tu amigo por Telegram."); setTimeout(() => estado(""), 3500);
+    cargarRetos();
+  } catch (e) { estado(e.message || "No se pudo mandar el reto."); }
+  $("rt-btn").disabled = false;
+});
+function chatPropio() { return perfil && perfil.chat_id ? perfil.chat_id : (retosDatos && retosDatos.yo) || ""; }
+
+// ---------------------------------------------------------------- modo práctica
+let practica = null, boleto = new Map();      // evento -> opción
+const fmt0 = n => (n < 0 ? "-$" : "$") + Math.abs(n).toLocaleString("es-MX", { maximumFractionDigits: 2 });
+async function cargarPractica() {
+  try { practica = await api("practica"); pintarPractica(); }
+  catch (e) { $("pr-opciones").innerHTML = ""; $("pr-opciones").append(el("p", "empty", e.message || "No se pudo cargar.")); }
+}
+function pintarPractica() {
+  const p = practica, pf = p.perfil || {};
+  const banca = Number(pf.practica_banca) || 0, juego = Number(pf.practica_en_juego) || 0;
+  $("pr-banca").textContent = fmt0(banca - juego); $("pr-juego").textContent = fmt0(juego);
+  const cerr = (p.apuestas || []).filter(a => a.estado !== "pendiente");
+  const gan = banca - 1000; $("pr-gan").textContent = (gan > 0 ? "+" : "") + fmt0(gan); $("pr-gan").className = clase(gan);
+  $("pr-rec").textContent = `${cerr.filter(a => a.estado === "gana").length}–${cerr.filter(a => a.estado === "pierde").length}`;
+  $("pr-par").textContent = (p.apuestas || []).filter(a => a.tipo === "parlay").length;
+  $("pr-sim").textContent = (p.apuestas || []).filter(a => a.tipo === "simple").length;
+  // opciones agrupadas por partido
+  const cont = $("pr-opciones"); cont.innerHTML = "";
+  const grupos = new Map();
+  (p.opciones || []).forEach(o => { if (!grupos.has(o.evento)) grupos.set(o.evento, []); grupos.get(o.evento).push(o); });
+  if (!grupos.size) cont.append(el("p", "empty", "No hay partidos próximos del bot. Las opciones salen después de cada escaneo (7:00 y 18:00)."));
+  [...grupos.values()].sort((a, b) => a[0].inicio.localeCompare(b[0].inicio)).forEach(ops => {
+    const g = el("div", "opc-partido"), t = el("div", "t");
+    t.append(el("b", "", `${DEP(ops[0].deporte)} ${ops[0].partido}`), el("span", "", cuando(ops[0].inicio)));
+    const chips = el("div", "chips");
+    ops.sort((a, b) => (a.mercado + a.seleccion).localeCompare(b.mercado + b.seleccion)).forEach(o => {
+      const b = el("button", "chip-op"); b.type = "button";
+      b.setAttribute("aria-pressed", String(boleto.get(o.evento)?.id === o.id));
+      const pr = o.serie && o.serie.length ? Number(o.serie[o.serie.length - 1][1]) : null;
+      b.append(el("span", "", o.seleccion), el("small", "", `${aAmericano(Number(o.minima))}${pr ? " · " + Math.round(pr * 100) + "%" : ""}`));
+      b.onclick = () => {
+        if (boleto.get(o.evento)?.id === o.id) boleto.delete(o.evento); else boleto.set(o.evento, o);
+        chips.querySelectorAll(".chip-op").forEach(x => x.setAttribute("aria-pressed", "false"));
+        if (boleto.get(o.evento)?.id === o.id) b.setAttribute("aria-pressed", "true");
+        if (navigator.vibrate) navigator.vibrate(8);
+        pintarBoleto();
+      };
+      chips.append(b);
+    });
+    g.append(t, chips); cont.append(g);
+  });
+  // mis apuestas de práctica
+  const lista = $("pr-lista"); lista.innerHTML = "";
+  if (!(p.apuestas || []).length) lista.append(el("p", "empty", "Todavía no haces apuestas de práctica."));
+  (p.apuestas || []).forEach(a => {
+    const c = el("div", "prac " + a.estado), g = Number(a.ganancia) || 0;
+    const cab = el("div", "bank");
+    cab.append(el("b", "", `${a.tipo === "parlay" ? `🎟 Parlay de ${(a.piernas || []).length}` : "🎯 Simple"} · ${fmt0(Number(a.monto))} a ${aAmericano(Number(a.cuota))}`),
+      el("span", a.estado === "pendiente" ? "num" : clase(g),
+        a.estado === "pendiente" ? `paga ${fmt0(Number(a.monto) * Number(a.cuota))}` : (g > 0 ? "+" : "") + fmt0(g)));
+    c.append(cab);
+    (a.piernas || []).forEach(x => {
+      const pi = el("div", "pierna");
+      pi.append(el("span", "", `${{ gana: "✅", pierde: "❌", nula: "➖" }[x.resultado] || "⏳"} ${x.seleccion} · ${x.partido}`),
+        el("span", "num", aAmericano(Number(x.cuota))));
+      c.append(pi);
+    });
+    lista.append(c);
+  });
+  pintarBoleto();
+}
+function pintarBoleto() {
+  const sel = [...boleto.values()], bo = $("boleto");
+  bo.hidden = !sel.length;
+  if (!sel.length) return;
+  const cuota = sel.reduce((x, o) => x * Number(o.minima), 1);
+  $("bo-tit").textContent = sel.length > 1 ? `🎟 Parlay de ${sel.length}` : "🎯 Apuesta simple";
+  const s = $("bo-sels"); s.innerHTML = ""; sel.forEach(o => s.append(el("span", "", `${o.seleccion} ${aAmericano(Number(o.minima))}`)));
+  $("bo-cuota").textContent = `${aAmericano(cuota)} (${cuota.toFixed(2)})`;
+  const m = Number($("bo-monto").value) || 0;
+  $("bo-premio").textContent = fmt0(m * cuota);
+}
+$("bo-monto").addEventListener("input", pintarBoleto);
+$("bo-limpiar").addEventListener("click", () => { boleto.clear(); pintarPractica(); });
+$("bo-btn").addEventListener("click", async () => {
+  const m = Number($("bo-monto").value);
+  if (!(m > 0)) { estado("Pon un monto."); return; }
+  $("bo-btn").disabled = true;
+  try {
+    await api("practica_crear", { senales: [...boleto.values()].map(o => o.id), monto: m });
+    boleto.clear(); estado("🎮 ¡Apuesta de práctica hecha! Te aviso por Telegram cuando se cierre."); setTimeout(() => estado(""), 3500);
+    if (navigator.vibrate) navigator.vibrate([10, 40, 10]);
+    await cargarPractica();
+  } catch (e) { estado(e.message || "No se pudo apostar."); }
+  $("bo-btn").disabled = false;
+});
+$("pr-reset").addEventListener("click", async () => {
+  const b = $("pr-reset");
+  if (b.dataset.ok !== "1") { b.dataset.ok = "1"; b.textContent = "¿Seguro? Se borra tu historial de práctica. Toca otra vez"; return; }
+  b.dataset.ok = ""; b.textContent = "🔄 Empezar de cero ($1,000)";
+  try { await api("practica_reiniciar"); boleto.clear(); cargarPractica(); } catch (e) { estado(e.message); }
+});
+
+
+// ---------------------------------------------------------------- señales del bot (lo que mandó por Telegram)
+let senalesCargadas = 0, senalesDatos = [];
+async function cargarSenales() {
+  if (Date.now() - senalesCargadas < 120000) return pintarSenales();
+  try { senalesDatos = await api("senales"); senalesCargadas = Date.now(); pintarSenales(); }
+  catch (e) { $("senales").innerHTML = ""; $("senales").append(el("p", "empty", e.message || "No se pudieron cargar las señales.")); }
+}
+function bancaBotActual() {
+  return bancaInicial + apuestas.filter(b => b.cartera === "bot").reduce((s, b) => s + ganancia(b), 0);
+}
+function montoSug(p, c) {
+  if (!(p * c - 1 > 0)) return 0;
+  return Math.max(Math.round(Math.min((p * c - 1) / (c - 1) * 0.25, 0.025) * bancaBotActual()), 2);
+}
+function pintarSenales() {
+  const cont = $("senales"); cont.innerHTML = "";
+  const lista = senalesDatos.filter(p => Date.parse(p.inicio) > Date.now());
+  $("sen-cuando").textContent = lista.length ? `${lista.length} partido(s)` : "";
+  if (!lista.length) { cont.append(el("p", "empty", "No hay señales vigentes. El bot escanea a las 7:00 y a las 18:00 si hay partidos de tu calendario.")); return; }
+  lista.forEach(p => {
+    const c = el("div", "senal"), cab = el("div", "cab");
+    cab.append(el("b", "", `${DEP(p.deporte)} ${p.partido}`), el("span", "", cuando(p.inicio)));
+    c.append(cab);
+    ["h2h", "totals", "spreads"].forEach(mk => {
+      const filas = (p.mercados[mk] || []).slice().sort((a, b) => b.prob - a.prob);
+      if (!filas.length) return;
+      c.append(el("div", "mk", NOMBRE_MK[mk]));
+      const caja = el("div", "list"); caja.style.gap = "4px";
+      filas.forEach((f, i) => {
+        const fila = el("div", "op-sen" + (i === 0 && filas.length > 1 ? " top" : ""));
+        if (i >= 3) fila.hidden = true;
+        const t = el("div");
+        const monto = montoSug(f.prob, f.minima);
+        t.append(el("div", "s", `${i === 0 && filas.length > 1 ? "⭐ " : ""}${f.seleccion} · ${(f.prob * 100).toFixed(1)}%${Math.abs(f.mov) >= .02 ? " ⚡" : ""}`));
+        const sm = el("small"); sm.append("paga ", el("b", "paga", aAmericano(f.minima)), ` o mejor → $${monto}`); t.append(sm);
+        const bt = el("button", "", "Lo aposté"); bt.type = "button";
+        bt.onclick = () => {
+          $("f-partido").value = p.partido; $("f-sel").value = f.seleccion; $("f-prob").value = (f.prob * 100).toFixed(1);
+          $("f-monto").value = monto; $("f-cuota").value = ""; vistaPrevia && vistaPrevia();
+          $("f").scrollIntoView({ behavior: "smooth", block: "center" }); setTimeout(() => $("f-cuota").focus(), 400);
+          estado("👉 Escribe el momio que te dieron y guarda."); setTimeout(() => estado(""), 4000);
+        };
+        fila.append(t, bt); caja.append(fila);
+      });
+      c.append(caja);
+      if (filas.length > 3) {
+        const mas = el("button", "mas-ops", `Ver ${filas.length - 3} más`); mas.type = "button";
+        mas.onclick = () => { caja.querySelectorAll(".op-sen").forEach(x => x.hidden = false); mas.remove(); };
+        c.append(mas);
+      }
+    });
+    cont.append(c);
+  });
+}
 $("login").addEventListener("submit", async e => {
   e.preventDefault();
   $("l-btn").disabled = true; estado("Entrando…");

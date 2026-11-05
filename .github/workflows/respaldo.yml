@@ -1,0 +1,26 @@
+name: Respaldo mensual
+
+on:
+  schedule:
+    - cron: "7 15 1 * *"      # día 1 de cada mes, 9:07 a. m. CDMX
+  workflow_dispatch:
+    inputs:
+      prueba:
+        description: "Solo generar los archivos (no manda nada)"
+        type: boolean
+        default: true
+
+jobs:
+  respaldo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Mandar respaldo por Telegram
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+        run: python respaldo.py ${{ inputs.prueba && '--prueba' || '' }}

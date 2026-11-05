@@ -105,3 +105,15 @@ gastan. Guarda 15 créditos de reserva y te avisa por Telegram si se acaban.
 - Evalúa después de unas 200 apuestas. 25 apuestas no dicen nada:
   una racha de -5 unidades es normal aun con un método ganador.
 - Lo que importa en `resumen` es si tu ganancia real sigue a la esperada.
+
+## Funciones nuevas (no gastan créditos de cuotas)
+
+- **🎯 Señales**: botón en Telegram y sección en la página con lo último que mandó el bot (se lee de la base de datos).
+- **📈 Movimiento de líneas**: cómo cambió la probabilidad de Pinnacle entre escaneos.
+- **🏆 Quiniela**: pronósticos de la jornada sin dinero, con tabla entre amigos.
+- **⚔️ Retos 1 vs 1**: retas a un amigo; el bot avisa quién ganó.
+- **🎮 Modo práctica**: apuestas simples y parlays de mentira con los momios mínimos del bot (banca virtual de $1,000).
+- **⭐ Mi equipo**: la página toma los colores y el escudo de tu equipo, y el bot te avisa antes de cada partido suyo.
+- **🗂 Respaldo mensual**: el día 1 de cada mes llega por Telegram un Excel con todas tus apuestas (`respaldo.yml`).
+
+`juegos.py` corre cada hora junto con `resultados.py` (quiniela, retos, práctica y avisos del equipo favorito).

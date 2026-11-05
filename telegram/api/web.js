@@ -1,7 +1,11 @@
 // API de la página web. Cada quien entra con su usuario y contraseña (los crea desde el bot
 // de Telegram) y solo puede ver y cambiar sus propias apuestas.
 
-import { buscarLogo, sugerencias, equipoPorClave } from "../lib/espn.js";
+import { buscarLogo, sugerencias, equipoPorClave, proximos, PRINCIPALES } from "../lib/espn.js";
+import { mas, tg, textoReto, botonesReto, avisarRespuesta, agruparSenales } from "../lib/mas.js";
+
+// Ligas para la quiniela, en orden: se usa la primera que tenga partidos en los próximos días
+const QUINIELA = ["soccer/mex.1", "soccer/uefa.champions", "soccer/eng.1", "soccer/esp.1"];
 
 const env = (k) => (process.env[k] || "").replace(/\s/g, "");
 
@@ -121,6 +125,85 @@ export default async function handler(req, res) {
       }
       case "bajar":
         return res.status(200).json(await rpc("comunidad", "bajar", { usuario, id: num((b.datos || {}).id) }));
+      // ---------- perfil / equipo favorito
+      case "perfil":
+        return res.status(200).json(await mas("perfil", { usuario }));
+      case "fav": {
+        const k = txt((b.datos || {}).k, 40);
+        if (!k) return res.status(200).json(await mas("fav", { usuario, equipo: null }));
+        const e = await equipoPorClave(k);
+        if (!e) return res.status(404).json({ error: "No encontré ese club." });
+        const intensidad = (b.datos || {}).intensidad === "mucho" ? "mucho" : "poco";
+        return res.status(200).json(await mas("fav", { usuario, equipo: { ...e, intensidad } }));
+      }
+      // ---------- movimiento de líneas
+      case "senales":
+        return res.status(200).json(agruparSenales(await mas("lineas2", {})));
+      case "lineas":
+        return res.status(200).json(await mas("lineas2", {}));
+      // ---------- quiniela
+      case "quiniela": {
+        let partidos = [];
+        for (const ruta of QUINIELA) {
+          partidos = (await proximos(ruta, 8)).slice(0, 12);
+          if (partidos.length >= 3) break;
+        }
+        return res.status(200).json({ partidos, ...(await mas("quiniela", { usuario })) });
+      }
+      case "quiniela_pick": {
+        const d = b.datos || {};
+        if (!["L", "E", "V"].includes(d.pick) || !QUINIELA.includes(d.ruta)) return res.status(400).json({ error: "Pick inválido" });
+        const p = (await proximos(d.ruta, 8)).find((x) => String(x.id) === String(d.evento));
+        if (!p) return res.status(400).json({ error: "Ese partido ya empezó o no está en la jornada." });
+        const r = await mas("quiniela_pick", { usuario, evento: `${p.ruta}:${p.id}`, liga: p.ruta,
+          partido: `${p.visita.nombre} vs ${p.local.nombre}`, inicio: p.inicio, pick: d.pick });
+        return res.status(r && r.error ? 400 : 200).json(r);
+      }
+      // ---------- retos 1 vs 1
+      case "retos": {
+        const [retos, perfil, listas] = await Promise.all([mas("retos", { usuario }), mas("perfil", { usuario }),
+          Promise.all(PRINCIPALES.map((r) => proximos(r, 3).catch(() => [])))]);
+        const partidos = listas.flat().sort((a, b) => a.inicio.localeCompare(b.inicio)).slice(0, 80);
+        return res.status(200).json({ retos, amigos: (perfil && perfil.amigos) || [], partidos });
+      }
+      case "reto_crear": {
+        const d = b.datos || {};
+        if (!["local", "visita"].includes(d.lado)) return res.status(400).json({ error: "Elige tu equipo." });
+        const p = (await proximos(txt(d.ruta, 40), 8)).find((x) => String(x.id) === String(d.evento));
+        if (!p) return res.status(400).json({ error: "Ese partido ya empezó." });
+        const datos = { usuario, rival: txt(d.rival, 40), evento: p.id, liga: p.ruta, partido: `${p.visita.nombre} vs ${p.local.nombre}`,
+          inicio: p.inicio, local: p.local.nombre, visita: p.visita.nombre, logo_local: p.local.logo, logo_visita: p.visita.logo,
+          lado: d.lado, premio: txt(d.premio, 80) };
+        const r = await mas("reto_crear", datos);
+        if (r && r.error) return res.status(400).json(r);
+        await tg("sendMessage", { chat_id: datos.rival, parse_mode: "Markdown", text: textoReto({ ...datos, ...r }),
+          reply_markup: botonesReto(r.id) });
+        return res.status(200).json(r);
+      }
+      case "reto_responder": {
+        const d = b.datos || {};
+        const r = await mas("reto_responder", { usuario, id: num(d.id), acepta: Boolean(d.acepta) });
+        await avisarRespuesta(r);
+        return res.status(200).json(r);
+      }
+      case "reto_cancelar":
+        return res.status(200).json(await mas("reto_cancelar", { usuario, id: num((b.datos || {}).id) }));
+      // ---------- modo práctica (dinero de mentira)
+      case "practica": {
+        const [perfil, apuestas, lineas] = await Promise.all([mas("perfil", { usuario }), mas("practica", { usuario }), mas("lineas2", {})]);
+        const ahora = Date.now();
+        return res.status(200).json({ perfil, apuestas, opciones: lineas.filter((l) => Date.parse(l.inicio) > ahora && Number(l.minima) > 1) });
+      }
+      case "practica_crear": {
+        const d = b.datos || {};
+        const senales = Array.isArray(d.senales) ? d.senales.map(Number).filter((x) => x > 0).slice(0, 8) : [];
+        const monto = num(d.monto);
+        if (!senales.length || !(monto > 0)) return res.status(400).json({ error: "Elige al menos una selección y un monto." });
+        const r = await mas("practica_crear", { usuario, senales, monto });
+        return res.status(r && r.error ? 400 : 200).json(r);
+      }
+      case "practica_reiniciar":
+        return res.status(200).json(await mas("practica_reiniciar", { usuario }));
       case "banca": {
         const v = num((b.datos || {}).valor);
         if (!(v > 0)) return res.status(400).json({ error: "La banca debe ser mayor a cero." });

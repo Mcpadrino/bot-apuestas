@@ -4,6 +4,7 @@
 // SUPABASE_URL, SUPABASE_KEY (publishable/anon), BOT_CLAVE (clave de la función bot en la BD).
 
 import { buscarLogo, sugerencias, equipoPorClave } from "../lib/espn.js";
+import { mas, avisarRespuesta, textoSenales, botonesSenales } from "../lib/mas.js";
 
 const env = (k) => (process.env[k] || "").replace(/\s/g, "");
 const TG = () => `https://api.telegram.org/bot${env("TELEGRAM_TOKEN")}`;
@@ -40,7 +41,7 @@ const LIBRE = new Set(["libre", "aparte", "personal", "fuera"]);
 const CASAS = { caliente: "Caliente", draftea: "Draftea", codere: "Codere", bet365: "Bet365" };
 const WEB_URL = env("WEB_URL") || "https://bot-apuestas-telegram.vercel.app";
 const TECLADO = {
-  keyboard: [[{ text: "💰 Saldo" }, { text: "📋 Pendientes" }], [{ text: "🌐 Mi página" }, { text: "❓ Ayuda" }]],
+  keyboard: [[{ text: "🎯 Señales" }, { text: "💰 Saldo" }, { text: "📋 Pendientes" }], [{ text: "🌐 Mi página" }, { text: "❓ Ayuda" }]],
   resize_keyboard: true,
   is_persistent: true,
 };
@@ -231,6 +232,18 @@ async function atenderTexto(chat, texto, esDueno, msgId) {
     return enviar(await resumen(dbu) + (lim.texto ? "\n\n" + lim.texto : ""), { reply_markup: TECLADO });
   }
 
+  // Vuelve a mandar las señales del último escaneo (lee la base de datos: no gasta créditos de cuotas)
+  if (["senales", "señales", "senal", "señal", "momios", "alertas", "🎯"].includes(cmd) || texto.includes("Señales")) {
+    const [lineas, r] = await Promise.all([mas("lineas2", {}), dbu("resumen")]);
+    const banca = Number(r.banca_inicial) + Number(r.bot.ganancia);
+    const partes = textoSenales(lineas, banca);
+    if (!partes.length) return enviar("No hay señales vigentes ahora. El bot escanea a las 7:00 y a las 18:00 (si hay partidos de tu calendario).", { reply_markup: TECLADO });
+    for (const t of partes) await enviar(t);
+    const bt = botonesSenales(lineas);
+    if (bt.length) await enviar("👇 ¿Apostaste alguna? Toca el partido y te pregunto el momio.", { reply_markup: { inline_keyboard: bt } });
+    return;
+  }
+
   if (["pendientes", "abiertas", "📋"].includes(cmd) || texto.includes("Pendientes")) {
     const lista = await dbu("pendientes");
     if (!lista.length) return enviar("No tienes apuestas pendientes. 👌");
@@ -395,6 +408,16 @@ async function atenderBoton(q) {
     if (res === "pendiente")
       await tg("editMessageReplyMarkup", { chat_id: chat, message_id: msgId, reply_markup: botones(id) });
     await tg("answerCallbackQuery", { callback_query_id: q.id, text: ETIQUETA[res] });
+  } else if (tipo === "r") {
+    // Respuesta a un reto 1 vs 1
+    const r = await mas("reto_responder", { usuario: String(chat), id: Number(id), acepta: res === "si" });
+    if (!r) {
+      await editar("Ese reto ya no está disponible (lo cancelaron o el partido ya empezó).");
+    } else {
+      await editar(res === "si" ? "🔥 *Reto aceptado.* Te aviso quién ganó cuando termine el partido." : "👌 Rechazaste el reto.");
+      await avisarRespuesta(r);
+    }
+    await tg("answerCallbackQuery", { callback_query_id: q.id });
   } else if (tipo === "l") {
     // Eligió el club correcto para el escudo
     if (res === "0") {
@@ -456,6 +479,15 @@ export default async function handler(req, res) {
     if (!tokenOk()) return res.status(401).json({ error: "no" });
     return res.status(200).json(await rpcResultados("pendientes", {}));
   }
+  // Para el revisor de GitHub: quiniela, retos, práctica, avisos de equipo favorito y respaldo mensual
+  if (req.query.mas !== undefined && req.method === "POST") {
+    if (!tokenOk()) return res.status(401).json({ error: "no" });
+    const b = req.body || {};
+    const PERMITIDAS = ["favoritos", "aviso", "quiniela_pendientes", "quiniela_res", "retos_abiertos", "reto_cerrar",
+      "practica_pendientes", "practica_pierna", "respaldo"];
+    if (!PERMITIDAS.includes(b.accion)) return res.status(400).json({ error: "acción" });
+    return res.status(200).json(await mas(b.accion, b.datos || {}));
+  }
   if (req.query.semana !== undefined) {
     if (!tokenOk()) return res.status(401).json({ error: "no" });
     return res.status(200).json(await rpcExtras("semana", {}));
@@ -484,6 +516,7 @@ export default async function handler(req, res) {
       const r = await tg("setWebhook", { url, secret_token: env("WEBHOOK_SECRET"),
         allowed_updates: ["message", "callback_query"], drop_pending_updates: true });
       await tg("setMyCommands", { commands: [
+        { command: "senales", description: "Volver a ver las señales vigentes" },
         { command: "saldo", description: "Banca, récord y ganancia" },
         { command: "pendientes", description: "Apuestas sin resultado" },
         { command: "ayuda", description: "Cómo registrar apuestas" },

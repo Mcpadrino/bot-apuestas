@@ -14,6 +14,7 @@ const EXTRA = {
   "soccer/uefa.europa.conf": "Conference League",
 };
 const TODAS = { ...LIGAS, ...EXTRA };
+export const PRINCIPALES = Object.keys(LIGAS);
 const RUTAS = Object.keys(TODAS);
 const BASE = "https://site.api.espn.com/apis/site/v2/sports/";
 const VACIAS = new Set(["fc", "cf", "club", "de", "the", "afc", "sc", "ac", "cd", "ud", "sd", "ca", "cp", "fk", "sk",
@@ -43,6 +44,7 @@ async function liga(ruta) {
     id: String(t.id || ""), nombre: t.displayName || t.shortDisplayName || "",
     abrev: (t.abbreviation || "").toLowerCase(),
     logo: t.logos?.[0]?.href || null,
+    color: t.color ? `#${t.color}` : null, color2: t.alternateColor ? `#${t.alternateColor}` : null,
     claves: [t.displayName, t.shortDisplayName, t.name, t.location, t.nickname].filter(Boolean),
   }));
   const valor = { t: Date.now(), equipos, ligaLogo: sb?.leagues?.[0]?.logos?.[0]?.href || null };
@@ -129,7 +131,8 @@ export async function sugerencias(texto, maximo = 3) {
         for (const w of palabras(k)) if (w.length >= 4) for (const t of toks) if (t.length >= 4) p = Math.max(p, similitud(w, t) * 0.95);
       }
       if (p >= 0.6 && e.logo && (!mejores.has(e.logo) || mejores.get(e.logo).p < p))
-        mejores.set(e.logo, { p, k: `${l.i}.${e.id}`, nombre: e.nombre, logo: e.logo, liga: TODAS[l.ruta], liga_logo: l.ligaLogo });
+        mejores.set(e.logo, { p, k: `${l.i}.${e.id}`, nombre: e.nombre, logo: e.logo, liga: TODAS[l.ruta], liga_logo: l.ligaLogo,
+                              color: e.color, color2: e.color2, ruta: l.ruta, id: e.id });
     }
   }
   return [...mejores.values()].sort((a, b) => b.p - a.p).slice(0, maximo).map(({ p, ...x }) => x);
@@ -142,7 +145,8 @@ export async function equipoPorClave(k) {
   if (!ruta) return null;
   const l = await liga(ruta);
   const e = l.equipos.find((x) => x.id === id);
-  return e ? { nombre: e.nombre, logo: e.logo, liga: TODAS[ruta], liga_logo: l.ligaLogo } : null;
+  return e ? { k: String(k), id: e.id, ruta, nombre: e.nombre, logo: e.logo, liga: TODAS[ruta], liga_logo: l.ligaLogo,
+               color: e.color, color2: e.color2 } : null;
 }
 
 // Futbolistas con 2 o más goles en un partido (de los eventos del partido)
@@ -168,12 +172,12 @@ export async function partidosDelDia(fecha) {
       const comp = ev.competitions?.[0] || {};
       const lado = (h) => {
         const c = (comp.competitors || []).find((x) => x.homeAway === h) || {};
-        return { nombre: c.team?.shortDisplayName || c.team?.displayName || "", logo: c.team?.logo || null,
+        return { id: String(c.team?.id || ""), nombre: c.team?.shortDisplayName || c.team?.displayName || "", logo: c.team?.logo || null,
                  marcador: c.score ?? null, ganador: Boolean(c.winner), record: c.records?.[0]?.summary || "" };
       };
       const st = ev.status?.type || {};
       return {
-        id: ev.id, liga: nombre, ligaLogo, inicio: ev.date,
+        id: ev.id, ruta, liga: nombre, ligaLogo, inicio: ev.date,
         estado: st.state || "pre",                 // pre | in | post
         detalle: st.shortDetail || st.detail || "",
         local: lado("home"), visita: lado("away"),
@@ -182,6 +186,37 @@ export async function partidosDelDia(fecha) {
     });
   }));
   return ligas.flat().sort((a, b) => (a.inicio || "").localeCompare(b.inicio || ""));
+}
+
+const ymd = (d) => d.toISOString().slice(0, 10).replace(/-/g, "");
+
+// Próximos partidos de una liga (para la quiniela): los de los siguientes `dias` días que no han empezado.
+export async function proximos(ruta, dias = 8) {
+  const hoy = new Date(), fin = new Date(Date.now() + dias * 864e5);
+  const j = await json(`${BASE}${ruta}/scoreboard?dates=${ymd(hoy)}-${ymd(fin)}&limit=200`, 5000);
+  const ligaLogo = j?.leagues?.[0]?.logos?.[0]?.href || null;
+  return (j?.events || []).map((ev) => {
+    const comp = ev.competitions?.[0] || {};
+    const lado = (h) => {
+      const c = (comp.competitors || []).find((x) => x.homeAway === h) || {};
+      return { id: String(c.team?.id || ""), nombre: c.team?.shortDisplayName || c.team?.displayName || "", logo: c.team?.logo || null };
+    };
+    return { id: ev.id, ruta, liga: TODAS[ruta] || ruta, ligaLogo, inicio: ev.date, estado: ev.status?.type?.state || "pre",
+             local: lado("home"), visita: lado("away") };
+  }).filter((p) => p.estado === "pre" && Date.parse(p.inicio) > Date.now())
+    .sort((a, b) => a.inicio.localeCompare(b.inicio));
+}
+
+// Un partido exacto por su id de ESPN (para revisar retos y quiniela)
+export async function partido(ruta, id) {
+  const j = await json(`${BASE}${ruta}/summary?event=${encodeURIComponent(id)}`, 5000);
+  const comp = j?.header?.competitions?.[0];
+  if (!comp) return null;
+  const lado = (h) => {
+    const c = (comp.competitors || []).find((x) => x.homeAway === h) || {};
+    return { nombre: c.team?.shortDisplayName || c.team?.displayName || "", marcador: Number(c.score ?? 0), ganador: Boolean(c.winner) };
+  };
+  return { terminado: Boolean(comp.status?.type?.completed), local: lado("home"), visita: lado("away") };
 }
 
 // Las noticias más recientes (en español) de tus ligas. Solo las de las últimas 24 h.
