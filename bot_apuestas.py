@@ -436,18 +436,22 @@ def escanear(args):
           f"(ventaja ≥ {EDGE_MIN:.0%}, cuotas {CUOTA_MIN}–{CUOTA_MAX}) — {args.deporte.upper()} ===")
     print("Si tu casa paga IGUAL O MÁS que 'mínima', apuesta el monto indicado.")
     print("⚡ = la línea de Pinnacle se movió desde el escaneo anterior: revisa primero esas.\n")
-    actual, msg = None, [f"🎯 Cuotas mínimas {args.deporte.upper()} (banca ${BANCA:,.0f})"]
+    actual, msg = None, [
+        f"🎯 Señales (banca ${BANCA:,.0f})",
+        "% = probabilidad real de que pase. Apuesta SOLO si tu casa paga igual o mejor "
+        "que la cuota indicada. En hándicap y total la línea debe ser la misma.",
+    ]
     for f in sorted(tabla, key=lambda x: (x["hora"], x["partido"])):
         if f["partido"] != actual:
             actual = f["partido"]
             print(f"{f['hora']}  {actual}   [{f['fuente']}]")
             msg.append(f"\n🕐 {f['hora']}  {actual}")
-        rayo = "⚡" if abs(f["mov"]) >= MOVIMIENTO else " "
-        print(f" {rayo} {f['mercado']:<9} {f['seleccion']:<28} prob {f['prob']:5.1%}  "
+        rayo = "⚡" if abs(f["mov"]) >= MOVIMIENTO else ""
+        print(f" {rayo or ' '} {f['mercado']:<9} {f['seleccion']:<28} prob {f['prob']:5.1%}  "
               f"justa {f['justa']:5.2f}  mínima {f['minima']:5.2f} ({a_americano(f['minima'])})"
               f"  → ${f['monto']:,.0f}")
-        msg.append(f"{rayo.strip()}{f['seleccion']} ({f['mercado']}): mín {a_americano(f['minima'])}"
-                   f" / {f['minima']:.2f} → ${f['monto']:,.0f}")
+        msg.append(f"{rayo or '• '}{f['seleccion']} ({f['mercado']}) {f['prob']:.0%} → "
+                   f"{a_americano(f['minima'])} o mejor · ${f['monto']:,.0f}")
     msg.append(f"\n📋 Señales por liga: {resumen_ligas}")
     if nota_creditos:
         msg.append(nota_creditos)
