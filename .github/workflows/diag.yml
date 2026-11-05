@@ -8,22 +8,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
-      - name: Probar el token de Telegram (manda un mensaje al dueño)
-        env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      - name: Estadios (ESPN + Wikipedia)
         run: |
           python3 - <<'PY'
-          import os, urllib.request, json
-          t = "".join(os.environ["TELEGRAM_TOKEN"].split())
-          print("largo", len(t), "tiene 40lJ9", "40lJ9" in t)
-          try:
-              print("getMe", urllib.request.urlopen(f"https://api.telegram.org/bot{t}/getMe", timeout=15).status)
-              d = json.dumps({"chat_id": os.environ["TELEGRAM_CHAT_ID"].strip(), "text": "✅ Prueba: GitHub ya tiene el token nuevo. Las alertas de las 18:00 sí van a llegar."}).encode()
-              r = urllib.request.Request(f"https://api.telegram.org/bot{t}/sendMessage", data=d, headers={"content-type": "application/json"})
-              print("mensaje", urllib.request.urlopen(r, timeout=15).status)
-              r = urllib.request.Request("https://bot-apuestas-telegram.vercel.app/api/telegram?usuarios=1", headers={"x-bot-token": t})
-              print("vercel", urllib.request.urlopen(r, timeout=15).status)
-          except Exception as e:
-              print("error", e)
+          import json, urllib.request, urllib.parse
+          def g(u, h=None):
+              r = urllib.request.Request(u, headers={"user-agent": "bitacora-apuestas/1.0 (contacto: github Mcpadrino)", **(h or {})})
+              return json.load(urllib.request.urlopen(r, timeout=20))
+          for ruta, eid in [("soccer/mex.1", "227"), ("soccer/eng.1", "359"), ("football/nfl", "12"), ("basketball/nba", "13")]:
+              try:
+                  t = g(f"https://site.api.espn.com/apis/site/v2/sports/{ruta}/teams/{eid}")["team"]
+                  v = t.get("venue") or (t.get("franchise") or {}).get("venue") or {}
+                  print(ruta, t.get("displayName"), "| venue:", v.get("fullName"), v.get("address"), "imgs:", [i.get("href") for i in v.get("images", [])][:2])
+                  nombre = v.get("fullName")
+                  if nombre:
+                      w = g("https://en.wikipedia.org/w/api.php?" + urllib.parse.urlencode({"action": "query", "prop": "pageimages", "titles": nombre,
+                            "pithumbsize": 1200, "redirects": 1, "format": "json", "piprop": "thumbnail|name"}))
+                      print("   wiki:", [(p.get("title"), (p.get("thumbnail") or {}).get("source")) for p in w["query"]["pages"].values()])
+              except Exception as e:
+                  print(ruta, "error", e)
           PY
