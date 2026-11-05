@@ -524,6 +524,13 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
 .ck-card .kp b { font: 600 1rem var(--font-mono); }
 @media (prefers-reduced-motion: no-preference) { .ck-card.barata .tit { animation: latido2 1.2s ease 2; } }
 @keyframes latido2 { 50% { transform: scale(1.05); } }
+
+.saldo-n { display: grid; gap: 4px; background: rgba(0,0,0,.2); border-radius: 10px; padding: 10px 12px; }
+.saldo-n small { color: var(--hl); font-size: .78rem; }
+.movs-n summary { color: var(--hl); font-size: .85rem; }
+.movs-n .mov { background: rgba(0,0,0,.2); border-color: transparent; color: #fff; margin-top: 6px; }
+.movs-n .mov .meta { color: var(--hl); }
+.movs-n .mov button { background: rgba(255,255,255,.14); color: #fff; border-color: transparent; }
 </style>
 </head>
 <body>
@@ -618,6 +625,15 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
         <div class="tope"><i id="n-lim-barra"></i></div>
         <small id="n-lim-nota"></small>
       </div>
+      <div class="saldo-n" id="n-saldo" hidden>
+        <div class="bank"><span class="label">💳 Saldo en tu casa</span><span class="num" id="n-saldo-v" style="font-size:1.25rem">$0.00</span></div>
+        <small id="n-saldo-det"></small>
+      </div>
+      <div class="mov-btns" id="n-mov-btns">
+        <button type="button" id="btn-retiro-n">💸 Retirar a mi tarjeta</button>
+        <button type="button" id="btn-dep-n">➕ Depositar</button>
+      </div>
+      <details class="movs-n" id="n-movs-wrap" hidden><summary>💸 Retiros y depósitos</summary><div class="list" id="movs-n"></div></details>
       <p class="verdict">Parlays y apuestas por tu cuenta. No tocan la banca del bot; aquí solo se suma lo que ganas o pierdes. Puedes ponerte un tope semanal escribiéndole al bot <b>limite 300</b>.</p>
     </section>
   </div>
@@ -925,7 +941,7 @@ async function cargar() {
     const [r, mv] = await Promise.all([api("todas"), api("movimientos").catch(() => null)]);
     bancaInicial = Number(r.banca) || 200;          // ya incluye retiros y depósitos
     limiteSemanal = Number(r.limite) || 0;
-    movs = mv || { neto: 0, lista: [] };
+    movs = mv || { neto: 0, libre: { depositado: 0, retirado: 0 }, lista: [] };
     $("cfg-banca").value = +(bancaInicial - Number(movs.neto || 0)).toFixed(2);
     pintarMovs();
     $("q-nombre").textContent = "";
@@ -984,6 +1000,7 @@ function irA(v) {
   $("f-sel").placeholder = vista === "normal" ? "Parlay América + Jaguars" : "Jaguars ganador";
   if (location.hash !== "#" + vista) history.replaceState(null, "", "#" + vista);
   confirmando = null;
+  $("mov-form").hidden = true;
   render();
 }
 // ---- menú lateral
@@ -1029,6 +1046,7 @@ document.querySelectorAll("[data-f]").forEach(b => b.addEventListener("click", (
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 
 function render() {
+  pintarMovs();
   const de = c => apuestas.filter(b => b.cartera === c);
   const cerr = l => l.filter(b => b.resultado !== "pendiente");
   const pend = l => l.filter(b => b.resultado === "pendiente");
@@ -2228,43 +2246,70 @@ document.querySelectorAll("[data-cf]").forEach(b => b.addEventListener("click", 
 document.addEventListener("visibilitychange", () => { if (!document.hidden && vista === "conviene" && listo) cargarConviene(); });
 $("ir-conviene").addEventListener("click", () => irA("conviene"));
 
-// ---------------------------------------------------------------- retiros y depósitos (cambian la banca del bot)
-let movs = { neto: 0, lista: [] }, movTipo = "retiro";
+// ---------------------------------------------------------------- retiros y depósitos (banca del bot y apuestas normales)
+let movs = { neto: 0, libre: { depositado: 0, retirado: 0 }, lista: [] }, movTipo = "retiro", movCartera = "bot";
+function filaMov(m) {
+  const r = el("div", "mov"), t = el("div");
+  t.append(el("b", "", m.tipo === "retiro" ? "💸 Retiro" : "➕ Depósito"), el("div", "meta", `${fecha(Date.parse(m.creada))}${m.nota ? " · " + m.nota : ""}`));
+  const x = el("button", "", "Anular"); x.type = "button";
+  x.onclick = async () => {
+    if (x.dataset.ok !== "1") { x.dataset.ok = "1"; x.textContent = "¿Seguro?"; return; }
+    await hacer("mov_anular", { id: m.id }, "No se pudo anular.");
+  };
+  r.append(t, el("span", m.tipo === "retiro" ? "num neg" : "num pos", (m.tipo === "retiro" ? "-" : "+") + fmt(Number(m.monto))), x);
+  return r;
+}
+function gananciaNormal() { return apuestas.filter(b => b.cartera === "normal").reduce((s, b) => s + ganancia(b), 0); }
+function enJuegoNormal() { return apuestas.filter(b => b.cartera === "normal" && b.resultado === "pendiente").reduce((s, b) => s + b.monto, 0); }
+function saldoNormal() { const l = movs.libre || {}; return Number(l.depositado || 0) - Number(l.retirado || 0) + gananciaNormal(); }
 function pintarMovs() {
-  const c = $("movs"); if (!c) return; c.innerHTML = "";
-  if (!(movs.lista || []).length) { c.append(el("p", "hint", "Sin retiros ni depósitos.")); return; }
-  movs.lista.forEach(m => {
-    const r = el("div", "mov"), t = el("div");
-    t.append(el("b", "", m.tipo === "retiro" ? "💸 Retiro" : "➕ Depósito"), el("div", "meta", `${fecha(Date.parse(m.creada))}${m.nota ? " · " + m.nota : ""}`));
-    const x = el("button", "", "Anular"); x.type = "button";
-    x.onclick = async () => {
-      if (x.dataset.ok !== "1") { x.dataset.ok = "1"; x.textContent = "¿Seguro?"; return; }
-      await hacer("mov_anular", { id: m.id }, "No se pudo anular.");
-    };
-    r.append(t, el("span", m.tipo === "retiro" ? "num neg" : "num pos", (m.tipo === "retiro" ? "-" : "+") + fmt(Number(m.monto))), x);
-    c.append(r);
-  });
+  const lista = movs.lista || [], bot = lista.filter(m => (m.cartera || "bot") === "bot"), lib = lista.filter(m => m.cartera === "libre");
+  const c = $("movs");
+  if (c) { c.innerHTML = ""; if (!bot.length) c.append(el("p", "hint", "Sin retiros ni depósitos.")); bot.forEach(m => c.append(filaMov(m))); }
+  const cn = $("movs-n"); cn.innerHTML = ""; lib.forEach(m => cn.append(filaMov(m)));
+  $("n-movs-wrap").hidden = !lib.length;
+  const l = movs.libre || {};
+  $("n-saldo").hidden = !lib.length;
+  $("n-saldo-v").textContent = fmt(saldoNormal());
+  $("n-saldo-v").className = "num " + (saldoNormal() < 0 ? "neg" : "");
+  $("n-saldo-det").textContent = `Depositado ${fmt(Number(l.depositado || 0))} · retirado ${fmt(Number(l.retirado || 0))} · ganancia ${sign(gananciaNormal())}` +
+    (enJuegoNormal() ? ` · en juego ${fmt(enJuegoNormal())}` : "");
 }
 function disponibleBot() {
   const bot = apuestas.filter(b => b.cartera === "bot");
   return bancaBotActual() - bot.filter(b => b.resultado === "pendiente").reduce((s, b) => s + b.monto, 0);
 }
-function abrirMov(tipo) {
-  movTipo = tipo;
-  $("mov-tit").textContent = tipo === "retiro" ? "💸 ¿Cuánto retiraste a tu tarjeta?" : "➕ ¿Cuánto depositaste?";
+function abrirMov(tipo, cartera) {
+  movTipo = tipo; movCartera = cartera;
+  const f = $("mov-form");
+  // el mismo formulario se muestra en la portada de la sección donde estás
+  const ancla = cartera === "libre" ? $("n-mov-btns") : $("btn-retiro").parentElement;
+  ancla.after(f);
+  $("mov-tit").textContent = (tipo === "retiro" ? "💸 ¿Cuánto retiraste a tu tarjeta?" : "➕ ¿Cuánto depositaste?") + (cartera === "libre" ? " (apuestas normales)" : "");
   $("mov-nota").placeholder = tipo === "retiro" ? "A mi tarjeta" : "Recarga";
-  $("mov-form").hidden = false; $("mov-monto").value = ""; prevMov(); setTimeout(() => $("mov-monto").focus(), 50);
+  f.hidden = false; $("mov-monto").value = ""; prevMov(); setTimeout(() => $("mov-monto").focus(), 50);
 }
 function prevMov() {
-  const m = parseFloat($("mov-monto").value), act = bancaBotActual();
+  const m = parseFloat($("mov-monto").value);
+  if (movCartera === "libre") {
+    const act = saldoNormal(), disp = act - enJuegoNormal();
+    if (!(m > 0)) { $("mov-prev").textContent = movTipo === "retiro" ? `Saldo disponible: ${fmt(disp)}` : `Saldo actual: ${fmt(act)}`; return; }
+    const nueva = movTipo === "retiro" ? act - m : act + m;
+    $("mov-prev").textContent = `Tu saldo de apuestas normales pasa de ${fmt(act)} a ${fmt(nueva)}.` +
+      (movTipo === "retiro" && m > disp + .001 ? " ⚠️ Es más de lo que tienes registrado; si depositaste antes, regístralo también." : "");
+    return;
+  }
+  const act = bancaBotActual();
   if (!(m > 0)) { $("mov-prev").textContent = movTipo === "retiro" ? `Disponible para retirar: ${fmt(disponibleBot())}` : ""; return; }
   const nueva = movTipo === "retiro" ? act - m : act + m;
   $("mov-prev").textContent = movTipo === "retiro" && m > disponibleBot() + .001
     ? `⚠️ Solo tienes ${fmt(disponibleBot())} disponibles (lo demás está en juego).`
     : `Tu banca del bot pasa de ${fmt(act)} a ${fmt(nueva)}. Los montos sugeridos se ajustan solos.`;
 }
-$("btn-retiro").addEventListener("click", () => abrirMov("retiro"));
-$("btn-dep").addEventListener("click", () => abrirMov("deposito"));
+$("btn-retiro").addEventListener("click", () => abrirMov("retiro", "bot"));
+$("btn-dep").addEventListener("click", () => abrirMov("deposito", "bot"));
+$("btn-retiro-n").addEventListener("click", () => abrirMov("retiro", "libre"));
+$("btn-dep-n").addEventListener("click", () => abrirMov("deposito", "libre"));
 $("mov-cancel").addEventListener("click", () => { $("mov-form").hidden = true; });
 $("mov-monto").addEventListener("input", prevMov);
 $("mov-form").addEventListener("submit", async e => {
@@ -2272,7 +2317,7 @@ $("mov-form").addEventListener("submit", async e => {
   const m = parseFloat($("mov-monto").value);
   if (!(m > 0)) { estado("Escribe el monto."); return; }
   $("mov-ok").disabled = true;
-  const ok = await hacer("mov_crear", { tipo: movTipo, monto: m, nota: $("mov-nota").value.trim() }, "No se pudo guardar.");
+  const ok = await hacer("mov_crear", { tipo: movTipo, monto: m, nota: $("mov-nota").value.trim(), cartera: movCartera }, "No se pudo guardar.");
   $("mov-ok").disabled = false;
   if (ok) { $("mov-form").hidden = true; estado(movTipo === "retiro" ? "💸 Retiro guardado." : "➕ Depósito guardado."); setTimeout(() => estado(""), 3000); }
 });

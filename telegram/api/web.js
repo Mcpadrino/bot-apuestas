@@ -188,14 +188,14 @@ export default async function handler(req, res) {
         return res.status(200).json(await mas("movimientos", { usuario }));
       case "mov_crear": {
         const d = b.datos || {};
-        const monto = num(d.monto), tipo = d.tipo === "deposito" ? "deposito" : "retiro";
+        const monto = num(d.monto), tipo = d.tipo === "deposito" ? "deposito" : "retiro", cartera = d.cartera === "libre" ? "libre" : "bot";
         if (!(monto > 0)) return res.status(400).json({ error: "Escribe un monto mayor a cero." });
-        if (tipo === "retiro") {
+        if (tipo === "retiro" && cartera === "bot") {
           const r0 = await rpc("bot", "resumen", { usuario });
           const disp = Number(r0.banca_inicial) + Number(r0.bot.ganancia) - Number(r0.bot.en_juego);
           if (monto > disp + 0.001) return res.status(400).json({ error: `Solo tienes $${disp.toFixed(2)} disponibles en la banca del bot.` });
         }
-        return res.status(200).json(await mas("mov_crear", { usuario, tipo, monto, nota: txt(d.nota, 80) }));
+        return res.status(200).json(await mas("mov_crear", { usuario, tipo, monto, nota: txt(d.nota, 80), cartera }));
       }
       case "mov_anular":
         return res.status(200).json(await mas("mov_anular", { usuario, id: num((b.datos || {}).id) }));

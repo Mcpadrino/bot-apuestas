@@ -111,6 +111,7 @@ const AYUDA = [
   "",
   "💸 `retiro 50` — sacaste $50 a tu tarjeta (baja la banca del bot)",
   "➕ `deposito 50` — metiste $50 más (sube la banca del bot)",
+  "🎲 `retiro normal 50` / `deposito normal 50` — lo mismo para tus apuestas normales",
   "",
   "💰 *Saldo* — tu banca, récord y ganancia",
   "📋 *Pendientes* — apuestas sin resultado",
@@ -250,24 +251,34 @@ async function atenderTexto(chat, texto, esDueno, msgId) {
     return;
   }
 
-  // Retiros y depósitos: cambian la banca del bot (y con eso los montos sugeridos)
+  // Retiros y depósitos: en la banca del bot (cambian los montos sugeridos) o en apuestas normales (`retiro normal 50`)
   if (["retiro", "retire", "retirar", "saque", "deposito", "deposite", "depositar", "meti"].includes(cmd)) {
-    const monto = Number(String(args[0] || "").replace(/[$,]/g, ""));
-    if (!(monto > 0)) return enviar("Escribe el monto, por ejemplo: `retiro 50` o `deposito 50`.");
+    const libre = args.some((a) => /^(libre|normal|normales|parlay|aparte)$/i.test(a));
+    const resto = args.filter((a) => !/^(libre|normal|normales|parlay|aparte|bot)$/i.test(a));
+    const i = resto.findIndex((a) => Number(a.replace(/[$,]/g, "")) > 0);
+    const monto = i >= 0 ? Number(resto[i].replace(/[$,]/g, "")) : 0;
+    if (!(monto > 0)) return enviar("Escribe el monto, por ejemplo: `retiro 50` (banca del bot) o `retiro normal 50` (apuestas normales).");
     const tipo = /^(dep|meti)/.test(cmd) ? "deposito" : "retiro";
-    if (tipo === "retiro") {
+    const nota = resto.filter((_, j) => j !== i).join(" ").slice(0, 80);
+    if (tipo === "retiro" && !libre) {
       const r0 = await dbu("resumen");
       const disponible = Number(r0.banca_inicial) + Number(r0.bot.ganancia) - Number(r0.bot.en_juego);
       if (monto > disponible + 0.001) return enviar(`No puedes retirar ${money(monto)}: tienes ${money(disponible)} disponibles en la banca del bot.`);
     }
-    await mas("mov_crear", { usuario: String(chat), tipo, monto, nota: args.slice(1).join(" ").slice(0, 80) });
+    await mas("mov_crear", { usuario: String(chat), tipo, monto, nota, cartera: libre ? "libre" : "bot" });
     const r = await dbu("resumen");
+    if (libre) {
+      const mv = await mas("movimientos", { usuario: String(chat) });
+      const saldo = Number(mv.libre.depositado) - Number(mv.libre.retirado) + Number(r.libre.ganancia);
+      return enviar(`${tipo === "retiro" ? "💸 Retiro" : "➕ Depósito"} de *${money(monto)}* en apuestas normales guardado.\n` +
+        `🎲 Saldo normal: *${money(saldo)}* (depositado ${money(mv.libre.depositado)} · retirado ${money(mv.libre.retirado)} · ganancia ${signed(Number(r.libre.ganancia))})`,
+        { reply_markup: TECLADO });
+    }
     const actual = Number(r.banca_inicial) + Number(r.bot.ganancia);
-    return enviar(`${tipo === "retiro" ? "💸 Retiro" : "➕ Depósito"} de *${money(monto)}* guardado.
-🤖 Banca del bot ahora: *${money(actual)}*
-` +
+    return enviar(`${tipo === "retiro" ? "💸 Retiro" : "➕ Depósito"} de *${money(monto)}* guardado.\n🤖 Banca del bot ahora: *${money(actual)}*\n` +
       `_Los montos sugeridos de las próximas señales ya usan esta banca._`, { reply_markup: TECLADO });
   }
+
 
   // ¿Conviene? "Ravens -250?" o "checa más 2.5 1.90 draftea"
   const pregunta = /\?\s*$/.test(limpio);
