@@ -664,6 +664,28 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
 .rk div { display: grid; grid-template-columns: 30px 1fr auto; gap: 8px; align-items: center; background: var(--surface); border: 1px solid var(--line);
   border-radius: 10px; padding: 8px 12px; font-size: .9rem; }
 .rk div.yo { border-color: var(--accent); }
+
+/* ---------- 🐉 LoL ---------- */
+.lol-hero { display: grid; gap: 8px; }
+.lol-player { position: relative; aspect-ratio: 16 / 9; border-radius: 16px; overflow: hidden; display: grid; place-items: center; align-content: center; gap: 8px;
+  background: radial-gradient(80% 80% at 50% 40%, #2a2f6b, #0b0d24); color: #cfd6ff; text-align: center; padding: 10px; }
+.lol-player iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.lol-player small { font-size: .75rem; opacity: .75; }
+.lol-play { font-size: 1.1rem; padding: 14px 22px; border-radius: 999px; background: #c8aa6e; color: #111; border: 0; font-weight: 700;
+  box-shadow: 0 0 0 6px rgba(200,170,110,.2); }
+@media (prefers-reduced-motion: no-preference) { .lol-play { animation: latido2 1.8s ease-in-out infinite; } }
+.lol-canales { display: flex; gap: 6px; flex-wrap: wrap; }
+.lol-canales button { padding: 6px 12px; font-size: .8rem; border-radius: 999px; }
+.lol-canales button[aria-pressed="true"] { background: #c8aa6e; color: #111; border-color: #c8aa6e; }
+.serie { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; display: grid; gap: 8px; }
+.serie.vivo-s { border-color: var(--loss); box-shadow: 0 0 0 1px var(--loss) inset; }
+.serie .eqs { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; text-align: center; font-size: .82rem; font-weight: 600; }
+.serie .eqs img { width: 40px; height: 40px; object-fit: contain; display: block; margin: 0 auto 3px; }
+.serie .eqs .gano { color: var(--win); } .serie .eqs .perdio { opacity: .55; }
+.serie .marc { font: 700 1.5rem var(--font-display); }
+.serie .info { display: flex; justify-content: space-between; font-size: .72rem; color: var(--muted); }
+.serie .g-barra { height: 18px; line-height: 18px; font-size: .68rem; }
+.serie .g-barra .l { background: #3a7bd5; } .serie .g-barra .v { background: #c0392b; }
 </style>
 </head>
 <body>
@@ -941,6 +963,23 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
     <div id="j-ranking" class="section" hidden><p class="empty">Cargando…</p></div>
   </div>
 
+
+  <!-- ===================== LoL ===================== -->
+  <div id="v-lol" class="vista section" hidden>
+    <section class="lol-hero">
+      <div class="lol-player" id="lol-player"><button type="button" class="lol-play" id="lol-play">▶ Ver en vivo</button>
+        <small id="lol-estado-tx">Toca para cargar el video (así no gasta datos si no lo ves).</small></div>
+      <div class="lol-canales" id="lol-canales"></div>
+    </section>
+    <div class="filters" role="group" aria-label="Partidos">
+      <button type="button" data-lf="prox" aria-pressed="true">⏳ Próximos y en vivo</button>
+      <button type="button" data-lf="res" aria-pressed="false">✅ Resultados</button>
+    </div>
+    <div class="list" id="lol-lista"><p class="empty">Cargando…</p></div>
+    <p class="hint">Calendario y resultados de la API oficial de LoL Esports. El % es un <b>Elo</b> con los resultados de Worlds, MSI y las ligas grandes (LCK, LPL, LEC…), solo como referencia:
+      el bot no tiene momios de LoL porque la API de cuotas no cubre esports.</p>
+  </div>
+
   <!-- ===================== MOVIMIENTO DE LÍNEAS ===================== -->
   <div id="v-lineas" class="vista section" hidden>
     <p class="explica">📈 Cómo cambió la probabilidad de <b>Pinnacle</b> (la casa de los profesionales) entre los escaneos del bot.
@@ -1097,6 +1136,7 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
     <div class="menu-grupo">En vivo</div>
     <button class="menu-item" data-v="hoy"><span class="mi">📺</span><span class="txt">Hoy<small>Marcadores, noticias y datos</small></span><span class="flecha">›</span></button>
     <button class="menu-item" data-v="guru"><span class="mi">🔮</span><span class="txt">Gurú<small>Pronósticos con modelos matemáticos</small></span><span class="flecha">›</span></button>
+    <button class="menu-item" data-v="lol"><span class="mi">🐉</span><span class="txt">LoL Worlds<small>Mundial de League of Legends en vivo</small></span><span class="punto" id="lol-punto" hidden>EN VIVO</span><span class="flecha">›</span></button>
     <button class="menu-item" data-v="lineas"><span class="mi">📈</span><span class="txt">Movimiento de líneas<small>Hacia dónde va Pinnacle</small></span><span class="flecha">›</span></button>
     <div class="menu-grupo">Con amigos</div>
     <button class="menu-item" data-v="comunidad"><span class="mi">💬</span><span class="txt">Comunidad<small>Fotos, links y opiniones</small></span><span class="flecha">›</span></button>
@@ -1188,7 +1228,7 @@ async function hacer(op, datos, errorTxt) {
 // ---------------------------------------------------------------- vistas
 const SECCIONES = {
   bot: ["🤖", "Banca del bot"], conviene: ["✅", "¿Conviene?"], normal: ["🎲", "Normales"], resultados: ["📜", "Historial"], hoy: ["📺", "Hoy"],
-  lineas: ["📈", "Líneas"], guru: ["🔮", "Gurú"], comunidad: ["💬", "Comunidad"], quiniela: ["🏆", "Quiniela"], retos: ["⚔️", "Retos"],
+  lineas: ["📈", "Líneas"], guru: ["🔮", "Gurú"], lol: ["🐉", "LoL Worlds"], comunidad: ["💬", "Comunidad"], quiniela: ["🏆", "Quiniela"], retos: ["⚔️", "Retos"],
   practica: ["🎮", "Práctica"], juegos: ["🕹️", "Minijuegos"], equipo: ["⭐", "Mi equipo"] };
 function irA(v) {
   vista = SECCIONES[v] ? v : "bot";
@@ -1209,6 +1249,7 @@ function irA(v) {
   if (vista === "conviene") cargarConviene();
   if (vista === "guru") cargarGuru();
   if (vista === "juegos") cargarMascota();
+  if (vista === "lol") cargarLol(); else { clearTimeout(lolTimer); }
   if (vista === "quiniela") cargarQuiniela();
   if (vista === "retos") cargarRetos();
   if (vista === "practica") cargarPractica();
@@ -3057,6 +3098,81 @@ function juegoGolCampo() {
 }
 const JUEGOS = { logos: juegoLogos, penales: juegoPenales, canasta: juegoCanasta, gol_campo: juegoGolCampo };
 document.querySelectorAll("[data-juego]").forEach(b => b.addEventListener("click", () => JUEGOS[b.dataset.juego]()));
+
+
+// ---------------------------------------------------------------- 🐉 LoL Worlds
+let lolDatos = null, lolFiltro = "prox", lolTimer = null, lolCanal = null;
+const CANALES_FIJOS = [
+  { nombre: "LoL Esports (YouTube)", provider: "youtube-canal", parametro: "UCvqRdlKsE5Q8mf8YXbdIJLw" },
+  { nombre: "Ibai (Twitch)", provider: "twitch", parametro: "ibai" },
+  { nombre: "Riot Games (Twitch)", provider: "twitch", parametro: "riotgames" },
+];
+function urlStream(c) {
+  if (c.provider === "youtube") return `https://www.youtube.com/embed/${encodeURIComponent(c.parametro)}?autoplay=1&mute=1&playsinline=1`;
+  if (c.provider === "youtube-canal") return `https://www.youtube.com/embed/live_stream?channel=${encodeURIComponent(c.parametro)}&autoplay=1&mute=1`;
+  return `https://player.twitch.tv/?channel=${encodeURIComponent(c.parametro)}&parent=${location.hostname}&muted=true&autoplay=true`;
+}
+function ponerStream(c) {
+  lolCanal = c;
+  const p = $("lol-player"); p.innerHTML = "";
+  const f = document.createElement("iframe");
+  f.src = urlStream(c); f.title = "Transmisión en vivo: " + c.nombre; f.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen"; f.allowFullscreen = true;
+  p.append(f);
+  document.querySelectorAll("#lol-canales button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.k === c.provider + ":" + c.parametro)));
+}
+$("lol-play").addEventListener("click", () => ponerStream(canalesLol()[0]));
+function canalesLol() {
+  const oficiales = [];
+  (lolDatos?.enVivo || []).forEach(e => (e.streams || []).forEach(s => {
+    if (/es|en/i.test(s.idioma) && !oficiales.some(o => o.parametro === s.parametro))
+      oficiales.push({ nombre: `${e.liga || "En vivo"} · ${s.provider === "youtube" ? "YouTube" : "Twitch"} ${s.idioma}`, provider: s.provider, parametro: s.parametro });
+  }));
+  // primero los oficiales en español
+  oficiales.sort((a, b) => (/es/i.test(b.nombre) ? 1 : 0) - (/es/i.test(a.nombre) ? 1 : 0));
+  return [...oficiales.slice(0, 3), ...CANALES_FIJOS];
+}
+async function cargarLol() {
+  clearTimeout(lolTimer);
+  try { const r = await fetch("/api/lol"); lolDatos = await r.json(); if (!r.ok) throw new Error(lolDatos.error); pintarLol(); }
+  catch (e) { if (!lolDatos) { $("lol-lista").innerHTML = ""; $("lol-lista").append(el("p", "empty", e.message || "No se pudo leer LoL Esports.")); } }
+  if (vista === "lol" && !document.hidden) lolTimer = setTimeout(cargarLol, 60000);
+}
+function pintarLol() {
+  const vivo = (lolDatos.enVivo || []).length;
+  $("lol-punto").hidden = !vivo;
+  $("lol-estado-tx").textContent = vivo ? `🔴 Hay ${vivo} partido(s) en vivo ahora. Toca para verlo.` : "Ahorita no hay partido en vivo. Puedes abrir un canal de todos modos.";
+  const cc = $("lol-canales"); cc.innerHTML = "";
+  canalesLol().forEach(c => { const b = el("button", "", c.nombre); b.type = "button"; b.dataset.k = c.provider + ":" + c.parametro;
+    b.setAttribute("aria-pressed", String(!!lolCanal && lolCanal.parametro === c.parametro)); b.onclick = () => ponerStream(c); cc.append(b); });
+  const cont = $("lol-lista"); cont.innerHTML = "";
+  let lista = (lolDatos.eventos || []).filter(e => lolFiltro === "res" ? e.estado === "completed" : e.estado !== "completed");
+  if (lolFiltro === "res") lista = lista.reverse();
+  if (!lista.length) { cont.append(el("p", "empty", lolFiltro === "res" ? "Todavía no hay resultados." : "No hay más partidos programados.")); return; }
+  let dia = null;
+  lista.forEach(e => {
+    const d = new Date(e.inicio).toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" });
+    if (d !== dia) { dia = d; cont.append(el("div", "liga-cab", d)); }
+    const c = el("div", "serie" + (e.estado === "inProgress" ? " vivo-s" : ""));
+    const eq = el("div", "eqs");
+    const lado = (t, otro) => { const x = el("div", e.estado === "completed" ? (t && t.gana ? "gano" : "perdio") : "");
+      if (t && okUrl(t.logo)) x.append(imagen(t.logo)); x.append(el("span", "", t ? (t.code !== "TBD" ? t.nombre : "Por definir") : "?")); return x; };
+    const mid = el("div", "marc", e.estado === "unstarted" ? "VS" : `${e.a?.juegos ?? 0} – ${e.b?.juegos ?? 0}`);
+    eq.append(lado(e.a), mid, lado(e.b)); c.append(eq);
+    if (e.prob_a != null) c.append(barra(e.prob_a, null, 1 - e.prob_a, true));
+    const info = el("div", "info");
+    info.append(el("span", "", e.estado === "inProgress" ? "🔴 EN VIVO" : new Date(e.inicio).toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })),
+      el("span", "", `${e.fase} · Bo${e.bo}${e.prob_a != null ? ` · Elo ${e.elo_a} vs ${e.elo_b}` : ""}`));
+    c.append(info);
+    if (e.estado === "inProgress") { const b = el("button", "primary", "▶ Verlo"); b.type = "button"; b.style.cssText = "justify-self:start;padding:6px 12px;font-size:.85rem";
+      b.onclick = () => { ponerStream(canalesLol()[0]); window.scrollTo({ top: 0, behavior: "smooth" }); }; c.append(b); }
+    cont.append(c);
+  });
+}
+document.querySelectorAll("[data-lf]").forEach(b => b.addEventListener("click", () => {
+  lolFiltro = b.dataset.lf;
+  document.querySelectorAll("[data-lf]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  if (lolDatos) pintarLol();
+}));
 
 $("login").addEventListener("submit", async e => {
   e.preventDefault();
