@@ -117,6 +117,7 @@ gastan. Guarda 15 créditos de reserva y te avisa por Telegram si se acaban.
 - **⚡ Movimientos fuertes**: aviso por Telegram si una línea de Pinnacle se mueve 3 puntos o más entre escaneos.
 - **🧪 Gurú xG**: modelo aparte con xG estimado con los tiros de ESPN (Liga MX y 5 grandes).
 - **🕹️ Minijuegos**: mascota con tienda (cartera virtual = lo ganado en apuestas + premios, no es dinero real), Adivina el logo, Penales, Canasta y Gol de campo.
+- **🏆 Pick'em del Mundial de LoL**, **🐾 mascota que festeja o se pone triste** con tus apuestas (y avisa si tiene hambre), **🏅 logros** con premio, **🏆 tabla general** y **📸 tarjeta semanal** para compartir.
 - **🐉 LoL Worlds**: calendario y resultados de la API pública de LoL Esports, Elo por equipo y transmisión en vivo.
 - **⏰ Horarios**: los dispara Supabase (pg_cron + pg_net) con un token de GitHub guardado en `privado.secretos`.
 - **📈 Movimiento de líneas**: cómo cambió la probabilidad de Pinnacle entre escaneos.

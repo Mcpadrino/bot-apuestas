@@ -2,6 +2,7 @@
 // de Telegram) y solo puede ver y cambiar sus propias apuestas.
 
 import { buscarLogo, sugerencias, equipoPorClave, proximos, PRINCIPALES, equiposDe, LIGAS_JUEGO } from "../lib/espn.js";
+import { datosLol } from "../lib/lol.js";
 import { mas, tg, textoReto, botonesReto, avisarRespuesta, agruparSenales, conv, avisarValor, sacarMomio, buscarSenal, veredicto, guru, jugar } from "../lib/mas.js";
 
 // Ligas para la quiniela, en orden: se usa la primera que tenga partidos en los próximos días
@@ -202,7 +203,7 @@ export default async function handler(req, res) {
       // ---------- 🕹️ minijuegos y mascota
       case "jugar": {
         const d = b.datos || {};
-        if (!["estado", "comprar", "poner", "nombre", "premio", "ranking", "especie"].includes(d.accion)) return res.status(400).json({ error: "acción" });
+        if (!["estado", "comprar", "poner", "nombre", "premio", "ranking", "especie", "logros", "general"].includes(d.accion)) return res.status(400).json({ error: "acción" });
         const r = await jugar(d.accion, { usuario, item: txt(d.item, 20), nombre: txt(d.nombre, 20), juego: txt(d.juego, 20), puntos: Math.round(num(d.puntos) || 0), especie: txt(d.especie, 20) });
         return res.status(r && r.error ? 400 : 200).json(r);
       }
@@ -213,6 +214,19 @@ export default async function handler(req, res) {
         const listas = await Promise.all(rutas.map(async (r) => (await equiposDe(r)).map((e) => ({ ...e, liga: r }))));
         const vistos = new Set();
         return res.status(200).json(listas.flat().filter((e) => !vistos.has(e.logo) && vistos.add(e.logo)));
+      }
+      // ---------- 🐉 pick'em del Mundial de LoL
+      case "lol_quiniela":
+        return res.status(200).json(await mas("lol_quiniela", { usuario }));
+      case "lol_pick": {
+        const d = b.datos || {};
+        if (!["L", "V"].includes(d.pick)) return res.status(400).json({ error: "Pick inválido" });
+        const e = (await datosLol()).eventos.find((x) => String(x.id) === String(d.id));
+        if (!e || e.estado !== "unstarted" || !e.a || !e.b || e.a.code === "TBD" || e.b.code === "TBD")
+          return res.status(400).json({ error: "Esa serie ya empezó o todavía no tiene equipos." });
+        const r = await mas("quiniela_pick", { usuario, evento: `lol:${e.id}`, liga: "lol/worlds",
+          partido: `${e.a.nombre} vs ${e.b.nombre}`, inicio: e.inicio, pick: d.pick });
+        return res.status(r && r.error ? 400 : 200).json(r);
       }
       case "guru": {
         const [lista, precision, duelo, historial, duelo_xg, historial_xg] = await Promise.all([guru("lista"), guru("precision"),

@@ -87,8 +87,37 @@ def marcador(p):
 
 
 # ---------------------------------------------------------------- quiniela
+LOL_KEY = "0TvQnueqKa5mxJntVWt0w4LpLfEkrV1Ta8rQBb9Z"      # llave pública de lolesports.com
+
+
+def lol_resultados():
+    """{id_de_serie: ganador 'L' (primer equipo) / 'V' (segundo)} de las series terminadas del Mundial."""
+    try:
+        r = requests.get("https://esports-api.lolesports.com/persisted/gw/getSchedule", headers={"x-api-key": LOL_KEY},
+                         params={"hl": "es-MX", "leagueId": "98767975604431411"}, timeout=20)
+        eventos = r.json()["data"]["schedule"]["events"]
+    except (requests.RequestException, ValueError, KeyError):
+        return {}
+    salida = {}
+    for e in eventos:
+        t = (e.get("match") or {}).get("teams") or []
+        if e.get("state") == "completed" and len(t) == 2:
+            res = "L" if (t[0].get("result") or {}).get("outcome") == "win" else "V"
+            salida[str(e["match"]["id"])] = (res, f"{t[0]['code']} {t[0]['result']['gameWins']} – {t[1]['result']['gameWins']} {t[1]['code']}")
+    return salida
+
+
 def quiniela():
+    lol = None
     for q in api("quiniela_pendientes") or []:
+        if q["evento"].startswith("lol:"):
+            if lol is None:
+                lol = lol_resultados()
+            r = lol.get(q["evento"][4:])
+            if r:
+                print("pick'em LoL", q["evento"], r)
+                api("quiniela_res", {"evento": q["evento"], "res": r[0], "marcador": r[1]})
+            continue
         ruta, _, id_ = q["evento"].rpartition(":")
         p = resumen(ruta, id_)
         if not p or not p["terminado"]:
@@ -209,6 +238,22 @@ def favoritos():
             telegram(u["chat_id"], txt, e.get("logo"))
 
 
+# ---------------------------------------------------------------- mascota con hambre
+def hambre():
+    r = requests.post(f"{BOT_URL}/api/telegram", params={"jugar": "1"}, headers={"x-bot-token": TOKEN},
+                      json={"accion": "hambrientos"}, timeout=20)
+    r.raise_for_status()
+    hoy = dt.datetime.now(dt.timezone(dt.timedelta(hours=-6))).strftime("%Y-%m-%d")
+    nombres = {"gato": "gato", "perro": "perro", "lagarto": "lagarto", "tigre": "tigre", "pinguino": "pingüino", "jirafa": "jirafa"}
+    for m in r.json():
+        if not PRUEBA and not api("aviso", {"usuario": m["chat_id"], "clave": f"hambre:{hoy}"}):
+            continue                       # máximo un aviso al día
+        txt = (f"🍽️ *{limpio(m['nombre'])}*, tu {nombres.get(m['especie'], 'mascota')}, lleva {m['horas']} h sin comer."
+               + (" ¡Ya se está poniendo en los huesos! 🦴" if m["horas"] >= 48 else " Si pasa de 48 h se pone en los huesos.")
+               + f"\nDale unos tacos 🌮 en la tienda: {WEB_URL}/#juegos")
+        telegram(m["chat_id"], txt)
+
+
 # ---------------------------------------------------------------- CLV: ¿le ganaste a la línea de cierre?
 def clv():
     """Compara el momio que tomaste contra la última probabilidad de Pinnacle antes del partido (último escaneo)."""
@@ -240,7 +285,7 @@ def clv():
 def main():
     if not TOKEN:
         sys.exit("Falta TELEGRAM_TOKEN")
-    for paso in (quiniela, retos, practica, favoritos, clv):
+    for paso in (quiniela, retos, practica, favoritos, clv, hambre):
         try:
             paso()
         except Exception as e:           # un paso que falle no detiene a los demás

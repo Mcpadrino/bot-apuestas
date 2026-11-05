@@ -4,6 +4,7 @@
 // SUPABASE_URL, SUPABASE_KEY (publishable/anon), BOT_CLAVE (clave de la función bot en la BD).
 
 import { buscarLogo, sugerencias, equipoPorClave } from "../lib/espn.js";
+import { jugar } from "../lib/mas.js";
 import { mas, avisarRespuesta, textoSenales, botonesSenales, sacarMomio, casaDe, buscarSenal, veredicto, conv, guru } from "../lib/mas.js";
 
 const env = (k) => (process.env[k] || "").replace(/\s/g, "");
@@ -179,7 +180,10 @@ async function cerrar(dbu, id, resultado) {
   if (!a || !a.id) return { texto: `No encontré la apuesta #${id}.` };
   const c = Number(a.cuota), m = Number(a.monto);
   const g = resultado === "gana" ? m * (c - 1) : resultado === "pierde" ? -m : 0;
-  return { texto: `${lineaApuesta(a)}\n${ETIQUETA[resultado]} ${resultado === "pendiente" ? "" : signed(g)}`.trim(), a };
+  // tu mascota reacciona: festeja si ganaste (y se lleva la ganancia a su cartera virtual), se pone triste si perdiste
+  const mascota = resultado === "gana" ? `\n🐾 ¡Tu mascota festeja! 🎉 +${money(g)} a su cartera virtual.`
+    : resultado === "pierde" ? "\n🐾 Tu mascota se puso triste… pero ya se le pasará." : "";
+  return { texto: `${lineaApuesta(a)}\n${ETIQUETA[resultado]} ${resultado === "pendiente" ? "" : signed(g)}${mascota}`.trim(), a };
 }
 
 // ---------------------------------------------------------------- mensajes
@@ -540,6 +544,13 @@ export default async function handler(req, res) {
       "practica_pendientes", "practica_pierna", "respaldo", "lineas2", "clv_pendientes", "clv_set"];
     if (!PERMITIDAS.includes(b.accion)) return res.status(400).json({ error: "acción" });
     return res.status(200).json(await mas(b.accion, b.datos || {}));
+  }
+  // Para juegos.py: mascotas con hambre (aviso por Telegram)
+  if (req.query.jugar !== undefined && req.method === "POST") {
+    if (!tokenOk()) return res.status(401).json({ error: "no" });
+    const b = req.body || {};
+    if (!["hambrientos"].includes(b.accion)) return res.status(400).json({ error: "acción" });
+    return res.status(200).json(await jugar(b.accion, b.datos || {}));
   }
   // Para pronosticos.py de GitHub: guardar pronósticos del Gurú y sus resultados
   if (req.query.guru !== undefined && req.method === "POST") {
