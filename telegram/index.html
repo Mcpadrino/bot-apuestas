@@ -531,6 +531,40 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
 .movs-n .mov { background: rgba(0,0,0,.2); border-color: transparent; color: #fff; margin-top: 6px; }
 .movs-n .mov .meta { color: var(--hl); }
 .movs-n .mov button { background: rgba(255,255,255,.14); color: #fff; border-color: transparent; }
+
+/* ---------- Gurú ---------- */
+.summary.hero.guru-hero { background:
+    radial-gradient(120% 80% at 50% -10%, rgba(255,255,255,.16), transparent 60%),
+    radial-gradient(60% 60% at 85% 120%, rgba(120, 220, 255, .18), transparent 70%),
+    linear-gradient(160deg, #2b2f8f 0%, #1a1c5e 55%, #0d0e33 100%) !important;
+  box-shadow: 0 10px 30px -12px rgba(20, 20, 90, .6); }
+.duelo { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; text-align: center; gap: 8px; }
+.duelo b { display: block; font: 700 2.6rem/1 var(--font-display); }
+.duelo small { color: var(--hl); font-size: .75rem; }
+.vs-g { font: 700 1.1rem var(--font-display); color: var(--hl); width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center;
+  border: 2px solid rgba(255,255,255,.25); }
+@media (prefers-reduced-motion: no-preference) { .vs-g { animation: latido2 2.4s ease-in-out infinite; } }
+.tira { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: rgba(255,255,255,.15); }
+.tira i { display: block; height: 100%; transition: width .8s cubic-bezier(.2,.9,.25,1); width: 50%; }
+#g-tira-g { background: #9ea8ff; } #g-tira-p { background: #7ee0c3; }
+.guru-hero .bank small { color: var(--hl); font-size: .78rem; }
+.g-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: grid; gap: 8px; }
+.g-card.valor { box-shadow: 0 0 0 2px #8c7bff inset; }
+.g-eqs { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; text-align: center; font-size: .85rem; font-weight: 600; }
+.g-eqs img { width: 36px; height: 36px; object-fit: contain; display: block; margin: 0 auto 3px; }
+.g-eqs .mid { font-size: .72rem; color: var(--muted); font-weight: 500; }
+.g-barra { display: flex; height: 26px; border-radius: 8px; overflow: hidden; font: 600 .74rem/26px var(--font-mono); color: #fff; }
+.g-barra span { text-align: center; white-space: nowrap; overflow: hidden; transition: width .7s cubic-bezier(.2,.9,.25,1); }
+.g-barra .l { background: #5b6cff; } .g-barra .e { background: #8a93a3; } .g-barra .v { background: #e0567a; }
+.g-barra.m { height: 14px; line-height: 14px; font-size: .62rem; opacity: .8; }
+.g-et { display: flex; justify-content: space-between; font-size: .7rem; color: var(--muted); }
+.g-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.g-chips span { font-size: .72rem; background: var(--bg); border-radius: 999px; padding: 3px 9px; }
+.g-chips span.hot { background: #8c7bff; color: #fff; font-weight: 700; }
+.g-row { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 10px; padding: 8px 10px; font-size: .82rem; }
+.g-row .q { text-align: center; min-width: 64px; font-size: .72rem; color: var(--muted); }
+.g-row .q b { display: block; font-size: 1rem; }
 </style>
 </head>
 <body>
@@ -726,6 +760,38 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
     <div id="cv-analisis" class="section" hidden><p class="empty">Cargando…</p></div>
   </div>
 
+
+  <!-- ===================== GURÚ ===================== -->
+  <div id="v-guru" class="vista section" hidden>
+    <section class="summary hero guru-hero" aria-label="Gurú contra Pinnacle">
+      <div class="hero-saludo">🔮 Gurú vs 📌 Pinnacle · <span id="g-n">últimos 200</span></div>
+      <div class="duelo">
+        <div><span class="label">🔮 Gurú</span><b class="num" id="g-ag">0</b><small>aciertos</small></div>
+        <div class="vs-g">VS</div>
+        <div><span class="label">📌 Pinnacle</span><b class="num" id="g-ap">0</b><small>aciertos</small></div>
+      </div>
+      <div class="tira" aria-hidden="true"><i id="g-tira-g"></i><i id="g-tira-p"></i></div>
+      <div class="bank"><small id="g-cerca">Más cerca del resultado: —</small><small id="g-ll"></small></div>
+      <p class="verdict" id="g-veredicto">Cuando terminen los primeros partidos aquí verás quién atina más.</p>
+    </section>
+    <div class="filters" role="group" aria-label="Deporte">
+      <button type="button" data-g="todos" aria-pressed="true">Todos</button>
+      <button type="button" data-g="futbol" aria-pressed="false">⚽ Fútbol</button>
+      <button type="button" data-g="nfl" aria-pressed="false">🏈 NFL</button>
+      <button type="button" data-g="nba" aria-pressed="false">🏀 NBA</button>
+      <button type="button" data-g="mlb" aria-pressed="false">⚾ MLB</button>
+      <button type="button" data-g="valor" aria-pressed="false">🔥 Discrepa</button>
+    </div>
+    <div class="list" id="g-lista"><p class="empty">Cargando…</p></div>
+    <details class="g-hist"><summary><b>📚 Historial: quién acertó cada partido</b></summary><div class="list" id="g-hist" style="margin-top:8px"></div></details>
+    <details><summary>¿Cómo calcula el gurú?</summary>
+      <p class="hint" style="margin-top:8px"><b>Fútbol:</b> modelo <b>Dixon-Coles</b> (librería open source <i>penaltyblog</i>): con ~18 meses de goles calcula
+      el ataque y la defensa de cada equipo, dándole más peso a los partidos recientes. Liga MX va sola; las ligas europeas, Champions y Europa League van juntas para poder comparar entre ligas.<br>
+      <b>NFL, NBA y MLB:</b> rating <b>Elo</b> (método de FiveThirtyEight) con ventaja de local y margen de victoria.<br>
+      Se actualiza después de cada escaneo (7:25 y 18:25) y no gasta créditos. <b>Pinnacle</b> es lo que usa tu bot; el gurú es una segunda opinión.
+      Si en 200 partidos no le gana a Pinnacle, no le hagas caso.</p></details>
+  </div>
+
   <!-- ===================== MOVIMIENTO DE LÍNEAS ===================== -->
   <div id="v-lineas" class="vista section" hidden>
     <p class="explica">📈 Cómo cambió la probabilidad de <b>Pinnacle</b> (la casa de los profesionales) entre los escaneos del bot.
@@ -881,6 +947,7 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
     <button class="menu-item" data-v="resultados"><span class="mi">📜</span><span class="txt">Historial<small>Resultados, estadísticas y Excel</small></span><span class="flecha">›</span></button>
     <div class="menu-grupo">En vivo</div>
     <button class="menu-item" data-v="hoy"><span class="mi">📺</span><span class="txt">Hoy<small>Marcadores, noticias y datos</small></span><span class="flecha">›</span></button>
+    <button class="menu-item" data-v="guru"><span class="mi">🔮</span><span class="txt">Gurú<small>Pronósticos con modelos matemáticos</small></span><span class="flecha">›</span></button>
     <button class="menu-item" data-v="lineas"><span class="mi">📈</span><span class="txt">Movimiento de líneas<small>Hacia dónde va Pinnacle</small></span><span class="flecha">›</span></button>
     <div class="menu-grupo">Con amigos</div>
     <button class="menu-item" data-v="comunidad"><span class="mi">💬</span><span class="txt">Comunidad<small>Fotos, links y opiniones</small></span><span class="flecha">›</span></button>
@@ -970,7 +1037,7 @@ async function hacer(op, datos, errorTxt) {
 // ---------------------------------------------------------------- vistas
 const SECCIONES = {
   bot: ["🤖", "Banca del bot"], conviene: ["✅", "¿Conviene?"], normal: ["🎲", "Normales"], resultados: ["📜", "Historial"], hoy: ["📺", "Hoy"],
-  lineas: ["📈", "Líneas"], comunidad: ["💬", "Comunidad"], quiniela: ["🏆", "Quiniela"], retos: ["⚔️", "Retos"],
+  lineas: ["📈", "Líneas"], guru: ["🔮", "Gurú"], comunidad: ["💬", "Comunidad"], quiniela: ["🏆", "Quiniela"], retos: ["⚔️", "Retos"],
   practica: ["🎮", "Práctica"], equipo: ["⭐", "Mi equipo"] };
 function irA(v) {
   vista = SECCIONES[v] ? v : "bot";
@@ -989,6 +1056,7 @@ function irA(v) {
   if (vista === "comunidad") cargarFeed();
   if (vista === "lineas") cargarLineas();
   if (vista === "conviene") cargarConviene();
+  if (vista === "guru") cargarGuru();
   if (vista === "quiniela") cargarQuiniela();
   if (vista === "retos") cargarRetos();
   if (vista === "practica") cargarPractica();
@@ -2356,6 +2424,97 @@ async function checar(texto) {
   $("ck-btn").disabled = false;
 }
 $("ck-form").addEventListener("submit", e => { e.preventDefault(); checar($("ck-texto").value); });
+
+// ---------------------------------------------------------------- 🔮 Gurú
+let guruDatos = null, guruFiltro = "todos";
+const DEP_G = { futbol: "⚽", nfl: "🏈", nba: "🏀", mlb: "⚾" };
+async function cargarGuru() {
+  try { guruDatos = await api("guru"); pintarGuru(); }
+  catch (e) { $("g-lista").innerHTML = ""; $("g-lista").append(el("p", "empty", e.message || "No se pudo cargar el gurú.")); }
+}
+function pctx(x) { return x == null ? "—" : Math.round(Number(x) * 100) + "%"; }
+function barra(pl, pe, pv, chica) {
+  const b = el("div", "g-barra" + (chica ? " m" : ""));
+  [["l", pl], ["e", pe], ["v", pv]].forEach(([c, p]) => {
+    if (p == null) return;
+    const sp = el("span", c, Number(p) >= .12 ? pctx(p) : ""); sp.style.width = "0%"; b.append(sp);
+    requestAnimationFrame(() => requestAnimationFrame(() => { sp.style.width = (Number(p) * 100) + "%"; }));
+  });
+  return b;
+}
+function pintarGuru() {
+  const d = guruDatos.duelo || {}, n = Number(d.n || 0);
+  $("g-n").textContent = n ? `últimos ${n} partidos` : "aún sin partidos calificados";
+  $("g-ag").textContent = d.aciertos_guru || 0; $("g-ap").textContent = d.aciertos_pinnacle || 0;
+  const tot = (d.guru_mas_cerca || 0) + (d.pinnacle_mas_cerca || 0);
+  $("g-tira-g").style.width = tot ? (d.guru_mas_cerca / tot * 100) + "%" : "50%";
+  $("g-tira-p").style.width = tot ? (d.pinnacle_mas_cerca / tot * 100) + "%" : "50%";
+  $("g-cerca").textContent = `Más cerca del resultado: 🔮 ${d.guru_mas_cerca || 0} · 📌 ${d.pinnacle_mas_cerca || 0}`;
+  $("g-ll").textContent = d.logloss_guru != null ? `Error (log-loss): 🔮 ${Number(d.logloss_guru).toFixed(3)} · 📌 ${Number(d.logloss_pinnacle).toFixed(3)}` : "";
+  $("g-veredicto").textContent = n < 30 ? `Van ${n} partidos comparados. Con menos de 30 todavía es suerte; a los 200 ya dice algo.`
+    : Number(d.logloss_guru) < Number(d.logloss_pinnacle) ? "🔮 El gurú va ganando: sus probabilidades se acercan más a lo que pasa. Vale la pena tomarlo en cuenta."
+    : "📌 Pinnacle va ganando (lo normal). Usa al gurú solo como segunda opinión.";
+  const cont = $("g-lista"); cont.innerHTML = "";
+  const ahora = Date.now();
+  const dif = p => {
+    if (!p.mercado) return null;
+    const ops = [["L", p.p_local, p.local], ["E", p.p_empate, "Empate"], ["V", p.p_visita, p.visita]].filter(x => x[1] != null && p.mercado[x[0]] != null);
+    return ops.map(([k, pg, nom]) => ({ k, nom, d: Number(pg) - Number(p.mercado[k]) })).sort((a, b) => b.d - a.d)[0];
+  };
+  let lista = (guruDatos.lista || []).filter(p => Date.parse(p.inicio) > ahora - 3 * 3600e3 && !p.res);
+  if (guruFiltro === "valor") lista = lista.filter(p => (dif(p) || { d: 0 }).d >= .04);
+  else if (guruFiltro !== "todos") lista = lista.filter(p => p.deporte === guruFiltro);
+  if (!lista.length) cont.append(el("p", "empty", guruFiltro === "valor" ? "Ningún partido donde el gurú y Pinnacle difieran 4 puntos o más."
+    : "Sin pronósticos por ahora. Se calculan después de cada escaneo (7:25 y 18:25)."));
+  let liga = null;
+  lista.forEach(p => {
+    if (p.liga !== liga) { liga = p.liga; cont.append(el("div", "liga-cab", `${DEP_G[p.deporte] || ""} ${p.liga}`)); }
+    const dd = dif(p), c = el("div", "g-card" + (dd && dd.d >= .04 ? " valor" : ""));
+    const eq = el("div", "g-eqs"), lado = (n, l) => { const x = el("div"); if (okUrl(l)) x.append(imagen(l)); x.append(el("span", "", n)); return x; };
+    eq.append(lado(p.local, p.logo_local), el("div", "mid", cuando(p.inicio)), lado(p.visita, p.logo_visita));
+    c.append(eq);
+    c.append(el("div", "g-et", ""), barra(p.p_local, p.p_empate, p.p_visita));
+    const et = c.querySelector(".g-et"); et.append(el("span", "", "🔮 Gurú (" + (p.modelo || "") + ")"), el("span", "", p.p_empate != null ? "Local · Empate · Visita" : "Local · Visita"));
+    if (p.mercado) {
+      const et2 = el("div", "g-et"); et2.append(el("span", "", "📌 Pinnacle"), el("span", "", ""));
+      c.append(et2, barra(p.mercado.L, p.mercado.E, p.mercado.V, true));
+    }
+    const ch = el("div", "g-chips"), x = p.datos || {};
+    if (x.xg_local != null) ch.append(el("span", "", `Goles esperados ${x.xg_local} – ${x.xg_visita}`), el("span", "", `Más de 2.5: ${pctx(x.over25)}`),
+      el("span", "", `Ambos anotan: ${pctx(x.btts)}`), el("span", "", `Marcador probable ${x.marcador} (${pctx(x.p_marcador)})`));
+    if (x.elo_local != null) ch.append(el("span", "", `Elo ${x.elo_local} vs ${x.elo_visita}`));
+    if (x.spread != null) ch.append(el("span", "", `Hándicap justo local ${x.spread > 0 ? "+" : ""}${x.spread}`));
+    if (dd && dd.d >= .04) ch.prepend(el("span", "hot", `🔥 El gurú ve más a ${dd.nom} (+${Math.round(dd.d * 100)} pts que Pinnacle)`));
+    if (!p.mercado) ch.append(el("span", "", "Sin línea de Pinnacle para comparar"));
+    c.append(ch);
+    const fav = [["L", p.p_local, p.local], ["E", p.p_empate, "Empate"], ["V", p.p_visita, p.visita]].filter(y => y[1] != null).sort((a, b) => b[1] - a[1])[0];
+    const pick = dd && dd.d >= .04 ? dd.nom : fav[2], pp = dd && dd.d >= .04 ? { L: p.p_local, E: p.p_empate, V: p.p_visita }[dd.k] : fav[1];
+    const bt = el("button", "", `🔎 Checar momio de ${pick}`); bt.type = "button"; bt.style.cssText = "justify-self:start;padding:6px 11px;font-size:.8rem;border-radius:999px";
+    bt.onclick = () => { irA("conviene"); $("ck-texto").value = pick + " "; $("ck-texto").focus(); estado(`👉 Escribe el momio que te dan. Según el gurú lo mínimo sería ${aAmericano(1 / Number(pp) * 1.04)}.`); setTimeout(() => estado(""), 6000); };
+    c.append(bt);
+    cont.append(c);
+  });
+  // historial
+  const h = $("g-hist"); h.innerHTML = "";
+  const hist = guruDatos.historial || [];
+  if (!hist.length) h.append(el("p", "hint", "Todavía no hay partidos terminados."));
+  hist.forEach(p => {
+    const prob = (o, k) => o == null ? null : Number(o[k]);
+    const k = p.res, pg = Number({ L: p.p_local, E: p.p_empate || 0, V: p.p_visita }[k]), pm = p.mercado ? prob(p.mercado, k) : null;
+    const tope = o => Object.entries(o).filter(([, v]) => v != null).sort((a, b) => b[1] - a[1])[0][0];
+    const okG = tope({ L: p.p_local, E: p.p_empate, V: p.p_visita }) === k, okM = p.mercado ? tope(p.mercado) === k : null;
+    const r = el("div", "g-row"), t = el("div");
+    t.append(el("b", "", `${p.local} vs ${p.visita}`), el("div", "meta", `${DEP_G[p.deporte] || ""} ${p.liga} · ${p.marcador || ""}`));
+    const q1 = el("div", "q"); q1.append(el("b", okG ? "pos" : "neg", okG ? "✓" : "✗"), `🔮 ${pctx(pg)}`);
+    const q2 = el("div", "q"); q2.append(el("b", okM == null ? "" : okM ? "pos" : "neg", okM == null ? "—" : okM ? "✓" : "✗"), pm == null ? "📌 —" : `📌 ${pctx(pm)}`);
+    r.append(t, q1, q2); h.append(r);
+  });
+}
+document.querySelectorAll("[data-g]").forEach(b => b.addEventListener("click", () => {
+  guruFiltro = b.dataset.g;
+  document.querySelectorAll("[data-g]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  if (guruDatos) pintarGuru();
+}));
 $("login").addEventListener("submit", async e => {
   e.preventDefault();
   $("l-btn").disabled = true; estado("Entrando…");

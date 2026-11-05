@@ -200,8 +200,8 @@ export default async function handler(req, res) {
       case "mov_anular":
         return res.status(200).json(await mas("mov_anular", { usuario, id: num((b.datos || {}).id) }));
       case "guru": {
-        const [lista, precision] = await Promise.all([guru("lista"), guru("precision")]);
-        return res.status(200).json({ lista, precision });
+        const [lista, precision, duelo, historial] = await Promise.all([guru("lista"), guru("precision"), guru("duelo"), guru("historial", { n: 200 })]);
+        return res.status(200).json({ lista, precision, duelo, historial });
       }
       case "analisis":
         return res.status(200).json(await conv("analisis", { dias: 90 }));

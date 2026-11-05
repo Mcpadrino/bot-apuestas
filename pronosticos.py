@@ -235,7 +235,24 @@ def calificar():
             api("guru", "resultado", {"evento": p["evento"], "res": res, "marcador": juegos.marcador(r)})
 
 
+def diagnostico():
+    """Solo en --prueba: revisa qué contesta ESPN a una consulta por rango de fechas."""
+    hoy = AHORA.date()
+    for ruta, params in [("soccer/mex.1", {"dates": f"{hoy - dt.timedelta(days=30):%Y%m%d}-{hoy:%Y%m%d}", "limit": 1000}),
+                         ("soccer/mex.1", {"dates": f"{hoy - dt.timedelta(days=30):%Y%m%d}-{hoy:%Y%m%d}", "limit": 300}),
+                         ("soccer/mex.1", {"dates": f"{hoy - dt.timedelta(days=3):%Y%m%d}"}),
+                         ("basketball/nba", {"dates": f"{hoy - dt.timedelta(days=10):%Y%m%d}-{hoy:%Y%m%d}", "limit": 300})]:
+        try:
+            r = requests.get(espn.BASE.format(ruta=f"{ruta}/scoreboard"), params=params, timeout=20,
+                             headers={"user-agent": "bitacora-apuestas"})
+            print("diag", ruta, params, r.status_code, len((r.json() if r.ok else {}).get("events", [])), r.text[:150] if not r.ok else "")
+        except Exception as e:
+            print("diag", ruta, params, type(e).__name__, e)
+
+
 def main():
+    if PRUEBA:
+        diagnostico()
     if not TOKEN:
         sys.exit("Falta TELEGRAM_TOKEN")
     try:
