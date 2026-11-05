@@ -106,7 +106,8 @@ const AYUDA = [
   "💰 *Saldo* — tu banca, récord y ganancia",
   "📋 *Pendientes* — apuestas sin resultado",
   "`inicial 300` — cambia la banca inicial",
-  "🌐 *Mi página* — te manda tu enlace para ver todo en el navegador",
+  "🌐 *Mi página* — la dirección de tu bitácora web",
+  "`cuenta usuario contraseña` — crea o cambia tu acceso a la página",
   "",
   "🎲 *Apuestas fuera de la banca* (parlays, corazonadas):",
   "agrega la palabra *libre* o *parlay* y van a una cuenta aparte que no toca la banca del bot:",
@@ -171,7 +172,16 @@ async function cerrar(dbu, id, resultado) {
 }
 
 // ---------------------------------------------------------------- mensajes
-async function atenderTexto(chat, texto, esDueno) {
+async function rpcWeb(accion, datos) {
+  const r = await fetch(`${env("SUPABASE_URL")}/rest/v1/rpc/web`, {
+    method: "POST",
+    headers: { "content-type": "application/json", apikey: env("SUPABASE_KEY"), authorization: `Bearer ${env("SUPABASE_KEY")}` },
+    body: JSON.stringify({ p_clave: env("BOT_CLAVE"), p_accion: accion, p_datos: datos }),
+  });
+  return r.json();
+}
+
+async function atenderTexto(chat, texto, esDueno, msgId) {
   const dbu = (accion, datos = {}) => db(accion, { ...datos, usuario: chat });
   const limpio = texto.trim().replace(/^\//, "").replace(/@\w+/, "");
   const [cmd0, ...args] = limpio.split(/\s+/);
@@ -185,7 +195,7 @@ async function atenderTexto(chat, texto, esDueno) {
     const nombre = args.slice(1).join(" ") || "Amigo";
     await db("agregar", { usuario: args[0], nombre });
     const r = await tg("sendMessage", { chat_id: args[0], parse_mode: "Markdown", reply_markup: TECLADO,
-      text: `👋 Hola ${nombre}, ya tienes acceso.\nTu banca inicial es $200 (cámbiala con \`inicial 500\`).\n\n` + AYUDA });
+      text: `👋 Hola ${nombre}, ya tienes acceso.\nTu banca inicial es $200 (cámbiala con \`inicial 500\`).\nPara ver tu bitácora en el navegador crea tu acceso con \`cuenta tuusuario tucontraseña\`.\n\n` + AYUDA });
     return enviar(r.ok ? `✅ ${nombre} (${args[0]}) ya tiene acceso. Le mandé las instrucciones.`
                        : `✅ ${nombre} tiene acceso, pero no pude escribirle: que le dé *Iniciar* al bot primero.`);
   }
@@ -199,17 +209,19 @@ async function atenderTexto(chat, texto, esDueno) {
     return enviar("👥 *Con acceso*\n" + us.map((u) => `• ${u.nombre || "—"} (${u.chat_id}) · banca ${money(u.banca_actual)}`).join("\n"));
   }
 
-  if (["web", "pagina", "página", "🌐"].includes(cmd) || texto.includes("Mi página")) {
-    const r = await fetch(`${env("SUPABASE_URL")}/rest/v1/rpc/web`, {
-      method: "POST",
-      headers: { "content-type": "application/json", apikey: env("SUPABASE_KEY"), authorization: `Bearer ${env("SUPABASE_KEY")}` },
-      body: JSON.stringify({ p_clave: env("BOT_CLAVE"), p_accion: "enlace_nuevo", p_datos: { usuario: chat } }),
-    }).then((x) => x.json());
-    if (!r || !r.codigo) return enviar("No pude crear tu enlace. Intenta de nuevo.");
-    return tg("sendMessage", { chat_id: chat,
-      text: "🌐 Tu enlace personal para entrar a la página (sirve una vez y vence en 15 minutos; después la página te recuerda en ese navegador por 30 días):",
-      reply_markup: { inline_keyboard: [[{ text: "Abrir mi bitácora", url: `${WEB_URL}/#entrar=${r.codigo}` }]] } });
+  if (cmd === "cuenta") {
+    if (msgId) await tg("deleteMessage", { chat_id: chat, message_id: msgId });   // no dejar la contraseña en el chat
+    if (args.length < 2)
+      return enviar("Escribe: `cuenta tuusuario tucontraseña`\n(usuario de 3 a 20 letras o números; contraseña de 6 o más)");
+    const r = await rpcWeb("cuenta", { usuario: chat, nombre_web: args[0], pass: args.slice(1).join(" ") });
+    if (!r || r.error) return enviar("⚠️ " + ((r && r.error) || "No se pudo guardar."));
+    return enviar(`✅ Listo. Entra a ${WEB_URL} con:\nUsuario: *${r.usuario_web}*\nContraseña: la que escribiste.\n\n🔒 Borré tu mensaje para que la contraseña no quede en el chat. Si la olvidas, vuelve a escribir \`cuenta\` con una nueva.`,
+      { disable_web_page_preview: true });
   }
+
+  if (["web", "pagina", "🌐"].includes(cmd) || texto.includes("Mi página"))
+    return enviar(`🌐 Tu bitácora: ${WEB_URL}\n\nEntra con tu usuario y contraseña. Si aún no tienes, créalos aquí escribiendo:\n\`cuenta tuusuario tucontraseña\``,
+      { disable_web_page_preview: true });
 
   if (["saldo", "banca", "balance", "resumen", "💰"].includes(cmd) || texto.includes("Saldo"))
     return enviar(await resumen(dbu), { reply_markup: TECLADO });
@@ -328,7 +340,7 @@ export default async function handler(req, res) {
       return res.status(200).send("ok");
     }
     if (u.callback_query) await atenderBoton(u.callback_query);
-    else if (u.message?.text) await atenderTexto(chatId, u.message.text, esDueno);
+    else if (u.message?.text) await atenderTexto(chatId, u.message.text, esDueno, u.message.message_id);
   } catch (e) {
     console.error(e);
     await tg("sendMessage", { chat_id: chatId, text: `⚠️ No se pudo completar: ${e.message}` });

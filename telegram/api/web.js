@@ -1,5 +1,5 @@
-// API de la página web. Cada quien entra con un enlace de un solo uso que le manda
-// el bot de Telegram y solo puede ver y cambiar sus propias apuestas.
+// API de la página web. Cada quien entra con su usuario y contraseña (los crea desde el bot
+// de Telegram) y solo puede ver y cambiar sus propias apuestas.
 
 const env = (k) => (process.env[k] || "").replace(/\s/g, "");
 
@@ -27,10 +27,10 @@ export default async function handler(req, res) {
   const b = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
 
   try {
-    if (b.op === "entrar") {
-      const r = await rpc("web", "enlace_usar", { codigo: txt(b.codigo, 80) });
-      if (!r) return res.status(401).json({ error: "El enlace ya se usó o venció. Pide otro escribiéndole web al bot." });
-      return res.status(200).json(r);
+    if (b.op === "login") {
+      const r = await rpc("web", "login", { nombre_web: txt(b.usuario, 40), pass: String(b.pass ?? "").slice(0, 200) });
+      if (!r || !r.token) return res.status(401).json({ error: (r && r.error) || "Usuario o contraseña incorrectos." });
+      return res.status(200).json({ token: r.token });
     }
     if (b.op === "salir") {
       await rpc("web", "salir", { token: txt(b.token, 100) });
@@ -38,7 +38,7 @@ export default async function handler(req, res) {
     }
 
     const usuario = await rpc("web", "sesion", { token: txt(b.token, 100) });
-    if (!usuario) return res.status(401).json({ error: "Tu sesión venció. Escríbele web al bot para entrar de nuevo." });
+    if (!usuario) return res.status(401).json({ error: "Tu sesión venció. Vuelve a iniciar sesión." });
 
     switch (b.op) {
       case "todas":

@@ -120,10 +120,18 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
   </header>
 
   <section class="login" id="v-login" hidden>
-    <h2>Entrar</h2>
-    <p>Escríbele <b>web</b> a tu bot de Telegram (o toca <b>🌐 Mi página</b>) y abre el enlace que te manda. Así entras sin contraseña y solo ves tus apuestas.</p>
-    <p><a href="https://t.me/meapuestinlaverginbot" target="_blank" rel="noopener">Abrir el bot en Telegram →</a></p>
-    <p class="hint">¿No tienes acceso? Pídele a quien te invitó que te agregue.</p>
+    <h2>Iniciar sesión</h2>
+    <form id="login" autocomplete="on">
+      <label>Usuario<input id="l-user" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required></label>
+      <label>Contraseña<input id="l-pass" name="password" type="password" autocomplete="current-password" required></label>
+      <button class="primary" type="submit" id="l-btn">Entrar</button>
+    </form>
+    <details>
+      <summary>¿No tienes cuenta u olvidaste tu contraseña?</summary>
+      <p class="hint" style="margin-top:8px">Escríbele a tu bot de Telegram:<br><b class="num">cuenta tuusuario tucontraseña</b><br>
+      El bot la guarda y borra tu mensaje. Solo pueden crear cuenta las personas que tienen acceso al bot.</p>
+      <p style="margin-top:8px"><a href="https://t.me/meapuestinlaverginbot" target="_blank" rel="noopener">Abrir el bot en Telegram →</a></p>
+    </details>
   </section>
 
   <nav class="tabs" role="tablist" aria-label="Secciones" id="tabs" hidden>
@@ -297,7 +305,7 @@ function irA(v) {
   render();
 }
 document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => irA(t.dataset.v)));
-window.addEventListener("hashchange", () => { if (!location.hash.startsWith("#entrar=")) irA(location.hash.slice(1)); });
+window.addEventListener("hashchange", () => irA(location.hash.slice(1)));
 document.querySelectorAll(".filters button").forEach(b => b.addEventListener("click", () => {
   filtro = b.dataset.f;
   document.querySelectorAll(".filters button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
@@ -472,23 +480,26 @@ $("salir").addEventListener("click", async () => {
   salirLocal(); listo = false; mostrarLogin("Cerraste sesión en este navegador.");
 });
 
-(async () => {
-  const m = location.hash.match(/^#entrar=([0-9a-f]+)$/);
-  if (m) {
-    history.replaceState(null, "", location.pathname + "#bot");
-    estado("Entrando…");
-    try {
-      const r = await fetch("/api/web", { method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ op: "entrar", codigo: m[1] }) });
-      const j = await r.json().catch(() => ({}));
-      if (!r.ok || !j.token) { mostrarLogin(j.error || "Ese enlace ya no sirve. Pide otro escribiéndole web al bot."); return; }
+$("login").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("l-btn").disabled = true; estado("Entrando…");
+  try {
+    const r = await fetch("/api/web", { method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ op: "login", usuario: $("l-user").value.trim(), pass: $("l-pass").value }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.token) { estado(j.error || "Usuario o contraseña incorrectos."); }
+    else {
       token = j.token;
-      try { localStorage.setItem(LLAVE, token); } catch (e) {}
-    } catch (e) { mostrarLogin("No se pudo conectar. Revisa tu internet."); return; }
-  }
-  vista = (location.hash.slice(1) || "bot");
-  cargar();
-})();
+      try { localStorage.setItem(LLAVE, token); } catch (err) {}
+      $("l-pass").value = "";
+      await cargar();
+    }
+  } catch (err) { estado("No se pudo conectar. Revisa tu internet."); }
+  $("l-btn").disabled = false;
+});
+
+vista = location.hash.slice(1) || "bot";
+cargar();
 </script>
 </body>
 </html>
