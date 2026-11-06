@@ -3387,12 +3387,59 @@ function posAcc(especie, tipo) {
   const base = { cabeza: [50, 16, 2.5], ojos: [50, 44, 2.8], cuello: [50, 63, 1.8], mano: [81, 75, 1.9], pies: [50, 95, 1.6] };
   return (POS_ESPECIE[especie] || {})[tipo] || base[tipo];
 }
+// ---- playeras reales: patrón y colores de los equipos más conocidos (si no está, usa los colores de ESPN)
+// patrón: liso, rayas, aros, mitad, banda, franja, centro, mangas, rayitas
+const KITS = [
+  [/\bamerica\b/, "liso", "#ffe11a", "#0a2a66"], [/guadalajara|chivas/, "rayas", "#d50032", "#ffffff", "#0a2a66"],
+  [/cruz azul/, "liso", "#0047ab", "#ffffff"], [/pumas|unam/, "liso", "#ffffff", "#0b2550", "#0b2550"],
+  [/tigres/, "liso", "#fdb913", "#0d3d84"], [/monterrey|rayados/, "rayas", "#0a2a66", "#ffffff", "#ffffff"],
+  [/toluca/, "liso", "#d50032", "#ffffff"], [/santos/, "mitad", "#00843d", "#ffffff", "#0a2a66"],
+  [/atlas/, "mitad", "#d50032", "#111111", "#ffffff"], [/pachuca/, "mitad", "#0a2a66", "#ffffff", "#ffffff"],
+  [/\bleon\b/, "liso", "#00703c", "#ffffff"], [/necaxa/, "rayas", "#d50032", "#ffffff", "#111111"],
+  [/puebla/, "banda", "#ffffff", "#0a2a66", "#0a2a66"], [/queretaro/, "rayas", "#0a2a66", "#111111", "#ffffff"],
+  [/tijuana|xolos/, "rayas", "#d50032", "#111111", "#ffffff"], [/san luis/, "rayas", "#d50032", "#ffffff", "#0a2a66"],
+  [/mazatlan/, "liso", "#5b2c83", "#ffffff"], [/juarez/, "liso", "#111111", "#7ac143"],
+  [/barcelona/, "rayas", "#a50044", "#004d98", "#ffd200"], [/real madrid/, "liso", "#ffffff", "#c9a227", "#c9a227"],
+  [/atletico madrid|atletico de madrid|atl[eé]tico$/, "rayas", "#cb3524", "#ffffff", "#272e61"], [/juventus/, "rayas", "#111111", "#ffffff", "#c9a227"],
+  [/\binter\b(?! miami)|internazionale/, "rayas", "#0068a8", "#111111", "#c9a227"], [/\bmilan\b/, "rayas", "#fb090b", "#111111", "#ffffff"],
+  [/celtic/, "aros", "#018749", "#ffffff", "#111111"], [/boca juniors/, "franja", "#003a70", "#f3b229", "#f3b229"],
+  [/river plate/, "banda", "#ffffff", "#e2001a", "#111111"], [/paris|psg/, "centro", "#004170", "#da291c", "#ffffff"],
+  [/ajax/, "centro", "#ffffff", "#d2122e", "#111111"], [/newcastle/, "rayas", "#111111", "#ffffff", "#c9a227"],
+  [/arsenal/, "mangas", "#ef0107", "#ffffff", "#ffffff"], [/bayern/, "liso", "#dc052d", "#ffffff"],
+  [/dortmund/, "liso", "#fde100", "#111111"], [/liverpool/, "liso", "#c8102e", "#ffffff"],
+  [/manchester city|man city/, "liso", "#6cabdd", "#ffffff", "#1c2c5b"], [/manchester united|man united|man utd/, "liso", "#da291c", "#ffffff"],
+  [/chelsea/, "liso", "#034694", "#ffffff"], [/tottenham/, "liso", "#ffffff", "#132257", "#132257"],
+  [/sporting/, "aros", "#008057", "#ffffff", "#111111"], [/flamengo/, "aros", "#c3281e", "#111111", "#ffffff"],
+  [/napoli/, "liso", "#12a0d7", "#ffffff"], [/\broma\b/, "liso", "#8e1f2f", "#f0bc42", "#f0bc42"],
+  [/benfica/, "liso", "#e83030", "#ffffff"], [/porto/, "rayas", "#003893", "#ffffff", "#ffffff"],
+  [/athletic/, "rayas", "#ee2523", "#ffffff", "#111111"], [/sevilla/, "liso", "#ffffff", "#d50032", "#d50032"],
+  [/betis/, "rayas", "#0bb363", "#ffffff", "#111111"], [/lazio/, "liso", "#87d8f7", "#ffffff", "#0a2a66"],
+  [/psv/, "rayas", "#ed1c24", "#ffffff", "#111111"], [/marseille|marsella/, "liso", "#ffffff", "#2faee0", "#2faee0"],
+  [/aston villa/, "mangas", "#670e36", "#95bfe5", "#ffffff"], [/west ham/, "mangas", "#7a263a", "#1bb1e7", "#ffffff"],
+  [/crystal palace/, "rayas", "#1b458f", "#c4122e", "#ffffff"], [/brentford/, "rayas", "#e30613", "#ffffff", "#111111"],
+  [/inter miami/, "liso", "#f7b5cd", "#231f20", "#231f20"], [/galaxy/, "banda", "#ffffff", "#00245d", "#00245d"],
+  [/yankees/, "rayitas", "#ffffff", "#0c2340", "#0c2340"],
+];
+function kitMascota(fav) {
+  fav = fav === undefined ? (typeof perfil !== "undefined" && perfil && perfil.equipo_fav) : fav;
+  if (!fav) return null;
+  const hex = (c) => (/^#[0-9a-f]{6}$/i.test(c || "") ? c : null);
+  const ruta = fav.ruta || "";
+  const deporte = /nfl|football/.test(ruta) ? "nfl" : /basketball|nba/.test(ruta) ? "nba" : /baseball|mlb/.test(ruta) ? "mlb" : "futbol";
+  const n = String(fav.nombre || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  const k = deporte === "futbol" || deporte === "mlb" ? KITS.find(([re]) => re.test(n)) : null;
+  let c1 = hex(fav.color) || "#c0392b", c2 = hex(fav.color2) || "#ffffff";
+  if (c2.toLowerCase() === c1.toLowerCase()) c2 = "#ffffff";
+  if (k) return { patron: k[1], c1: k[2], c2: k[3], num: k[4] || k[3], deporte, logo: fav.logo || "" };
+  return { patron: deporte === "mlb" ? "liso" : "liso", c1, c2, num: c2, deporte, logo: fav.logo || "" };
+}
 function mezclaHex(a, b, t) {
   const p = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
   const A = p(a), B = p(b);
   return "#" + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, "0")).join("");
 }
-function animalSVG(especie, estado, c1, c2) {
+function animalSVG(especie, estado, c1, c2, kit) {
+  if (kit === undefined) kit = kitMascota();
   const PAL = {   // piel, oscuro, claro, contorno
     gato: ["#ffb46b", "#e8893a", "#fff3e2", "#8a4a1c"], perro: ["#e3b07a", "#a86a3c", "#fff1df", "#6b4122"],
     lagarto: ["#8fd468", "#4f9e35", "#e6f8c9", "#2f6420"], tigre: ["#ffa04a", "#3a2416", "#fff4e4", "#7a3b12"],
@@ -3405,7 +3452,8 @@ function animalSVG(especie, estado, c1, c2) {
   const S = `stroke="${L}" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"`;
   const hx = 100, hy = 84, hrx = 55, hry = 47;     // cabeza grande
   const by = 150, brx = 39 * tx, bry = 31;         // cuerpo chiquito
-  const ch = c1 || "#c0392b", c2b = c2 || "#ffffff";
+  const K = kit || { patron: "liso", c1: c1 || "#c0392b", c2: c2 || "#ffffff", num: c2 || "#ffffff", deporte: "futbol", logo: "" };
+  const ch = K.c1, c2b = K.c2;
   let h = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" aria-label="Tu ${ESPECIES[especie]} (${estado})">
   <defs><radialGradient id="g${u}" cx=".36" cy=".3" r=".85"><stop offset="0" stop-color="${mezclaHex(piel, "#ffffff", .38)}"/><stop offset=".55" stop-color="${piel}"/><stop offset="1" stop-color="${mezclaHex(piel, "#000000", .14)}"/></radialGradient>
   <linearGradient id="j${u}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${mezclaHex(ch, "#ffffff", .18)}"/><stop offset="1" stop-color="${mezclaHex(ch, "#000000", .18)}"/></linearGradient>
@@ -3431,16 +3479,42 @@ function animalSVG(especie, estado, c1, c2) {
   });
   // ---- cuerpo + playera
   h += `<ellipse cx="100" cy="${by}" rx="${brx}" ry="${bry}" fill="${G}" ${S}/>`;
-  h += `<g clip-path="url(#c${u})"><rect x="40" y="${by - 26}" width="120" height="70" fill="url(#j${u})"/>
-    <rect x="40" y="${by + 9}" width="120" height="5" fill="${c2b}" opacity=".9"/>
-    <path d="M86 ${by - 30} L100 ${by - 16} L114 ${by - 30}" fill="${piel}" stroke="${c2b}" stroke-width="4" stroke-linejoin="round"/>
-    <text x="100" y="${by + 6}" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="800" font-size="17" fill="${c2b}" text-anchor="middle">10</text></g>
+  // patrón de la playera
+  let pat = "";
+  const Y0 = by - 34, Y1 = by + 34;
+  if (K.patron === "rayas") for (let x = 100 - 4.5 - 18 * 4; x < 160; x += 18) pat += `<rect x="${x}" y="${Y0}" width="9" height="70" fill="${c2b}"/>`;
+  if (K.patron === "rayitas") for (let x = 100 - 42; x < 150; x += 6) pat += `<rect x="${x}" y="${Y0}" width="1.3" height="70" fill="${c2b}" opacity=".8"/>`;
+  if (K.patron === "aros") for (let y = by - 22; y < Y1; y += 15) pat += `<rect x="40" y="${y}" width="120" height="7.5" fill="${c2b}"/>`;
+  if (K.patron === "mitad") pat += `<rect x="100" y="${Y0}" width="60" height="70" fill="${c2b}"/>`;
+  if (K.patron === "banda") pat += `<polygon points="${100 - brx * .75},${Y0} ${100 - brx * .75 + 15},${Y0} ${100 + brx + 6},${Y1} ${100 + brx - 9},${Y1}" fill="${c2b}"/>`;
+  if (K.patron === "franja") pat += `<rect x="40" y="${by - 6}" width="120" height="12" fill="${c2b}"/>`;
+  if (K.patron === "centro") pat += `<rect x="91" y="${Y0}" width="18" height="70" fill="${c2b}"/>` + (K.c2 !== "#ffffff" && K.c1 !== "#ffffff" ? `<rect x="89" y="${Y0}" width="2" height="70" fill="#fff"/><rect x="109" y="${Y0}" width="2" height="70" fill="#fff"/>` : "");
+  const trim = K.patron === "liso" || K.patron === "mangas" ? c2b : K.num;
+  const futbol = K.deporte === "futbol";
+  const ex0 = futbol ? 113 : 114, ey0 = by - 9;
+  const escudo = K.logo ? `<circle cx="${ex0}" cy="${ey0}" r="10" fill="#fff" opacity=".9" stroke="${mezclaHex(ch, "#000000", .3)}" stroke-width="1"/><image href="${String(K.logo).replace(/"/g, "")}" x="${ex0 - 8.5}" y="${ey0 - 8.5}" width="17" height="17" preserveAspectRatio="xMidYMid meet"/>` : "";
+  const numTxt = (x, y, size) => `<text x="${x}" y="${y}" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="800" font-size="${size}" fill="${K.num}" stroke="${mezclaHex(ch, "#000000", .45)}" stroke-width="${K.patron === "liso" ? 0 : 2.2}" paint-order="stroke" text-anchor="middle">10</text>`;
+  let cuello = "", extra = "";
+  if (K.deporte === "nba") cuello = `<path d="M84 ${by - 33} Q 100 ${by - 10} 116 ${by - 33}" fill="${piel}" stroke="${trim}" stroke-width="4"/>`;
+  else if (K.deporte === "nfl") cuello = `<path d="M88 ${by - 32} Q 100 ${by - 20} 112 ${by - 32}" fill="${piel}" stroke="${trim}" stroke-width="4"/>`;
+  else if (K.deporte === "mlb") { cuello = `<path d="M86 ${by - 30} L100 ${by - 16} L114 ${by - 30}" fill="${piel}" stroke="${trim}" stroke-width="3.5" stroke-linejoin="round"/>`;
+    extra = `<path d="M100 ${by - 16} V ${by + 34}" stroke="${trim}" stroke-width="2"/>` + [by - 8, by + 4, by + 16].map((y) => `<circle cx="103.5" cy="${y}" r="1.5" fill="${trim}"/>`).join(""); }
+  else cuello = `<path d="M86 ${by - 30} L100 ${by - 16} L114 ${by - 30}" fill="${piel}" stroke="${trim}" stroke-width="4" stroke-linejoin="round"/>`;
+  let pecho;
+  if (futbol) pecho = escudo || numTxt(100, by + 6, 17);
+  else if (K.deporte === "mlb") pecho = escudo + numTxt(88, by + 10, 13);
+  else pecho = numTxt(100, by + 12, K.deporte === "nba" ? 24 : 26);
+  h += `<g clip-path="url(#c${u})"><rect x="40" y="${by - 34}" width="120" height="70" fill="url(#j${u})"/>${pat}
+    ${K.deporte === "nfl" ? `<rect x="40" y="${by + 22}" width="120" height="4" fill="${trim}"/>` : ""}
+    ${cuello}${extra}${pecho}</g>
     <ellipse cx="100" cy="${by}" rx="${brx}" ry="${bry}" fill="none" ${S}/>`;
   // ---- bracitos con manga
+  const mangaC = K.patron === "mangas" ? c2b : K.patron === "aros" ? c2b : ch;
   [-1, 1].forEach((s) => {
     const ax = 100 + s * (brx - 2), ay = by - 2;
     h += `<g transform="rotate(${s * -24} ${ax} ${ay})"><ellipse cx="${ax}" cy="${ay + 6}" rx="${especie === "pinguino" ? 9 : 10}" ry="${especie === "pinguino" ? 19 : 15}" fill="${G}" ${S}/>` +
-      (especie !== "pinguino" ? `<path d="M${ax - 10.5} ${ay - 2} Q ${ax} ${ay + 5} ${ax + 10.5} ${ay - 2} L ${ax + 9} ${ay - 9} Q ${ax} ${ay - 13} ${ax - 9} ${ay - 9} Z" fill="${ch}" ${S}/>` : "") + `</g>`;
+      (especie !== "pinguino" && K.deporte !== "nba" ? `<path d="M${ax - 10.5} ${ay - 2} Q ${ax} ${ay + 5} ${ax + 10.5} ${ay - 2} L ${ax + 9} ${ay - 9} Q ${ax} ${ay - 13} ${ax - 9} ${ay - 9} Z" fill="${mangaC}" ${S}/>` +
+        (K.deporte === "nfl" ? `<path d="M${ax - 9} ${ay - 5} Q ${ax} ${ay - 1} ${ax + 9} ${ay - 5}" stroke="${trim}" stroke-width="2.4" fill="none"/>` : `<path d="M${ax - 10} ${ay - 2} Q ${ax} ${ay + 4.5} ${ax + 10} ${ay - 2}" stroke="${trim}" stroke-width="2" fill="none"/>`) : "") + `</g>`;
   });
   // ---- cosas detrás de la cabeza
   if (especie === "gato" || especie === "tigre") [-1, 1].forEach((s) => {
@@ -5863,7 +5937,8 @@ function petImagen(estado = "feliz") {
   if (!mascota || !mascota.mascota) return null;
   const fav = perfil && perfil.equipo_fav, hex = c => /^#[0-9a-f]{6}$/i.test(c || "") ? c : null;
   const c1 = (fav && hex(fav.color)) || "#c0392b", c2 = (fav && hex(fav.color2) && fav.color2.toLowerCase() !== c1.toLowerCase() ? fav.color2 : "#ffffff");
-  let svg = animalSVG(mascota.mascota.especie || "perro", estado, c1, c2);
+  const kt = kitMascota();   // como imagen no carga el escudo externo: usa el número
+  let svg = animalSVG(mascota.mascota.especie || "perro", estado, c1, c2, kt ? { ...kt, logo: "" } : null);
   if (!/xmlns=/.test(svg)) svg = svg.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"');
   const img = new Image(); img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg); return img;
 }
