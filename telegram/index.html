@@ -3155,14 +3155,14 @@ function barra(pl, pe, pv, chica) {
 function pintarGuru() {
   const esXg = guruFiltro === "xg";
   const d = (esXg ? guruDatos.duelo_xg : guruDatos.duelo) || {}, n = Number(d.n || 0);
-  $("g-n").textContent = (esXg ? "🧪 xG · " : "") + (n ? `últimos ${n} partidos` : "aún sin partidos calificados");
+  $("g-n").textContent = (esXg ? "🧪 xG · " : "") + (n === 1 ? "último partido" : n ? `últimos ${n} partidos` : "aún sin partidos calificados");
   $("g-ag").textContent = d.aciertos_guru || 0; $("g-ap").textContent = d.aciertos_pinnacle || 0;
   const tot = (d.guru_mas_cerca || 0) + (d.pinnacle_mas_cerca || 0);
   $("g-tira-g").style.width = tot ? (d.guru_mas_cerca / tot * 100) + "%" : "50%";
   $("g-tira-p").style.width = tot ? (d.pinnacle_mas_cerca / tot * 100) + "%" : "50%";
   $("g-cerca").textContent = `Más cerca del resultado: 🔮 ${d.guru_mas_cerca || 0} · 📌 ${d.pinnacle_mas_cerca || 0}`;
   $("g-ll").textContent = d.logloss_guru != null ? `Error (log-loss): 🔮 ${Number(d.logloss_guru).toFixed(3)} · 📌 ${Number(d.logloss_pinnacle).toFixed(3)}` : "";
-  $("g-veredicto").textContent = n < 30 ? `Van ${n} partidos comparados. Con menos de 30 todavía es suerte; a los 200 ya dice algo.`
+  $("g-veredicto").textContent = n < 30 ? `${n === 1 ? "Va 1 partido comparado" : `Van ${n} partidos comparados`}. Con menos de 30 todavía es suerte; a los 200 ya dice algo.`
     : Number(d.logloss_guru) < Number(d.logloss_pinnacle) ? "🔮 El gurú va ganando: sus probabilidades se acercan más a lo que pasa. Vale la pena tomarlo en cuenta."
     : "📌 Pinnacle va ganando (lo normal). Usa al gurú solo como segunda opinión.";
   const cont = $("g-lista"); cont.innerHTML = "";
