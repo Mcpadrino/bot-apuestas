@@ -132,17 +132,33 @@ async function wiki(titulos, lang = "en") {
     credito: `Foto: Wikimedia Commons · ${lang}.wikipedia.org/wiki/${encodeURIComponent(p.title.replace(/ /g, "_"))}` }));
 }
 // Busca la página del ESTADIO (no la de la persona que le da nombre: "Santiago Bernabéu", "Alfredo Harp Helú"…)
+const ES_PERSONA = /\b(born|footballer|football player|soccer player|politician|businessman|businesswoman|entrepreneur|president|chairman|coach|manager|journalist|writer|actor|singer|lawyer|engineer|philanthropist|emperor|futbolista|jugador|pol[ií]tico|empresari[oa]|presidente|entrenador|periodista|escritor|cantante|abogado|ingeniero|emperador|militar)\b|\(\d{4}\s*[–-]\s*\d{4}\)|\b\d{4}\s*[–-]\s*\d{4}\b/i;
 const ES_ESTADIO = /stadium|stadion|estadio|est[áa]dio|arena|field|park|ground|ballpark|coliseum|coliseo|dome|center|centre|bowl|venue|sports? (complex|hall)|recinto|cancha/i;
+const cacheEstadio = new Map();
 export async function wikiEstadio(nombre) {
   const limpio = String(nombre || "").replace(/\s*\(.*?\)\s*/g, " ").trim();
   if (!limpio) return null;
+  if (cacheEstadio.has(limpio)) return cacheEstadio.get(limpio);
+  const r = await buscarEstadio(limpio);
+  if (r) cacheEstadio.set(limpio, r);
+  return r;
+}
+async function buscarEstadio(limpio) {
   const pedir = async (lang, params) => {
-    const u = `https://${lang}.wikipedia.org/w/api.php?action=query&prop=pageimages|description|categories&piprop=thumbnail&pithumbsize=1600&cllimit=30&redirects=1&format=json&origin=*&${params}`;
+    const u = `https://${lang}.wikipedia.org/w/api.php?action=query&prop=pageimages|description|categories|pageprops&ppprop=wikibase_item&piprop=thumbnail&pithumbsize=1600&cllimit=50&clshow=!hidden&redirects=1&format=json&origin=*&${params}`;
     const j = await json(u, 8000);
     return Object.values(j?.query?.pages || {}).sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
   };
-  const esEstadio = (p) => p && p.thumbnail?.source && (ES_ESTADIO.test(p.description || "") || ES_ESTADIO.test(p.title || "") ||
-    (p.categories || []).some((c) => /stadium|stadiums|estadios|venues|arenas|sports venues/i.test(c.title)));
+  // una persona (la que le da nombre al estadio) NUNCA cuenta, aunque su página mencione el estadio
+  const esPersona = (p) => ES_PERSONA.test(p.description || "") ||
+    (p.categories || []).some((c) => /births|deaths|living people|nacidos en|fallecidos en|personas vivas|people from|footballers|futbolistas|politicians|pol[ií]ticos|businesspeople|empresarios/i.test(c.title));
+  const esEstadio = (p) => p && p.thumbnail?.source && !esPersona(p) && (ES_ESTADIO.test(p.description || "") || ES_ESTADIO.test(p.title || "") ||
+    (p.categories || []).some((c) => /^(category|categoría):.*(stadiums|estadios|venues|arenas|recintos)/i.test(c.title)));
+  const humano = async (p) => {
+    const q = p.pageprops?.wikibase_item; if (!q) return false;
+    const j = await json(`https://www.wikidata.org/w/api.php?action=wbgetclaims&entity=${q}&property=P31&format=json&origin=*`, 6000);
+    return (j?.claims?.P31 || []).some((c) => c.mainsnak?.datavalue?.value?.id === "Q5");
+  };
   const fmt = (p, lang) => ({ nombre: p.title, foto: p.thumbnail.source,
     credito: `Foto: Wikimedia Commons · ${lang}.wikipedia.org/wiki/${encodeURIComponent(p.title.replace(/ /g, "_"))}` });
   // 1) títulos directos: "X Stadium", "Estadio X", "X"
@@ -151,13 +167,12 @@ export async function wikiEstadio(nombre) {
     const ps = await pedir(lang, `titles=${encodeURIComponent(titulos.join("|"))}`);
     const ok = titulos.map((t) => ps.find((p) => p.title.toLowerCase() === t.toLowerCase() || (p.title.toLowerCase().includes(limpio.toLowerCase()) && ES_ESTADIO.test(p.title))))
       .find(esEstadio) || ps.find(esEstadio);
-    if (ok) return fmt(ok, lang);
+    if (ok && !(await humano(ok))) return fmt(ok, lang);
   }
   // 2) búsqueda: "<nombre> estadio" y quedarse solo con páginas de estadios
   for (const [lang, extra] of [["en", "stadium"], ["es", "estadio"]]) {
     const ps = await pedir(lang, `generator=search&gsrlimit=6&gsrsearch=${encodeURIComponent(`${limpio} ${extra}`)}`);
-    const ok = ps.find(esEstadio);
-    if (ok) return fmt(ok, lang);
+    for (const ok of ps.filter(esEstadio)) if (!(await humano(ok))) return fmt(ok, lang);
   }
   return null;
 }

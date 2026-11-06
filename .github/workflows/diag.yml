@@ -4,7 +4,16 @@ jobs:
   d:
     runs-on: ubuntu-latest
     steps:
-      - name: Probar
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Probar estadios
         run: |
-          U=https://bot-apuestas-telegram.vercel.app/api/deportes
-          curl -s "$U?op=estadios&ruta=soccer/esp.1&id=86" | python3 -c "import json,sys;d=json.load(sys.stdin);print('CLUB',d.get('club'));[print('G',g['nombre'],g.get('pedido'),g['foto'][:90]) for g in d.get('galeria',[])]"
+          cat > /tmp/t.mjs <<'JS'
+          import { wikiEstadio } from "/home/runner/work/bot-apuestas/bot-apuestas/telegram/api/deportes.js";
+          for (const n of ["Santiago Bernabéu", "Alfredo Harp Helú", "Estadio Benito Villamarín", "Giuseppe Meazza", "Diego Armando Maradona", "Ramón Sánchez-Pizjuán", "Nemesio Díez"]) {
+            const r = await wikiEstadio(n); console.log(n.padEnd(30), "=>", r ? r.nombre : null);
+            await new Promise(ok => setTimeout(ok, 1500));
+          }
+          JS
+          node /tmp/t.mjs
