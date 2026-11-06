@@ -370,14 +370,18 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
 .opciones-club img { width: 34px; height: 34px; object-fit: contain; }
 
 /* ---------- Movimiento de líneas ---------- */
-.linea { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px;
-  display: grid; grid-template-columns: 1fr 110px auto; gap: 10px; align-items: center; }
-.linea .sel { font-size: .92rem; } .linea .meta { font-size: .75rem; }
-.linea svg { width: 110px; height: 36px; display: block; overflow: visible; }
-.linea .mov { text-align: right; font: 600 .95rem var(--font-mono); white-space: nowrap; }
-.linea .mov small { display: block; font: 500 .7rem var(--font-body); color: var(--muted); }
+.linea { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; display: grid; gap: 6px; }
+.linea .lin-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.linea .sel { font-size: 1rem; font-weight: 700; line-height: 1.2; } .linea .meta { font-size: .76rem; color: var(--muted); margin-top: 2px; }
+.linea .lin-mov { flex: none; text-align: right; font: 700 1rem var(--font-mono); white-space: nowrap; padding: 4px 10px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); }
+.linea .lin-mov.sube { border-color: color-mix(in srgb, var(--win) 50%, transparent); } .linea .lin-mov.baja { border-color: color-mix(in srgb, var(--loss) 50%, transparent); }
+.linea .lin-graf { position: relative; }
+.linea .lin-graf svg { width: 100%; height: 52px; display: block; overflow: visible; }
+.linea .lin-pie { display: flex; justify-content: space-between; font: 500 .72rem var(--font-mono); color: var(--muted); }
+.linea .lin-pie b { color: var(--fg); }
 .sube { color: var(--win); } .baja { color: var(--loss); } .igual { color: var(--muted); }
 .linea.fuerte { border-color: var(--win); box-shadow: 0 0 0 1px var(--win) inset; }
+.linea.fuerte.fbaja { border-color: var(--loss); box-shadow: 0 0 0 1px var(--loss) inset; }
 .explica { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; font-size: .86rem; margin: 0; }
 
 /* ---------- Quiniela ---------- */
@@ -2467,20 +2471,25 @@ async function cargarLineas() {
 }
 function grafica(serie, color) {
   const ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg");
-  svg.setAttribute("viewBox", "0 0 110 36"); svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("viewBox", "0 0 300 52"); svg.setAttribute("preserveAspectRatio", "none"); svg.setAttribute("aria-hidden", "true");
   const ys = serie.map(p => Number(p[1])), min = Math.min(...ys), max = Math.max(...ys), rango = Math.max(max - min, 0.02);
-  const pts = ys.map((y, i) => [ys.length === 1 ? 55 : 4 + i * 102 / (ys.length - 1), 32 - ((y - min) / rango) * 28]);
+  const pts = ys.map((y, i) => [ys.length === 1 ? 150 : 6 + i * 288 / (ys.length - 1), 46 - ((y - min) / rango) * 38]);
+  // área sombreada bajo la línea
+  const id = "g" + Math.random().toString(36).slice(2, 8), defs = document.createElementNS(ns, "defs");
+  defs.innerHTML = `<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".35"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient>`;
+  svg.append(defs);
+  if (pts.length > 1) { const area = document.createElementNS(ns, "polygon");
+    area.setAttribute("points", [...pts, [pts[pts.length - 1][0], 52], [pts[0][0], 52]].map(p => p.join(",")).join(" ")); area.setAttribute("fill", `url(#${id})`); svg.append(area); }
   const base = document.createElementNS(ns, "line");
-  base.setAttribute("x1", 0); base.setAttribute("x2", 110); base.setAttribute("y1", pts[0][1]); base.setAttribute("y2", pts[0][1]);
+  base.setAttribute("x1", 0); base.setAttribute("x2", 300); base.setAttribute("y1", pts[0][1]); base.setAttribute("y2", pts[0][1]);
   base.setAttribute("stroke", "currentColor"); base.setAttribute("stroke-opacity", ".18"); base.setAttribute("stroke-dasharray", "3 3");
   svg.append(base);
   const path = document.createElementNS(ns, "polyline");
   path.setAttribute("points", pts.map(p => p.join(",")).join(" ")); path.setAttribute("fill", "none");
-  path.setAttribute("stroke", color); path.setAttribute("stroke-width", "2.2"); path.setAttribute("stroke-linejoin", "round"); path.setAttribute("stroke-linecap", "round");
+  path.setAttribute("stroke", color); path.setAttribute("stroke-width", "2.5"); path.setAttribute("stroke-linejoin", "round"); path.setAttribute("stroke-linecap", "round"); path.setAttribute("vector-effect", "non-scaling-stroke");
   svg.append(path);
-  const u = pts[pts.length - 1], c = document.createElementNS(ns, "circle");
-  c.setAttribute("cx", u[0]); c.setAttribute("cy", u[1]); c.setAttribute("r", "3.2"); c.setAttribute("fill", color);
-  svg.append(c);
+  pts.forEach((u, i) => { const c = document.createElementNS(ns, "ellipse");
+    c.setAttribute("cx", u[0]); c.setAttribute("cy", u[1]); c.setAttribute("rx", i === pts.length - 1 ? 4.5 : 2.5); c.setAttribute("ry", i === pts.length - 1 ? 4 : 2.2); c.setAttribute("fill", color); svg.append(c); });
   return svg;
 }
 function pintarLineas() {
@@ -2500,14 +2509,18 @@ function pintarLineas() {
   }
   lista.forEach(l => {
     const pts = l.mov * 100, cls = pts >= 0.5 ? "sube" : pts <= -0.5 ? "baja" : "igual";
-    const c = el("div", "linea" + (Math.abs(pts) >= 3 ? " fuerte" : ""));
-    const t = el("div"); t.append(el("div", "sel", l.seleccion),
+    const c = el("div", "linea" + (Math.abs(pts) >= 3 ? " fuerte" + (pts < 0 ? " fbaja" : "") : ""));
+    const top = el("div", "lin-top"), t = el("div");
+    t.append(el("div", "sel", l.seleccion),
       el("div", "meta", `${DEP(l.deporte)} ${l.partido} · ${NOMBRE_MK[l.mercado] || l.mercado} · ${new Date(l.inicio).toLocaleString("es-MX", { weekday: "short", hour: "2-digit", minute: "2-digit" })}`));
+    const m = el("div", "lin-mov " + cls, l.n > 1 ? `${pts > 0 ? "▲ +" : pts < 0 ? "▼ " : ""}${pts.toFixed(1)} pts` : "—");
+    top.append(t, m);
     const color = getComputedStyle(document.documentElement).getPropertyValue(cls === "sube" ? "--win" : cls === "baja" ? "--loss" : "--muted").trim();
-    const g = el("div"); g.append(grafica(l.serie || [[0, 0]], color)); g.style.color = "var(--fg)";
-    const m = el("div", "mov " + cls, l.n > 1 ? `${pts > 0 ? "▲ +" : pts < 0 ? "▼ " : ""}${pts.toFixed(1)}` : "—");
-    m.append(el("small", "", `${(Number(l.serie[l.serie.length - 1][1]) * 100).toFixed(1)}% · ${l.n} esc.`));
-    c.append(t, g, m); cont.append(c);
+    const g = el("div", "lin-graf"); g.append(grafica(l.serie || [[0, 0]], color)); g.style.color = "var(--fg)";
+    const s0 = l.serie || [], ini = s0.length ? Number(s0[0][1]) * 100 : null, fin = s0.length ? Number(s0[s0.length - 1][1]) * 100 : null;
+    const pie = el("div", "lin-pie");
+    pie.innerHTML = `<span>Empezó en <b>${ini == null ? "—" : ini.toFixed(1) + "%"}</b></span><span>${l.n} escaneo${l.n === 1 ? "" : "s"}</span><span>Ahora <b>${fin == null ? "—" : fin.toFixed(1) + "%"}</b></span>`;
+    c.append(top, g, pie); cont.append(c);
   });
 }
 document.querySelectorAll("[data-l]").forEach(b => b.addEventListener("click", () => {
