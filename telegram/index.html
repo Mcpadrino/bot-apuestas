@@ -527,7 +527,7 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
 .bol-res { font-size: .85rem; margin-top: 2px; }
 .doku-intro { display: grid; gap: 10px; text-align: center; justify-items: center; }
 .doku-intro p { margin: 0; }
-.doku-niveles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 100%; }
+.doku-niveles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; width: 100%; }
 .doku-niveles button { display: grid; gap: 2px; padding: 10px 4px; border-radius: 14px; font-weight: 700; }
 .doku-niveles small { color: var(--muted); font-weight: 500; }
 .doku-escudo-grande { position: absolute; inset: 0; display: grid; place-items: center; }
@@ -541,8 +541,8 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
   background: color-mix(in srgb, var(--zc) 46%, transparent); display: grid; place-items: center; transition: background .15s, transform .12s; color: #fff; }
 .doku-c:active { transform: scale(.94); }
 .doku-c img { width: 74%; height: 74%; object-fit: contain; filter: drop-shadow(0 2px 3px rgba(0,0,0,.5)); pointer-events: none; animation: doku-pon .25s cubic-bezier(.3,1.6,.5,1); }
-.doku-c .doku-emoji { font-size: 1.5rem; animation: doku-pon .25s cubic-bezier(.3,1.6,.5,1); }
-.doku-c i { font-style: normal; font-weight: 900; font-size: 1.1rem; color: rgba(255,255,255,.75); text-shadow: 0 1px 2px rgba(0,0,0,.6); }
+.doku-c .doku-emoji { font-size: calc(9rem / var(--n)); animation: doku-pon .25s cubic-bezier(.3,1.6,.5,1); }
+.doku-c i { font-style: normal; font-weight: 900; font-size: calc(7rem / var(--n)); color: rgba(255,255,255,.75); text-shadow: 0 1px 2px rgba(0,0,0,.6); }
 .doku-c.mal { background: color-mix(in srgb, #ff1744 70%, transparent); animation: tiembla .25s linear 2; }
 .doku-c.salta img, .doku-c.salta .doku-emoji { animation: p-salta .6s cubic-bezier(.3,1.6,.5,1) both; animation-delay: inherit; }
 @keyframes doku-pon { from { transform: scale(.2) rotate(-25deg); opacity: 0; } to { transform: none; opacity: 1; } }
@@ -4033,11 +4033,24 @@ function dokuResolver(N, zonas, max = 2) {
   rec(0); return n;
 }
 function dokuOtra(N, zonas, sol) {
-  // busca una solución distinta de "sol" (o null)
+  // busca una solución distinta de "sol" (o null). Con poda: cada zona sin escudo debe tener alguna casilla posible más abajo.
   const col = new Array(N).fill(false), zon = new Array(N).fill(false), pos = []; let res = null;
+  const celdas = Array.from({ length: N }, () => []);
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) celdas[zonas[r][c]].push([r, c]);
+  const viable = (r) => {
+    // filas que faltan = r..N-1; cada zona libre necesita una casilla en esas filas, columna libre y no pegada al último escudo
+    for (let z = 0; z < N; z++) {
+      if (zon[z]) continue;
+      let ok = false;
+      for (const [a, b] of celdas[z]) { if (a < r || col[b]) continue; if (a === r && r > 0 && Math.abs(pos[r - 1] - b) <= 1) continue; ok = true; break; }
+      if (!ok) return false;
+    }
+    return true;
+  };
   const rec = (r) => {
     if (res) return;
     if (r === N) { if (pos.some((c, i) => c !== sol[i])) res = pos.slice(); return; }
+    if (!viable(r)) return;
     for (let c = 0; c < N; c++) {
       const z = zonas[r][c];
       if (col[c] || zon[z] || (r > 0 && Math.abs(pos[r - 1] - c) <= 1)) continue;
@@ -4100,7 +4113,7 @@ function dokuGenerar(N, azar) {
   }
   return null;
 }
-const DOKU_COLORES = ["#e74c3c", "#3498db", "#f1c40f", "#9b59b6", "#1abc9c", "#e67e22", "#ecf0f1", "#ff6fae", "#2ecc71", "#34495e"];
+const DOKU_COLORES = ["#e74c3c", "#3498db", "#f1c40f", "#9b59b6", "#1abc9c", "#e67e22", "#ecf0f1", "#ff6fae", "#2ecc71", "#34495e", "#8d6e63", "#00e5ff"];
 function dokuCancha(tipo) {
   // dibujo de fondo según el deporte de tu equipo (líneas sobre el pasto / duela)
   if (tipo === "nfl") return `<svg viewBox="0 0 100 100" preserveAspectRatio="none"><rect width="100" height="100" fill="#2e7d32"/>
@@ -4131,7 +4144,7 @@ function juegoEquipodoku() {
   const fav = perfil && perfil.equipo_fav;
   const tipo = !fav || !fav.ruta ? "soccer" : /nfl|football/.test(fav.ruta) ? "nfl" : /basketball|nba/.test(fav.ruta) ? "nba" : /baseball|mlb/.test(fav.ruta) ? "mlb" : "soccer";
   const escudo = fav && /^https:\/\//.test(fav.logo || "") ? `<img src="${fav.logo}" alt="" draggable="false">` : `<span class="doku-emoji">${{ nfl: "🏈", nba: "🏀", mlb: "⚾" }[tipo] || "⚽"}</span>`;
-  const NIVELES = [["Fácil", 5], ["Normal", 6], ["Difícil", 7], ["Experto", 8]];
+  const NIVELES = [["Fácil", 6], ["Normal", 8], ["Difícil", 10], ["Experto", 11], ["Leyenda", 12]];
   const hoy = new Date().toLocaleDateString("en-CA", { timeZone: "America/Mexico_City" });
   let N = 6, juego = null, marcas = null, t0 = 0, timer = null, deshacer = [], diario = false, terminado = false;
   const menu = () => {
@@ -4140,15 +4153,15 @@ function juegoEquipodoku() {
       <div class="doku-cancha mini">${dokuCancha(tipo)}<div class="doku-escudo-grande">${escudo}</div></div>
       <p><b>Coloca un ${fav ? "escudo de " + admEsc(fav.nombre) : "escudo"} en cada fila, en cada columna y en cada zona de color.</b> Dos escudos nunca pueden tocarse, ni en diagonal.</p>
       <p class="hint" style="margin:0">Toca una casilla: 1 vez = ✕ (descartar) · 2 veces = escudo · 3 veces = vaciar. Mantén presionado para poner el escudo directo.</p>
-      <button type="button" class="primary btn-grande" data-dia="1">📅 Reto del día</button>
+      <button type="button" class="primary btn-grande" data-dia="1">📅 Reto del día · 10×10</button>
       <div class="doku-niveles">${NIVELES.map(([n, t]) => `<button type="button" data-n="${t}">${n}<small>${t}×${t}</small></button>`).join("")}</div>
     </div>`;
     a.querySelectorAll("[data-n]").forEach(b => b.onclick = () => empezar(+b.dataset.n, false));
-    a.querySelector("[data-dia]").onclick = () => empezar(7, true);
+    a.querySelector("[data-dia]").onclick = () => empezar(10, true);
   };
   const empezar = (n, dia) => {
     N = n; diario = dia; terminado = false;
-    a.innerHTML = `<p class="hint" style="text-align:center">🧩 Armando el tablero…</p>`;
+    a.innerHTML = `<p class="hint" style="text-align:center">🧩 Armando un tablero de ${n}×${n} con una sola solución…${n >= 11 ? " (los grandes tardan unos segundos)" : ""}</p>`;
     setTimeout(() => {
       const semilla = dia ? Number(hoy.replace(/-/g, "")) * 7 + N : Math.floor(Math.random() * 1e9);
       juego = dokuGenerar(N, dokuAzar(semilla)) || dokuGenerar(N, dokuAzar(semilla + 1));
