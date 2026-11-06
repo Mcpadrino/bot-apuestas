@@ -13,6 +13,7 @@ python pronosticos.py           -> calcula, guarda y califica
 python pronosticos.py --prueba  -> solo imprime
 """
 import datetime as dt
+import json
 import math
 import os
 import sys
@@ -30,12 +31,18 @@ AHORA = dt.datetime.now(dt.timezone.utc)
 NOMBRES = {
     "soccer/mex.1": "Liga MX", "soccer/eng.1": "Premier", "soccer/esp.1": "LaLiga", "soccer/ita.1": "Serie A",
     "soccer/ger.1": "Bundesliga", "soccer/fra.1": "Ligue 1", "soccer/uefa.champions": "Champions",
-    "soccer/uefa.europa": "Europa League", "football/nfl": "NFL", "basketball/nba": "NBA", "baseball/mlb": "MLB",
+    "soccer/uefa.europa": "Europa League", "soccer/uefa.europa.conf": "Conference League",
+    "soccer/ned.1": "Eredivisie", "soccer/por.1": "Liga Portugal", "soccer/bel.1": "Bélgica", "soccer/sco.1": "Escocia",
+    "soccer/tur.1": "Turquía", "soccer/aut.1": "Austria", "soccer/gre.1": "Grecia", "soccer/sui.1": "Suiza",
+    "soccer/den.1": "Dinamarca", "soccer/cze.1": "Rep. Checa", "football/nfl": "NFL", "basketball/nba": "NBA", "baseball/mlb": "MLB",
 }
 GRUPOS_FUTBOL = {
     "mex": ["soccer/mex.1"],
+    # las ligas medianas de Europa también entran: así el modelo conoce a los equipos que juegan Europa League y Conference
     "europa": ["soccer/eng.1", "soccer/esp.1", "soccer/ita.1", "soccer/ger.1", "soccer/fra.1",
-               "soccer/uefa.champions", "soccer/uefa.europa"],
+               "soccer/uefa.champions", "soccer/uefa.europa", "soccer/uefa.europa.conf",
+               "soccer/ned.1", "soccer/por.1", "soccer/bel.1", "soccer/sco.1", "soccer/tur.1", "soccer/aut.1",
+               "soccer/gre.1", "soccer/sui.1", "soccer/den.1", "soccer/cze.1"],
 }
 # Elo: K, ventaja de local (puntos Elo), puntos de Elo por punto de diferencia en el marcador
 ELO = {"football/nfl": (20, 48, 25.0, "nfl"), "basketball/nba": (20, 100, 28.0, "nba"), "baseball/mlb": (4, 24, 0, "mlb")}
@@ -51,10 +58,46 @@ def api(ruta, accion, datos=None):
 
 
 # ---------------------------------------------------------------- ESPN
+CACHE_DIAS = "cache_dias.json"
+_dias = None
+
+
+def _cache_dias():
+    global _dias
+    if _dias is None:
+        try:
+            with open(CACHE_DIAS, encoding="utf-8") as f:
+                _dias = json.load(f)
+        except (OSError, ValueError):
+            _dias = {}
+    return _dias
+
+
+def guardar_cache_dias():
+    if _dias is not None:
+        with open(CACHE_DIAS, "w", encoding="utf-8") as f:
+            json.dump(_dias, f)
+
+
 def _dia(ruta, fecha):
-    """Partidos de ESPN de un día (ESPN ya no acepta rangos de fechas)."""
+    """Partidos de ESPN de un día. Los días de hace más de 3 días ya no cambian: se guardan para no volver a pedirlos."""
+    viejo = fecha < (AHORA - dt.timedelta(days=3)).date()
+    clave = f"{ruta}|{fecha:%Y-%m-%d}"
+    c = _cache_dias()
+    if viejo and clave in c:
+        return [{**e, "fecha": dt.datetime.fromisoformat(e["fecha"])} for e in c[clave]]
+    salida = _dia_espn(ruta, fecha)
+    if viejo and salida is not None:
+        c[clave] = [{**e, "fecha": e["fecha"].isoformat()} for e in salida]
+    return salida or []
+
+
+def _dia_espn(ruta, fecha):
     salida = []
-    j = espn._get(espn.BASE.format(ruta=f"{ruta}/scoreboard"), dates=f"{fecha:%Y%m%d}", limit=300) or {}
+    j = espn._get(espn.BASE.format(ruta=f"{ruta}/scoreboard"), dates=f"{fecha:%Y%m%d}", limit=300)
+    if j is None:
+        return None                               # error de red: no se guarda en la caché
+
     for ev in j.get("events") or []:
         try:
             comp = ev["competitions"][0]
@@ -366,6 +409,7 @@ def main():
         calificar()
     except Exception as e:
         print(f"⚠️ calificar: {type(e).__name__}: {e}")
+    guardar_cache_dias()
 
 
 if __name__ == "__main__":
