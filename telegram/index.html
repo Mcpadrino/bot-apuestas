@@ -525,6 +525,32 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
 .bol-lista div { display: flex; justify-content: space-between; gap: 8px; padding: 6px 10px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); font-size: .85rem; }
 .bol-lista small { display: block; color: var(--muted); font-size: .72rem; }
 .bol-res { font-size: .85rem; margin-top: 2px; }
+.doku-intro { display: grid; gap: 10px; text-align: center; justify-items: center; }
+.doku-intro p { margin: 0; }
+.doku-niveles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 100%; }
+.doku-niveles button { display: grid; gap: 2px; padding: 10px 4px; border-radius: 14px; font-weight: 700; }
+.doku-niveles small { color: var(--muted); font-weight: 500; }
+.doku-escudo-grande { position: absolute; inset: 0; display: grid; place-items: center; }
+.doku-escudo-grande img { width: 46%; filter: drop-shadow(0 6px 10px rgba(0,0,0,.45)); animation: rebote 2s ease-in-out infinite; }
+.doku-escudo-grande .doku-emoji { font-size: 4rem; }
+.doku-cancha { position: relative; width: 100%; max-width: 460px; margin: 0 auto; aspect-ratio: 1; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 28px rgba(0,0,0,.35); }
+.doku-cancha.mini { width: 62%; max-width: 240px; }
+.doku-cancha > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.doku-grid { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(var(--n), 1fr); grid-template-rows: repeat(var(--n), 1fr); }
+.doku-c { position: relative; padding: 0; margin: 0; border-radius: 0; border-style: solid; border-color: rgba(10,20,15,.85); min-height: 0; min-width: 0;
+  background: color-mix(in srgb, var(--zc) 46%, transparent); display: grid; place-items: center; transition: background .15s, transform .12s; color: #fff; }
+.doku-c:active { transform: scale(.94); }
+.doku-c img { width: 74%; height: 74%; object-fit: contain; filter: drop-shadow(0 2px 3px rgba(0,0,0,.5)); pointer-events: none; animation: doku-pon .25s cubic-bezier(.3,1.6,.5,1); }
+.doku-c .doku-emoji { font-size: 1.5rem; animation: doku-pon .25s cubic-bezier(.3,1.6,.5,1); }
+.doku-c i { font-style: normal; font-weight: 900; font-size: 1.1rem; color: rgba(255,255,255,.75); text-shadow: 0 1px 2px rgba(0,0,0,.6); }
+.doku-c.mal { background: color-mix(in srgb, #ff1744 70%, transparent); animation: tiembla .25s linear 2; }
+.doku-c.salta img, .doku-c.salta .doku-emoji { animation: p-salta .6s cubic-bezier(.3,1.6,.5,1) both; animation-delay: inherit; }
+@keyframes doku-pon { from { transform: scale(.2) rotate(-25deg); opacity: 0; } to { transform: none; opacity: 1; } }
+.doku-cancha.ganaste { box-shadow: 0 0 0 4px #f1c40f, 0 0 36px rgba(241,196,15,.6); }
+.doku-top { display: flex; justify-content: space-between; align-items: center; font-size: .85rem; color: var(--muted); }
+.doku-top b { font: 700 1.3rem var(--font-mono, monospace); color: var(--fg); }
+.doku-acc { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.doku-acc button { padding: 9px 4px; border-radius: 12px; font-size: .8rem; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip-op { display: grid; gap: 1px; padding: 7px 11px; border-radius: 12px; font-size: .8rem; text-align: left; min-width: 0;
   transition: background .2s, color .2s, transform .15s cubic-bezier(.3,1.6,.5,1); }
@@ -1257,6 +1283,7 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
       <p class="hint" id="j-tope"></p>
       <div class="juegos-grid">
         <button type="button" class="jcard" data-juego="logos"><span>🛡️</span><b>Adivina el logo</b><small>Elige tus ligas · $1 por acierto</small></button>
+        <button type="button" class="jcard jcard-nuevo" data-juego="equipodoku"><span>🧩</span><b>Equipodoku <em>NUEVO</em></b><small>Como el gatodoku, con el escudo de tu equipo · reto del día</small></button>
         <button type="button" class="jcard jcard-nuevo" data-juego="tiro_libre"><span>🎯</span><b>Tiro libre <em>NUEVO</em></b><small>Barrera, efecto y escuadras; tu mascota te echa porras · $2 por punto</small></button>
         <button type="button" class="jcard" data-juego="penales"><span>⚽</span><b>Penales</b><small>¡Tu mascota es la portera! · $2 por punto</small></button>
         <button type="button" class="jcard" data-juego="canasta"><span>🏀</span><b>Canasta</b><small>5 tiros · $2 por canasta</small></button>
@@ -3461,7 +3488,7 @@ async function cargarRanking() {
       d.append(el("span", "", ["🥇", "🥈", "🥉"][i] || i + 1 + "."), n, el("b", "num", String(x.puntos))); tg.append(d); });
     c.append(tg);
     pintarLogros(c);
-    const NOM = { logos: "🛡️ Adivina el logo", penales: "⚽ Penales", tiro_libre: "🎯 Tiro libre", canasta: "🏀 Canasta", gol_campo: "🏈 Gol de campo" };
+    const NOM = { logos: "🛡️ Adivina el logo", penales: "⚽ Penales", tiro_libre: "🎯 Tiro libre", equipodoku: "🧩 Equipodoku", canasta: "🏀 Canasta", gol_campo: "🏈 Gol de campo" };
     c.append(el("h2", "", "🐾 Mascotas más ricas"));
     const rm = el("div", "rk");
     (r.mascotas || []).forEach((x, i) => { const d = el("div", x.yo ? "yo" : ""); d.append(el("span", "", ["🥇", "🥈", "🥉"][i] || i + 1 + "."),
@@ -3984,6 +4011,218 @@ function motorFutbol(opts) {
 function juegoPenales() { abrirJuego(mascota ? `⚽ Penales vs ${mascota.mascota.nombre || "tu mascota"}` : "⚽ Penales"); motorFutbol({ modo: "penal", tiros: 5, juego: "penales", max: 10, pet: petImagen() }); }
 function juegoTiroLibre() { abrirJuego("🎯 Tiro libre"); motorFutbol({ modo: "libre", tiros: 5, juego: "tiro_libre", max: 10, fan: petImagen() }); }
 
+// ---------------------------------------------------------------- 🧩 Equipodoku (como el "gatodoku", pero con el escudo de tu equipo)
+// Reglas: un escudo por fila, uno por columna y uno por zona de color; dos escudos nunca se tocan (ni en diagonal).
+function dokuAzar(semilla) {                       // generador con semilla (el reto del día es igual para todos)
+  let s = semilla >>> 0 || 1;
+  return () => { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; };
+}
+function dokuResolver(N, zonas, max = 2) {
+  // cuenta soluciones (hasta "max") con vuelta atrás fila por fila
+  let n = 0; const col = new Array(N).fill(false), zon = new Array(N).fill(false), pos = [];
+  const rec = (r) => {
+    if (n >= max) return;
+    if (r === N) { n++; return; }
+    for (let c = 0; c < N; c++) {
+      const z = zonas[r][c];
+      if (col[c] || zon[z]) continue;
+      if (r > 0 && Math.abs(pos[r - 1] - c) <= 1) continue;
+      col[c] = zon[z] = true; pos[r] = c; rec(r + 1); col[c] = zon[z] = false;
+    }
+  };
+  rec(0); return n;
+}
+function dokuOtra(N, zonas, sol) {
+  // busca una solución distinta de "sol" (o null)
+  const col = new Array(N).fill(false), zon = new Array(N).fill(false), pos = []; let res = null;
+  const rec = (r) => {
+    if (res) return;
+    if (r === N) { if (pos.some((c, i) => c !== sol[i])) res = pos.slice(); return; }
+    for (let c = 0; c < N; c++) {
+      const z = zonas[r][c];
+      if (col[c] || zon[z] || (r > 0 && Math.abs(pos[r - 1] - c) <= 1)) continue;
+      col[c] = zon[z] = true; pos[r] = c; rec(r + 1); col[c] = zon[z] = false; if (res) return;
+    }
+  };
+  rec(0); return res;
+}
+function dokuConexa(N, zonas, z) {
+  let ini = null, total = 0;
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (zonas[r][c] === z) { total++; ini = ini || [r, c]; }
+  if (!ini) return false;
+  const vis = new Set([ini.join()]), cola = [ini];
+  while (cola.length) { const [r, c] = cola.pop(); [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dr, dc]) => { const a = r + dr, b = c + dc, k = a + "," + b; if (a >= 0 && b >= 0 && a < N && b < N && zonas[a][b] === z && !vis.has(k)) { vis.add(k); cola.push([a, b]); } }); }
+  return vis.size === total;
+}
+function dokuGenerar(N, azar) {
+  for (let intento = 0; intento < 600; intento++) {
+    // 1) dónde van los escudos: una permutación sin vecinos
+    const pos = [], usadas = new Set();
+    const coloca = (r) => {
+      if (r === N) return true;
+      const ops = [...Array(N).keys()].sort(() => azar() - .5);
+      for (const c of ops) { if (usadas.has(c) || (r > 0 && Math.abs(pos[r - 1] - c) <= 1)) continue; pos[r] = c; usadas.add(c); if (coloca(r + 1)) return true; usadas.delete(c); }
+      return false;
+    };
+    if (!coloca(0)) continue;
+    // 2) crecer N zonas desde cada escudo (al azar, con tamaños dispares para que haya pistas)
+    const zonas = Array.from({ length: N }, () => new Array(N).fill(-1));
+    const fronteras = pos.map((c, r) => { zonas[r][c] = r; return [[r, c]]; });
+    const peso = pos.map(() => 0.3 + azar() * 1.7);
+    let libres = N * N - N;
+    while (libres > 0) {
+      const z = (() => { let t = peso.reduce((a, b) => a + b, 0) * azar(); for (let i = 0; i < N; i++) { t -= peso[i]; if (t <= 0) return i; } return N - 1; })();
+      const f = fronteras[z]; if (!f.length) { peso[z] = 0.0001; if (peso.every(p => p < .001)) break; continue; }
+      const [r, c] = f[Math.floor(azar() * f.length)];
+      const vec = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dr, dc]) => [r + dr, c + dc]).filter(([a, b]) => a >= 0 && b >= 0 && a < N && b < N && zonas[a][b] === -1);
+      if (!vec.length) { f.splice(f.findIndex(x => x[0] === r && x[1] === c), 1); continue; }
+      const [a, b] = vec[Math.floor(azar() * vec.length)]; zonas[a][b] = z; f.push([a, b]); libres--;
+    }
+    if (zonas.some(f => f.includes(-1))) continue;
+    // 3) mientras haya otra solución, mueve una casilla de esa solución a una zona vecina (sin romper la buena)
+    for (let ajuste = 0; ajuste < 400; ajuste++) {
+      const otra = dokuOtra(N, zonas, pos);
+      if (!otra) return { N, zonas, sol: pos };
+      const cand = [];
+      otra.forEach((c, r) => {
+        if (pos[r] === c) return;                                       // es casilla de la solución buena: no se toca
+        [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dr, dc]) => { const a = r + dr, b = c + dc;
+          if (a >= 0 && b >= 0 && a < N && b < N && zonas[a][b] !== zonas[r][c]) cand.push([r, c, zonas[a][b]]); });
+      });
+      let hecho = false;
+      for (const [r, c, nz] of cand.sort(() => azar() - .5)) {
+        const viejo = zonas[r][c]; zonas[r][c] = nz;
+        if (dokuConexa(N, zonas, viejo)) { hecho = true; break; }
+        zonas[r][c] = viejo;
+      }
+      if (!hecho) break;
+    }
+  }
+  return null;
+}
+const DOKU_COLORES = ["#e74c3c", "#3498db", "#f1c40f", "#9b59b6", "#1abc9c", "#e67e22", "#ecf0f1", "#ff6fae", "#2ecc71", "#34495e"];
+function dokuCancha(tipo) {
+  // dibujo de fondo según el deporte de tu equipo (líneas sobre el pasto / duela)
+  if (tipo === "nfl") return `<svg viewBox="0 0 100 100" preserveAspectRatio="none"><rect width="100" height="100" fill="#2e7d32"/>
+    ${Array.from({ length: 10 }, (_, i) => `<rect x="${i * 10}" width="5" height="100" fill="#2a7230"/>`).join("")}
+    <rect width="8" height="100" fill="#1b5e20"/><rect x="92" width="8" height="100" fill="#1b5e20"/>
+    ${Array.from({ length: 9 }, (_, i) => `<line x1="${8 + (i + 1) * 8.4}" y1="0" x2="${8 + (i + 1) * 8.4}" y2="100" stroke="#fff" stroke-width=".6" opacity=".8"/>`).join("")}
+    ${Array.from({ length: 40 }, (_, i) => `<line x1="${8 + i * 2.1}" y1="31" x2="${8 + i * 2.1}" y2="33" stroke="#fff" stroke-width=".3"/><line x1="${8 + i * 2.1}" y1="67" x2="${8 + i * 2.1}" y2="69" stroke="#fff" stroke-width=".3"/>`).join("")}
+    <text x="50" y="54" font-size="7" fill="#fff" opacity=".35" text-anchor="middle" font-weight="900">50</text></svg>`;
+  if (tipo === "nba") return `<svg viewBox="0 0 100 100" preserveAspectRatio="none"><rect width="100" height="100" fill="#d9a066"/>
+    ${Array.from({ length: 20 }, (_, i) => `<rect y="${i * 5}" width="100" height="2.5" fill="#cf9558"/>`).join("")}
+    <g fill="none" stroke="#fff" stroke-width=".8" opacity=".9"><rect x="2" y="2" width="96" height="96"/><line x1="50" y1="2" x2="50" y2="98"/><circle cx="50" cy="50" r="9"/>
+    <rect x="2" y="35" width="19" height="30" fill="#b5651d" fill-opacity=".35"/><rect x="79" y="35" width="19" height="30" fill="#b5651d" fill-opacity=".35"/>
+    <path d="M2 10 Q36 50 2 90"/><path d="M98 10 Q64 50 98 90"/></g></svg>`;
+  if (tipo === "mlb") return `<svg viewBox="0 0 100 100" preserveAspectRatio="none"><rect width="100" height="100" fill="#2e7d32"/>
+    ${Array.from({ length: 10 }, (_, i) => `<rect y="${i * 10}" width="100" height="5" fill="#2a7230"/>`).join("")}
+    <path d="M50 92 L18 60 L50 28 L82 60 Z" fill="#c68a4c"/><path d="M50 84 L26 60 L50 36 L74 60 Z" fill="#2e7d32"/>
+    <g fill="#fff"><rect x="48" y="90" width="4" height="4" transform="rotate(45 50 92)"/><rect x="80" y="58" width="4" height="4"/><rect x="48" y="26" width="4" height="4"/><rect x="16" y="58" width="4" height="4"/></g>
+    <circle cx="50" cy="60" r="3" fill="#c68a4c"/><g stroke="#fff" stroke-width=".6"><line x1="50" y1="92" x2="0" y2="42"/><line x1="50" y1="92" x2="100" y2="42"/></g></svg>`;
+  return `<svg viewBox="0 0 100 100" preserveAspectRatio="none"><rect width="100" height="100" fill="#2e8b47"/>
+    ${Array.from({ length: 10 }, (_, i) => `<rect y="${i * 10}" width="100" height="5" fill="#2a7f41"/>`).join("")}
+    <g fill="none" stroke="#fff" stroke-width=".7" opacity=".9"><rect x="3" y="3" width="94" height="94"/><line x1="3" y1="50" x2="97" y2="50"/><circle cx="50" cy="50" r="11"/>
+    <rect x="25" y="3" width="50" height="16"/><rect x="38" y="3" width="24" height="6"/><rect x="25" y="81" width="50" height="16"/><rect x="38" y="91" width="24" height="6"/>
+    <path d="M40 19 Q50 25 60 19"/><path d="M40 81 Q50 75 60 81"/></g><circle cx="50" cy="50" r="1" fill="#fff"/></svg>`;
+}
+function juegoEquipodoku() {
+  abrirJuego("🧩 Equipodoku");
+  const a = $("jm-area");
+  const fav = perfil && perfil.equipo_fav;
+  const tipo = !fav || !fav.ruta ? "soccer" : /nfl|football/.test(fav.ruta) ? "nfl" : /basketball|nba/.test(fav.ruta) ? "nba" : /baseball|mlb/.test(fav.ruta) ? "mlb" : "soccer";
+  const escudo = fav && /^https:\/\//.test(fav.logo || "") ? `<img src="${fav.logo}" alt="" draggable="false">` : `<span class="doku-emoji">${{ nfl: "🏈", nba: "🏀", mlb: "⚾" }[tipo] || "⚽"}</span>`;
+  const NIVELES = [["Fácil", 5], ["Normal", 6], ["Difícil", 7], ["Experto", 8]];
+  const hoy = new Date().toLocaleDateString("en-CA", { timeZone: "America/Mexico_City" });
+  let N = 6, juego = null, marcas = null, t0 = 0, timer = null, deshacer = [], diario = false, terminado = false;
+  const menu = () => {
+    clearInterval(timer);
+    a.innerHTML = `<div class="doku-intro">
+      <div class="doku-cancha mini">${dokuCancha(tipo)}<div class="doku-escudo-grande">${escudo}</div></div>
+      <p><b>Coloca un ${fav ? "escudo de " + admEsc(fav.nombre) : "escudo"} en cada fila, en cada columna y en cada zona de color.</b> Dos escudos nunca pueden tocarse, ni en diagonal.</p>
+      <p class="hint" style="margin:0">Toca una casilla: 1 vez = ✕ (descartar) · 2 veces = escudo · 3 veces = vaciar. Mantén presionado para poner el escudo directo.</p>
+      <button type="button" class="primary btn-grande" data-dia="1">📅 Reto del día</button>
+      <div class="doku-niveles">${NIVELES.map(([n, t]) => `<button type="button" data-n="${t}">${n}<small>${t}×${t}</small></button>`).join("")}</div>
+    </div>`;
+    a.querySelectorAll("[data-n]").forEach(b => b.onclick = () => empezar(+b.dataset.n, false));
+    a.querySelector("[data-dia]").onclick = () => empezar(7, true);
+  };
+  const empezar = (n, dia) => {
+    N = n; diario = dia; terminado = false;
+    a.innerHTML = `<p class="hint" style="text-align:center">🧩 Armando el tablero…</p>`;
+    setTimeout(() => {
+      const semilla = dia ? Number(hoy.replace(/-/g, "")) * 7 + N : Math.floor(Math.random() * 1e9);
+      juego = dokuGenerar(N, dokuAzar(semilla)) || dokuGenerar(N, dokuAzar(semilla + 1));
+      if (!juego) { a.innerHTML = `<p class="empty">No se pudo armar el tablero, intenta otra vez.</p>`; return; }
+      marcas = Array.from({ length: N }, () => new Array(N).fill(0));     // 0 vacío · 1 ✕ · 2 escudo
+      deshacer = []; t0 = Date.now(); pintar();
+      clearInterval(timer); timer = setInterval(() => { const r = $("doku-reloj"); if (r && !terminado) r.textContent = reloj(); else if (!r) clearInterval(timer); }, 1000);
+    }, 30);
+  };
+  const reloj = () => { const s = Math.floor((Date.now() - t0) / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
+  const conflictos = () => {
+    const mal = new Set(), esc = [];
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (marcas[r][c] === 2) esc.push([r, c]);
+    for (let i = 0; i < esc.length; i++) for (let j = i + 1; j < esc.length; j++) {
+      const [r1, c1] = esc[i], [r2, c2] = esc[j];
+      if (r1 === r2 || c1 === c2 || juego.zonas[r1][c1] === juego.zonas[r2][c2] || (Math.abs(r1 - r2) <= 1 && Math.abs(c1 - c2) <= 1)) { mal.add(r1 + "," + c1); mal.add(r2 + "," + c2); }
+    }
+    return { mal, n: esc.length };
+  };
+  const pintar = () => {
+    const { mal, n } = conflictos();
+    const z = juego.zonas;
+    let h = `<div class="doku-top"><span>${diario ? "📅 Reto del día" : NIVELES.find(x => x[1] === N)[0]} · ${N}×${N}</span><b id="doku-reloj">${reloj()}</b><span>${n}/${N} ${fav && fav.logo ? "escudos" : "colocados"}</span></div>
+      <div class="doku-cancha" style="--n:${N}">${dokuCancha(tipo)}<div class="doku-grid" role="grid" aria-label="Tablero">`;
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+      const zz = z[r][c], col = DOKU_COLORES[zz % DOKU_COLORES.length];
+      const b = [r > 0 && z[r - 1][c] !== zz, c < N - 1 && z[r][c + 1] !== zz, r < N - 1 && z[r + 1][c] !== zz, c > 0 && z[r][c - 1] !== zz];
+      const m = marcas[r][c];
+      h += `<button type="button" class="doku-c${mal.has(r + "," + c) ? " mal" : ""}${m === 2 ? " esc" : ""}" data-r="${r}" data-c="${c}" role="gridcell"
+        style="--zc:${col};border-width:${b.map(x => x ? "3px" : "1px").join(" ")}" aria-label="Fila ${r + 1}, columna ${c + 1}${m === 2 ? ", escudo" : m === 1 ? ", descartada" : ""}">${m === 2 ? escudo : m === 1 ? "<i>✕</i>" : ""}</button>`;
+    }
+    h += `</div></div><div class="doku-acc"><button type="button" data-a="deshacer">↩️ Deshacer</button><button type="button" data-a="limpiar">🧹 Limpiar</button><button type="button" data-a="pista">💡 Pista</button><button type="button" data-a="menu">☰ Niveles</button></div>`;
+    a.innerHTML = h;
+    a.querySelectorAll(".doku-c").forEach(btn => {
+      let largo = null;
+      btn.addEventListener("pointerdown", () => { largo = setTimeout(() => { largo = "ya"; poner(+btn.dataset.r, +btn.dataset.c, 2); }, 420); });
+      btn.addEventListener("pointerup", () => { if (largo === "ya") { largo = null; return; } clearTimeout(largo); largo = null; poner(+btn.dataset.r, +btn.dataset.c); });
+      btn.addEventListener("pointerleave", () => { if (largo && largo !== "ya") clearTimeout(largo); });
+      btn.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); poner(+btn.dataset.r, +btn.dataset.c); } });
+    });
+    a.querySelectorAll("[data-a]").forEach(b => b.onclick = () => {
+      if (b.dataset.a === "menu") return menu();
+      if (b.dataset.a === "deshacer") { const u = deshacer.pop(); if (u) { marcas[u[0]][u[1]] = u[2]; pintar(); } return; }
+      if (b.dataset.a === "limpiar") { deshacer = []; marcas = marcas.map(f => f.map(() => 0)); pintar(); return; }
+      if (b.dataset.a === "pista") {
+        // pone un escudo correcto que falte (cuesta: la partida da menos premio)
+        const r = [...Array(N).keys()].find(i => marcas[i][juego.sol[i]] !== 2);
+        if (r === undefined) return;
+        for (let c = 0; c < N; c++) if (marcas[r][c] === 2) marcas[r][c] = 0;
+        marcas[r][juego.sol[r]] = 2; juego.pistas = (juego.pistas || 0) + 1; pintar(); revisar();
+      }
+    });
+  };
+  const poner = (r, c, forzar) => {
+    if (terminado) return;
+    deshacer.push([r, c, marcas[r][c]]); if (deshacer.length > 200) deshacer.shift();
+    marcas[r][c] = forzar ?? (marcas[r][c] + 1) % 3;
+    if (marcas[r][c] === 2 && navigator.vibrate) navigator.vibrate(8);
+    pintar(); revisar();
+  };
+  const revisar = () => {
+    const { mal, n } = conflictos();
+    if (n !== N || mal.size) return;
+    terminado = true; clearInterval(timer);
+    const seg = Math.floor((Date.now() - t0) / 1000), pistas = juego.pistas || 0;
+    const puntos = Math.max(1, N - 2 - pistas + (seg < N * 20 ? 1 : 0));
+    const cancha = a.querySelector(".doku-cancha"); cancha.classList.add("ganaste");
+    a.querySelectorAll(".doku-c.esc").forEach((x, i) => { x.style.animationDelay = i * 90 + "ms"; x.classList.add("salta"); });
+    if (navigator.vibrate) navigator.vibrate([20, 50, 20, 50, 40]);
+    setTimeout(() => finJuego("equipodoku", puntos, N - 1, `🧩 ${diario ? "Reto del día" : N + "×" + N} resuelto en ${reloj()}${pistas ? ` con ${pistas} pista(s)` : " sin pistas"}.`), 1600);
+  };
+  menu();
+}
+
 // ---- medidor que va y viene (canasta y gol de campo)
 function medidor(cont, ancho, velocidad, alParar) {
   const m = el("div", "medidor"), z = el("div", "zona-ok"), ag = el("div", "aguja");
@@ -4077,7 +4316,7 @@ function juegoGolCampo() {
   };
   pintar();
 }
-const JUEGOS = { logos: juegoLogos, penales: juegoPenales, tiro_libre: juegoTiroLibre, canasta: juegoCanasta, gol_campo: juegoGolCampo };
+const JUEGOS = { logos: juegoLogos, penales: juegoPenales, tiro_libre: juegoTiroLibre, equipodoku: juegoEquipodoku, canasta: juegoCanasta, gol_campo: juegoGolCampo };
 document.querySelectorAll("[data-juego]").forEach(b => b.addEventListener("click", () => JUEGOS[b.dataset.juego]()));
 
 
