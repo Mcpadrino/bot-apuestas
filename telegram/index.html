@@ -460,8 +460,8 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
 .adm-barras div span { position: absolute; top: -16px; left: 50%; transform: translateX(-50%); font-size: .62rem; color: var(--muted); }
 .adm-sec { display: grid; grid-template-columns: 110px 1fr auto; gap: 8px; align-items: center; font-size: .82rem; }
 .adm-sec i { display: block; height: 8px; border-radius: 4px; background: var(--accent); }
-.tour-luz { position: fixed; z-index: 200; border-radius: 14px; box-shadow: 0 0 0 9999px rgba(3,8,6,.72); transition: all .35s cubic-bezier(.2,.8,.2,1); pointer-events: none; outline: 2px solid var(--accent); }
-.tour-burbuja { position: fixed; z-index: 201; left: 16px; right: 16px; max-width: 420px; margin: 0 auto; background: var(--surface); color: var(--fg); border-radius: 18px; padding: 14px 16px; display: grid; gap: 8px; box-shadow: 0 12px 40px rgba(0,0,0,.4); transition: top .35s; }
+.tour-luz { position: fixed; z-index: 1200; border-radius: 14px; box-shadow: 0 0 0 9999px rgba(3,8,6,.72); transition: top .3s cubic-bezier(.2,.8,.2,1), left .3s, width .3s, height .3s; pointer-events: none; outline: 2px solid var(--accent); }
+.tour-burbuja { position: fixed; z-index: 1201; left: 16px; right: 16px; max-width: 420px; margin: 0 auto; background: var(--surface); color: var(--fg); border-radius: 18px; padding: 14px 16px; display: grid; gap: 8px; box-shadow: 0 12px 40px rgba(0,0,0,.4); transition: top .3s; max-height: calc(100vh - 20px); overflow-y: auto; }
 .tour-burbuja .tb-pie { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .tour-burbuja .tb-pie span { color: var(--muted); font-size: .8rem; }
 .tour-burbuja .tb-pie button { padding: 8px 14px; border-radius: 999px; }
@@ -5418,29 +5418,51 @@ const TOUR = [
   { c: "Final", v: "inicio", t: "🙌 ¡Listo!", d: "Recuerda: apuesta solo cuando te paguen igual o más que el mínimo, montos chicos y nunca para recuperar. Esto es una herramienta, no dinero seguro. ¡Suerte!" },
 ];
 let tourPaso = 0, tourLuz = null, tourBur = null;
+function tourColocar(desplazar) {
+  if (!tourBur) return;
+  const p = TOUR[tourPaso], H = innerHeight, bh = tourBur.offsetHeight, m = 10;
+  const tgt = p.sel && document.querySelector(p.sel);
+  if (!tgt || tgt.offsetParent === null) {
+    Object.assign(tourLuz.style, { top: H / 2 + "px", left: "50%", width: "0px", height: "0px" });
+    tourBur.style.top = Math.max(m, Math.round((H - bh) / 2)) + "px";
+    return;
+  }
+  const fijo = getComputedStyle(tgt).position === "fixed" || !!tgt.closest("header, .topbar, [class*=barra-sup]");
+  let r = tgt.getBoundingClientRect();
+  // Cuánto alto puede tener la luz para que quepa la burbuja abajo
+  const maxH = Math.max(56, H - bh - 96);
+  const hh = Math.min(r.height, maxH);
+  if (desplazar && !fijo) {
+    const y0 = Math.max(70, Math.round((H - bh - hh - 30) / 2));
+    window.scrollTo({ top: Math.max(0, scrollY + r.top - y0), left: 0, behavior: "instant" });
+    r = tgt.getBoundingClientRect();
+  }
+  const pad = 6, top = r.top - pad, alto = hh + pad * 2;
+  Object.assign(tourLuz.style, { top: top + "px", left: Math.max(4, r.left - pad) + "px", width: Math.min(innerWidth - 8, r.width + pad * 2) + "px", height: alto + "px" });
+  let y;
+  if (top + alto + 12 + bh <= H - m) y = top + alto + 12;          // abajo
+  else if (top - 12 - bh >= m) y = top - 12 - bh;                   // arriba
+  else y = H - bh - m;                                              // pegada abajo, siempre visible
+  tourBur.style.top = Math.max(m, Math.round(y)) + "px";
+}
 function tourMostrar() {
   const p = TOUR[tourPaso];
   if (p.v && vista !== p.v) irA(p.v);
-  setTimeout(() => {
-    const tgt = p.sel && document.querySelector(p.sel);
-    if (tgt && tgt.offsetParent !== null) {
-      tgt.scrollIntoView({ block: "center" });
-      const r = tgt.getBoundingClientRect(), pad = 6;
-      Object.assign(tourLuz.style, { display: "block", top: r.top - pad + "px", left: r.left - pad + "px", width: r.width + pad * 2 + "px", height: Math.min(r.height, innerHeight * .5) + pad * 2 + "px" });
-      const abajo = r.top + Math.min(r.height, innerHeight * .5) + 18;
-      tourBur.style.top = (abajo + 170 < innerHeight ? abajo : Math.max(16, r.top - 190)) + "px";
-    } else {
-      Object.assign(tourLuz.style, { display: "block", top: "50%", left: "50%", width: "0px", height: "0px" });
-      tourBur.style.top = Math.round(innerHeight / 2 - 90) + "px";
-    }
-    tourBur.querySelector("b").textContent = p.t; tourBur.querySelector("p").textContent = p.d;
-    tourBur.querySelector(".tb-pie span").textContent = `${tourPaso + 1} de ${TOUR.length}`;
-    tourBur.querySelector(".tb-cap small").textContent = p.c ? p.c.toUpperCase() : "";
-    tourBur.querySelector(".tb-barra i").style.width = ((tourPaso + 1) / TOUR.length * 100) + "%";
-    tourBur.querySelector("[data-atras]").style.visibility = tourPaso ? "visible" : "hidden";
-    tourBur.querySelector("[data-sig]").textContent = tourPaso === TOUR.length - 1 ? "¡Va!" : "Siguiente →";
-  }, p.v ? 450 : 60);
+  tourBur.querySelector("b").textContent = p.t; tourBur.querySelector("p").textContent = p.d;
+  tourBur.querySelector(".tb-pie span").textContent = `${tourPaso + 1} de ${TOUR.length}`;
+  tourBur.querySelector(".tb-cap small").textContent = p.c ? p.c.toUpperCase() : "";
+  tourBur.querySelector(".tb-barra i").style.width = ((tourPaso + 1) / TOUR.length * 100) + "%";
+  tourBur.querySelector("[data-atras]").style.visibility = tourPaso ? "visible" : "hidden";
+  tourBur.querySelector("[data-sig]").textContent = tourPaso === TOUR.length - 1 ? "¡Va!" : "Siguiente →";
+  const paso = tourPaso;
+  setTimeout(() => { if (paso === tourPaso) tourColocar(true); }, p.v ? 450 : 60);
+  // por si la sección termina de cargar después y cambia de tamaño
+  setTimeout(() => { if (paso === tourPaso) tourColocar(false); }, 1300);
 }
+let tourRaf = 0;
+function tourSeguir() { if (!tourBur || tourRaf) return; tourRaf = requestAnimationFrame(() => { tourRaf = 0; tourColocar(false); }); }
+addEventListener("scroll", tourSeguir, { passive: true });
+addEventListener("resize", tourSeguir);
 function tourFin(ok) {
   tourLuz && tourLuz.remove(); tourBur && tourBur.remove(); tourLuz = tourBur = null;
   try { localStorage.setItem("tour-visto", "1"); } catch (e) {}
