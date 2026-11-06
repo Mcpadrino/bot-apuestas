@@ -1652,7 +1652,7 @@ async function cargar() {
     $("marca").hidden = true; $("sec-actual").hidden = false;
     $("menu-nombre").textContent = r.nombre || "—";
     if (!perfil) cargarPerfil();
-    revisarYo();
+    revisarYo(); revisarFondoClub();
     revisarTerminos().then(tourSiNuevo).then(() => setTimeout(() => { reaccionMascota(); revisarLogros(); }, 900));
     irA(vista);
   } catch (e) { e.auth ? mostrarLogin(e.message) : estado(e.message || "No se pudo cargar. Toca Actualizar."); }
@@ -2346,7 +2346,7 @@ function aplicarTema() {
 async function cargarPerfil() {
   try {
     perfil = await api("perfil");
-    if (perfil && perfil.tema) { tema = { ...TEMA_BASE, ...perfil.tema }; try { localStorage.setItem("mi-tema", JSON.stringify(tema)); } catch (e) {} }
+    if (perfil && perfil.tema) { tema = { ...TEMA_BASE, ...perfil.tema }; try { localStorage.setItem("mi-tema", JSON.stringify(tema)); } catch (e) {} fondoRevisado = false; revisarFondoClub(); }
     aplicarDiseno(); pintarEquipo();
     if (vista === "inicio") pintarInicio();
   } catch (e) {}
@@ -5437,6 +5437,20 @@ function petImagen(estado = "feliz") {
   let svg = animalSVG(mascota.mascota.especie || "perro", estado, c1, c2);
   if (!/xmlns=/.test(svg)) svg = svg.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"');
   const img = new Image(); img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg); return img;
+}
+
+// si el fondo es "el estadio de tu club", vuelve a pedir la foto (corrige fotos viejas que no eran del estadio)
+let fondoRevisado = false;
+async function revisarFondoClub() {
+  if (fondoRevisado || !tema || !tema.fondo || tema.fondo.tipo !== "club") return;
+  fondoRevisado = true;
+  try {
+    const d = await cargarEstadios();
+    if (d && d.club && d.club.foto && d.club.foto !== tema.fondo.foto) {
+      tema.fondo = { tipo: "club", foto: d.club.foto, nombre: d.club.nombre, credito: d.club.credito };
+      aplicarDiseno(); guardarTema();
+    }
+  } catch (e) {}
 }
 </script>
 </body>
