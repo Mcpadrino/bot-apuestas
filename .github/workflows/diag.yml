@@ -17,3 +17,6 @@ jobs:
           }
           JS
           node /tmp/t.mjs
+          curl -s -A "bitacora-apuestas/1.0 (github.com/Mcpadrino/bot-apuestas)" -o /dev/null -w "%{http_code}\n" "https://en.wikipedia.org/w/api.php?action=query&prop=pageimages|description|categories&piprop=thumbnail&pithumbsize=1600&cllimit=30&redirects=1&format=json&origin=*&titles=Estadio%20Jalisco"
+          curl -s -A "bitacora-apuestas/1.0 (github.com/Mcpadrino/bot-apuestas)" "https://en.wikipedia.org/w/api.php?action=query&prop=pageimages|description|categories&piprop=thumbnail&pithumbsize=1600&cllimit=30&redirects=1&format=json&origin=*&titles=Estadio%20Jalisco" | head -c 700; echo
+          curl -s -A "bitacora-apuestas/1.0 (github.com/Mcpadrino/bot-apuestas)" "https://en.wikipedia.org/w/api.php?action=query&prop=pageimages|description&piprop=thumbnail&redirects=1&format=json&titles=Santiago%20Bernab%C3%A9u%20Stadium|Santiago%20Bernab%C3%A9u" | head -c 900; echo
