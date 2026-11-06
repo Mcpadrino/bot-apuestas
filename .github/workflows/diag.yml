@@ -4,16 +4,10 @@ jobs:
   d:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 22 }
-      - name: Probar estadios
+      - name: Ligas ESPN
         run: |
-          cat > /tmp/t.mjs <<'JS'
-          import { wikiEstadio } from "/home/runner/work/bot-apuestas/bot-apuestas/telegram/api/deportes.js";
-          for (const n of ["Santiago Bernabéu", "Alfredo Harp Helú", "Estadio Benito Villamarín", "Giuseppe Meazza", "Diego Armando Maradona", "Ramón Sánchez-Pizjuán", "Nemesio Díez"]) {
-            const r = await wikiEstadio(n); console.log(n.padEnd(30), "=>", r ? r.nombre : null);
-            await new Promise(ok => setTimeout(ok, 1500));
-          }
-          JS
-          node /tmp/t.mjs
+          for l in ned.1 por.1 bel.1 sco.1 tur.1 aut.1 gre.1 sui.1 den.1 cze.1 cro.1 pol.1 nor.1 swe.1 cyp.1 svn.1 srb.1 uefa.europa.conf uefa.europa; do
+            n=$(curl -s "https://site.api.espn.com/apis/site/v2/sports/soccer/$l/scoreboard?dates=20261105" | python3 -c "import json,sys;d=json.load(sys.stdin);print(len(d.get('events',[])), d.get('leagues',[{}])[0].get('name','?'))" 2>/dev/null)
+            m=$(curl -s "https://site.api.espn.com/apis/site/v2/sports/soccer/$l/scoreboard?dates=20261101" | python3 -c "import json,sys;d=json.load(sys.stdin);print(len(d.get('events',[])))" 2>/dev/null)
+            echo "$l | 5nov: $n | 1nov: $m"
+          done
