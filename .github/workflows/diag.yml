@@ -6,11 +6,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 20 }
+        with: { node-version: 22 }
       - name: Probar estadios
         run: |
-          cd telegram && node --input-type=module -e "
-          const m = await import('./api/deportes.js');
-          for (const n of ['Estadio Jalisco','Estadio Victoria','Estadio Corregidora','Signal Iduna Park','Emirates Stadium']) {
-            const r = await m.wikiEstadio(n); console.log(n, '=>', r ? r.nombre + ' | ' + r.foto.slice(-50) : 'NADA');
-          }"
+          cd telegram
+          cat > /tmp/t.mjs <<'JS'
+          import { wikiEstadio } from "/home/runner/work/bot-apuestas/bot-apuestas/telegram/api/deportes.js";
+          for (const n of ["Santiago Bernabéu", "Estadio Santiago Bernabéu", "Estadio Alfredo Harp Helú", "Alfredo Harp Helú", "Estadio Akron", "Estadio Ciudad de los Deportes", "Estadio Olímpico Universitario", "Estadio Nemesio Díez", "Hard Rock Stadium", "Estadio Hidalgo", "Estadio Jalisco", "Estadio Victoria", "Estadio Cuauhtémoc", "Estadio Banorte", "Spotify Camp Nou", "Riyadh Air Metropolitano", "Estadio Benito Villamarín", "Estadio Ramón Sánchez-Pizjuán", "Estadio Mestalla", "Stade Vélodrome", "Giuseppe Meazza", "Diego Armando Maradona", "Stadio Olimpico"]) {
+            const r = await wikiEstadio(n); console.log(n.padEnd(36), "=>", r ? r.nombre : null);
+          }
+          JS
+          node /tmp/t.mjs
