@@ -1833,6 +1833,7 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
     <div class="menu-grupo">En vivo</div>
     <button class="menu-item" data-v="hoy"><span class="mi">📺</span><span class="txt">Hoy<small>Marcadores, noticias y datos</small></span><span class="flecha">›</span></button>
     <button class="menu-item" data-v="guru"><span class="mi">🔮</span><span class="txt">Gurú<small>Pronósticos con modelos matemáticos</small></span><span class="flecha">›</span></button>
+    <button class="menu-item" data-v="guru" data-ancla="ar-sec"><span class="mi">🗄️</span><span class="txt">Partidos pasados<small>Marcadores guardados: qué dijo el Gurú y Pinnacle</small></span><span class="flecha">›</span></button>
     <button class="menu-item" data-v="tablas"><span class="mi">📊</span><span class="txt">Tablas<small>Posiciones y goleadores</small></span><span class="flecha">›</span></button>
     <button class="menu-item" data-v="lol"><span class="mi">🐉</span><span class="txt">LoL Worlds<small>Mundial de League of Legends en vivo</small></span><span class="punto" id="lol-punto" hidden>EN VIVO</span><span class="flecha">›</span></button>
     <button class="menu-item" data-v="lineas"><span class="mi">📈</span><span class="txt">Movimiento de líneas<small>Hacia dónde va Pinnacle</small></span><span class="flecha">›</span></button>
@@ -2018,7 +2019,10 @@ document.addEventListener("pointerdown", e => {
   if (getComputedStyle(b).position === "static") b.style.position = "relative";
   b.style.overflow = "hidden"; b.append(o); setTimeout(() => o.remove(), 600);
 });
-document.querySelectorAll(".menu-item[data-v]").forEach(t => t.addEventListener("click", () => { irA(t.dataset.v); setTimeout(cerrarMenu, 120); }));
+document.querySelectorAll(".menu-item[data-v]").forEach(t => t.addEventListener("click", () => {
+  irA(t.dataset.v); setTimeout(cerrarMenu, 120);
+  if (t.dataset.ancla) setTimeout(() => { const a = $(t.dataset.ancla); if (a) a.scrollIntoView({ behavior: "smooth", block: "start" }); }, 600);
+}));
 document.querySelectorAll("a.menu-item").forEach(t => t.addEventListener("click", () => setTimeout(cerrarMenu, 120)));
 // deslizar a la izquierda para cerrar
 let toqueX = null;
