@@ -627,6 +627,8 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
 #ar-sec { display: grid; gap: 12px; min-width: 0; max-width: 100%; }
 #ar-sec > * { min-width: 0; }
 #ar-filtro { overflow-x: auto; flex-wrap: nowrap; }
+.duelo-mini { display: block; text-decoration: none; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 11px 14px; font-weight: 600; font-size: .9rem; }
+#v-duelo .seg { margin-bottom: 4px; }
 .ar-form { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .ar-form #ar-q { grid-column: 1 / -1; }
 .ar-form button { grid-column: 1 / -1; }
@@ -1437,7 +1439,7 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
           <li>🔧 <b>Aprende:</b> al juntar 200 partidos se recalibra cada semana con sus propios errores.</li>
           <li>🗄️ <b>Todo queda guardado:</b> cada marcador, qué dijo cada quien y a qué momio. Nadie puede borrar los fallos.</li>
           <li>🚫 <b>Lo que nunca hará:</b> decirte "seguro", cobrarte por picks o esconder lo que pierde.</li></ul>
-        <div class="mt-fila"><button type="button" data-ir="guru">🔮 Ver el duelo Gurú vs Pinnacle</button><button type="button" data-ir="archivo">🗄️ Partidos pasados</button></div>
+        <div class="mt-fila"><button type="button" data-ir="duelo">🥊 Ver el duelo Gurú vs Pinnacle</button><button type="button" data-ir="archivo">🗄️ Partidos pasados</button></div>
       </div>
     </section>
   </div>
@@ -1467,7 +1469,11 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
         <button type="button" id="ar-csv" hidden>⬇️ Descargar (Excel/CSV)</button></div>
     </section>
   </div>
-  <div id="v-guru" class="vista section" hidden>
+  <div id="v-duelo" class="vista section" hidden>
+    <div class="seg" role="tablist" aria-label="Modelo del Gurú" id="duelo-modelo">
+      <button type="button" role="tab" data-dm="dc" aria-selected="true">🔮 Gurú (Dixon-Coles)</button>
+      <button type="button" role="tab" data-dm="xg" aria-selected="false">🧪 Gurú xG</button>
+    </div>
     <section class="summary hero guru-hero" aria-label="Gurú contra Pinnacle">
       <div class="hero-saludo">🔮 Gurú vs 📌 Pinnacle · <span id="g-n">últimos 200</span></div>
       <div class="duelo">
@@ -1478,7 +1484,7 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
       <div class="tira" aria-hidden="true"><i id="g-tira-g"></i><i id="g-tira-p"></i></div>
       <div class="bank"><small id="g-cerca">Más cerca del resultado: —</small><small id="g-ll"></small></div>
       <p class="verdict" id="g-veredicto">Cuando terminen los primeros partidos aquí verás quién atina más.</p>
-      <button type="button" id="g-ver-hist" style="justify-self:start;padding:7px 12px;border-radius:999px;font-size:.82rem">📚 Ver cuáles acertó cada uno ↓</button>
+      <button type="button" id="g-ver-hist" style="justify-self:start;padding:7px 12px;border-radius:999px;font-size:.82rem">📚 Ver partido por partido ↓</button>
     </section>
     <section class="section" id="g-hist-sec">
       <div class="head"><h2>📚 Partidos ya jugados</h2><span class="label" id="g-hist-n"></span></div>
@@ -1492,6 +1498,10 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
       <div class="list" id="g-hist"></div>
       <button type="button" class="sen-mas" id="g-hist-mas" hidden></button>
     </section>
+    <p class="hint">¿Quieres ver los pronósticos de los próximos partidos? <a href="#guru" data-ir2="guru">🔮 Ir a Pronósticos</a></p>
+  </div>
+  <div id="v-guru" class="vista section" hidden>
+    <a class="duelo-mini" href="#duelo" data-ir2="duelo" id="duelo-mini">🔮 vs 📌 ¿Quién atina más? Ver el duelo ›</a>
     <h2 style="margin-top:6px">🔮 Próximos partidos</h2>
     <div class="filters" role="group" aria-label="Deporte">
       <button type="button" data-g="todos" aria-pressed="true">Todos</button>
@@ -1837,7 +1847,8 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
     <button class="menu-item" data-v="resultados"><span class="mi">📜</span><span class="txt">Historial<small>Resultados, estadísticas y Excel</small></span><span class="flecha">›</span></button>
     <div class="menu-grupo">En vivo</div>
     <button class="menu-item" data-v="hoy"><span class="mi">📺</span><span class="txt">Hoy<small>Marcadores, noticias y datos</small></span><span class="flecha">›</span></button>
-    <button class="menu-item" data-v="guru"><span class="mi">🔮</span><span class="txt">Gurú<small>Pronósticos con modelos matemáticos</small></span><span class="flecha">›</span></button>
+    <button class="menu-item" data-v="guru"><span class="mi">🔮</span><span class="txt">Gurú · Pronósticos<small>Los próximos partidos según los modelos</small></span><span class="flecha">›</span></button>
+    <button class="menu-item" data-v="duelo"><span class="mi">🥊</span><span class="txt">Gurú vs Pinnacle<small>Quién atina más, partido por partido</small></span><span class="flecha">›</span></button>
     <button class="menu-item" data-v="archivo"><span class="mi">🗄️</span><span class="txt">Partidos pasados<small>Marcadores guardados: qué dijo el Gurú y Pinnacle</small></span><span class="flecha">›</span></button>
     <button class="menu-item" data-v="tablas"><span class="mi">📊</span><span class="txt">Tablas<small>Posiciones y goleadores</small></span><span class="flecha">›</span></button>
     <button class="menu-item" data-v="lol"><span class="mi">🐉</span><span class="txt">LoL Worlds<small>Mundial de League of Legends en vivo</small></span><span class="punto" id="lol-punto" hidden>EN VIVO</span><span class="flecha">›</span></button>
@@ -1912,7 +1923,7 @@ async function api(op, datos) {
 }
 function estado(msg) { const s = $("status"); s.textContent = msg || ""; s.hidden = !msg; }
 function mostrarLogin(msg) {
-  [...["v-bot", "v-normal", "v-reg", "v-resultados", "v-comunidad", "v-hoy", "v-lineas", "v-quiniela", "v-retos", "v-practica", "v-equipo", "v-opiniones", "v-avisos", "v-admin", "v-mate", "v-archivo"], "quien", "abrir-menu", "sec-actual"].forEach(id => $(id).hidden = true);
+  [...["v-bot", "v-normal", "v-reg", "v-resultados", "v-comunidad", "v-hoy", "v-lineas", "v-quiniela", "v-retos", "v-practica", "v-equipo", "v-opiniones", "v-avisos", "v-admin", "v-mate", "v-archivo", "v-duelo"], "quien", "abrir-menu", "sec-actual"].forEach(id => $(id).hidden = true);
   $("marca").hidden = false; cerrarMenu();
   $("v-login").hidden = false; estado(msg || "");
 }
@@ -1955,7 +1966,7 @@ async function hacer(op, datos, errorTxt) {
 
 // ---------------------------------------------------------------- vistas
 const SECCIONES = {
-  inicio: ["🏠", "Inicio"], tablas: ["📊", "Tablas"], diseno: ["🎨", "Mi diseño"], bot: ["🤖", "Banca del bot"], conviene: ["✅", "¿Conviene?"], mate: ["🧮", "La matemática"], archivo: ["🗄️", "Partidos pasados"], normal: ["🎲", "Normales"], resultados: ["📜", "Historial"], hoy: ["📺", "Hoy"],
+  inicio: ["🏠", "Inicio"], tablas: ["📊", "Tablas"], diseno: ["🎨", "Mi diseño"], bot: ["🤖", "Banca del bot"], conviene: ["✅", "¿Conviene?"], mate: ["🧮", "La matemática"], duelo: ["🥊", "Gurú vs Pinnacle"], archivo: ["🗄️", "Partidos pasados"], normal: ["🎲", "Normales"], resultados: ["📜", "Historial"], hoy: ["📺", "Hoy"],
   lineas: ["📈", "Líneas"], guru: ["🔮", "Gurú"], lol: ["🐉", "LoL Worlds"], comunidad: ["💬", "Comunidad"], quiniela: ["🏆", "Quiniela"], retos: ["⚔️", "Retos"],
   practica: ["🎮", "Práctica"], juegos: ["🕹️", "Minijuegos"], equipo: ["⭐", "Mi equipo"], opiniones: ["📝", "Opiniones"], avisos: ["🔔", "Mis avisos"], admin: ["🛠️", "Administrador"] };
 function irA(v) {
@@ -1975,7 +1986,7 @@ function irA(v) {
   if (vista === "comunidad") cargarFeed();
   if (vista === "lineas") cargarLineas();
   if (vista === "conviene") cargarConviene();
-  if (vista === "guru") cargarGuru();
+  if (vista === "guru" || vista === "duelo") cargarGuru();
   if (vista === "archivo" && !arTotal && !arBusy) arBuscar(false);
   if (vista === "mate") { pintarMate(); if (mtTab === "parlay") mtParlay(); }
   if (vista === "juegos") cargarMascota();
@@ -3429,7 +3440,7 @@ async function checar(texto) {
 $("ck-form").addEventListener("submit", e => { e.preventDefault(); checar($("ck-texto").value); });
 
 // ---------------------------------------------------------------- 🔮 Gurú
-let guruDatos = null, guruFiltro = "todos";
+let guruDatos = null, guruFiltro = "todos", dueloModelo = "dc";
 const DEP_G = { futbol: "⚽", nfl: "🏈", nba: "🏀", mlb: "⚾" };
 async function cargarGuru() {
   try { guruDatos = await api("guru"); pintarGuru(); }
@@ -3446,8 +3457,14 @@ function barra(pl, pe, pv, chica) {
   return b;
 }
 function pintarGuru() {
-  const esXg = guruFiltro === "xg";
+  pintarDuelo();
+  pintarProximos();
+}
+function pintarDuelo() {
+  const esXg = dueloModelo === "xg";
   const d = (esXg ? guruDatos.duelo_xg : guruDatos.duelo) || {}, n = Number(d.n || 0);
+  const mini = $("duelo-mini");
+  if (mini) { const dd = guruDatos.duelo || {}; mini.textContent = dd.n ? `🔮 ${dd.aciertos_guru || 0} vs 📌 ${dd.aciertos_pinnacle || 0} en ${dd.n} partidos · Ver el duelo ›` : "🔮 vs 📌 ¿Quién atina más? Ver el duelo ›"; }
   $("g-n").textContent = (esXg ? "🧪 xG · " : "") + (n === 1 ? "último partido" : n ? `últimos ${n} partidos` : "aún sin partidos calificados");
   $("g-ag").textContent = d.aciertos_guru || 0; $("g-ap").textContent = d.aciertos_pinnacle || 0;
   const tot = (d.guru_mas_cerca || 0) + (d.pinnacle_mas_cerca || 0);
@@ -3458,6 +3475,10 @@ function pintarGuru() {
   $("g-veredicto").textContent = n < 30 ? `${n === 1 ? "Va 1 partido comparado" : `Van ${n} partidos comparados`}. Con menos de 30 todavía es suerte; a los 200 ya dice algo.`
     : Number(d.logloss_guru) < Number(d.logloss_pinnacle) ? "🔮 El gurú va ganando: sus probabilidades se acercan más a lo que pasa. Vale la pena tomarlo en cuenta."
     : "📌 Pinnacle va ganando (lo normal). Usa al gurú solo como segunda opinión.";
+  pintarHistGuru();
+}
+function pintarProximos() {
+  const esXg = guruFiltro === "xg";
   const cont = $("g-lista"); cont.innerHTML = "";
   const ahora = Date.now();
   const dif = p => {
@@ -3502,7 +3523,6 @@ function pintarGuru() {
     c.append(bt);
     cont.append(c);
   });
-  pintarHistGuru();
 }
 let gHistFiltro = "todos", gHistTodos = false;
 // "Visita X – Y Local" → [goles local, goles visita]
@@ -3514,7 +3534,7 @@ function golesLV(p) {
   return primeroEsLocal ? [Number(mm[2]), Number(mm[3])] : [Number(mm[3]), Number(mm[2])];
 }
 function pintarHistGuru() {
-  const esXg = guruFiltro === "xg";
+  const esXg = dueloModelo === "xg";
   const h = $("g-hist"); h.innerHTML = "";
   const hist = (esXg ? guruDatos.historial_xg : guruDatos.historial) || [];
   const NOM = (p, k) => ({ L: p.local, E: "Empate", V: p.visita })[k];
@@ -4009,6 +4029,12 @@ $("ar-csv").onclick = async () => {
   finally { b.disabled = false; b.textContent = "⬇️ Descargar (Excel/CSV)"; }
 };
 
+document.querySelectorAll("#duelo-modelo [data-dm]").forEach(b => b.addEventListener("click", () => {
+  dueloModelo = b.dataset.dm;
+  document.querySelectorAll("#duelo-modelo [data-dm]").forEach(x => x.setAttribute("aria-selected", String(x === b)));
+  if (guruDatos) pintarDuelo();
+}));
+document.querySelectorAll("[data-ir2]").forEach(a => a.addEventListener("click", (e) => { e.preventDefault(); irA(a.dataset.ir2); }));
 document.querySelectorAll("[data-g]").forEach(b => b.addEventListener("click", () => {
   guruFiltro = b.dataset.g;
   document.querySelectorAll("[data-g]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
