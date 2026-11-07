@@ -537,22 +537,35 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
 .doku-escudo-grande { position: absolute; inset: 0; display: grid; place-items: center; }
 .doku-escudo-grande img { width: 46%; filter: drop-shadow(0 6px 10px rgba(0,0,0,.45)); animation: rebote 2s ease-in-out infinite; }
 .doku-escudo-grande .doku-emoji { font-size: 4rem; }
-.doku-cancha { position: relative; width: 100%; max-width: 460px; margin: 0 auto; aspect-ratio: 1; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 28px rgba(0,0,0,.35); }
-.doku-cancha.mini { width: 62%; max-width: 240px; }
+.jm-area:has(.doku-cancha) { max-width: 760px; }
+.doku-cancha { position: relative; width: min(100%, calc(100dvh - 260px)); min-width: min(100%, 300px); margin: 0 auto; aspect-ratio: 1; border-radius: 18px; overflow: hidden;
+  box-shadow: 0 0 0 3px #111, 0 14px 34px rgba(0,0,0,.45); }
+.doku-cancha.mini { width: 58%; min-width: 0; max-width: 230px; }
 .doku-cancha > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
 .doku-grid { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(var(--n), 1fr); grid-template-rows: repeat(var(--n), 1fr); }
-.doku-c { position: relative; padding: 0; margin: 0; border-radius: 0; border-style: solid; border-color: rgba(10,20,15,.85); min-height: 0; min-width: 0;
-  background: color-mix(in srgb, var(--zc) 46%, transparent); display: grid; place-items: center; transition: background .15s, transform .12s; color: #fff; }
-.doku-c:active { transform: scale(.94); }
-.doku-c img { width: 74%; height: 74%; object-fit: contain; filter: drop-shadow(0 2px 3px rgba(0,0,0,.5)); pointer-events: none; animation: doku-pon .25s cubic-bezier(.3,1.6,.5,1); }
-.doku-c .doku-emoji { font-size: calc(9rem / var(--n)); animation: doku-pon .25s cubic-bezier(.3,1.6,.5,1); }
-.doku-c i { font-style: normal; font-weight: 900; font-size: calc(7rem / var(--n)); color: rgba(255,255,255,.75); text-shadow: 0 1px 2px rgba(0,0,0,.6); }
-.doku-c.mal { background: color-mix(in srgb, #ff1744 70%, transparent); animation: tiembla .25s linear 2; }
+.doku-c { position: relative; padding: 0; margin: 0; border-radius: 0; border-style: solid; border-color: rgba(0,0,0,.18); min-height: 0; min-width: 0;
+  background: color-mix(in srgb, var(--zc) 84%, transparent); display: grid; place-items: center; transition: background .15s, transform .12s, filter .15s; color: #1b1b1b; }
+.doku-c.zb-t { border-top-color: #111; } .doku-c.zb-r { border-right-color: #111; } .doku-c.zb-b { border-bottom-color: #111; } .doku-c.zb-l { border-left-color: #111; }
+.doku-c.lista { filter: saturate(1.25) brightness(1.06); }
+.doku-c:active { transform: scale(.92); }
+.doku-c img { width: 76%; height: 76%; object-fit: contain; filter: drop-shadow(0 2px 3px rgba(0,0,0,.45)); pointer-events: none; animation: doku-pon .25s cubic-bezier(.3,1.6,.5,1); }
+.doku-c .doku-emoji { font-size: calc(min(100vw, 100dvh - 260px) / var(--n) * .55); animation: doku-pon .25s cubic-bezier(.3,1.6,.5,1); }
+.doku-c i { font-style: normal; font-weight: 900; font-size: calc(min(100vw, 100dvh - 260px) / var(--n) * .42); color: rgba(20,20,20,.62); }
+.doku-c .punto { width: 18%; aspect-ratio: 1; border-radius: 50%; background: rgba(20,20,20,.28); }
+.doku-c.mal { background: repeating-linear-gradient(45deg, #ff5252 0 6px, #ff8a80 6px 12px); animation: tiembla .25s linear 2; }
 .doku-c.salta img, .doku-c.salta .doku-emoji { animation: p-salta .6s cubic-bezier(.3,1.6,.5,1) both; animation-delay: inherit; }
-@keyframes doku-pon { from { transform: scale(.2) rotate(-25deg); opacity: 0; } to { transform: none; opacity: 1; } }
 .doku-cancha.ganaste { box-shadow: 0 0 0 4px #f1c40f, 0 0 36px rgba(241,196,15,.6); }
 .doku-top { display: flex; justify-content: space-between; align-items: center; font-size: .85rem; color: var(--muted); }
 .doku-top b { font: 700 1.3rem var(--font-mono, monospace); color: var(--fg); }
+.doku-modo { display: grid; grid-template-columns: 1fr 1fr auto; gap: 6px; align-items: stretch; }
+.doku-modo button { border-radius: 14px; padding: 10px 8px; font-weight: 700; font-size: .95rem; display: flex; gap: 6px; align-items: center; justify-content: center; }
+.doku-modo button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink, #fff); border-color: var(--accent); box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 40%, transparent); }
+.doku-modo img { width: 22px; height: 22px; object-fit: contain; }
+.doku-modo .ayuda { font-size: .78rem; font-weight: 600; padding: 6px 10px; }
+.doku-reglas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 100%; }
+.doku-reglas div { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 6px; font-size: .74rem; line-height: 1.3; display: grid; gap: 4px; justify-items: center; text-align: center; }
+.doku-reglas b { font-size: 1.4rem; }
+.doku-tip { text-align: center; font-size: .82rem; color: var(--muted); margin: 0; min-height: 1.2em; }
 .doku-acc { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 .doku-acc button { padding: 9px 4px; border-radius: 12px; font-size: .8rem; }
 /* ---------- 🧮 La matemática */
@@ -5065,7 +5078,7 @@ function dokuGenerar(N, azar) {
   }
   return null;
 }
-const DOKU_COLORES = ["#e74c3c", "#3498db", "#f1c40f", "#9b59b6", "#1abc9c", "#e67e22", "#ecf0f1", "#ff6fae", "#2ecc71", "#34495e", "#8d6e63", "#00e5ff"];
+const DOKU_COLORES = ["#ff8a80", "#82b1ff", "#ffe066", "#c3a6ff", "#7ff0d4", "#ffb366", "#f2f2f2", "#ff9ccf", "#a8f0b8", "#9fb3c8", "#d7b9a8", "#8be9ff"];
 function dokuCancha(tipo) {
   // dibujo de fondo según el deporte de tu equipo (líneas sobre el pasto / duela)
   if (tipo === "nfl") return `<svg viewBox="0 0 100 100" preserveAspectRatio="none"><rect width="100" height="100" fill="#2e7d32"/>
@@ -5099,12 +5112,14 @@ function juegoEquipodoku() {
   const NIVELES = [["Fácil", 6], ["Normal", 8], ["Difícil", 10], ["Experto", 11], ["Leyenda", 12]];
   const hoy = new Date().toLocaleDateString("en-CA", { timeZone: "America/Mexico_City" });
   let N = 6, juego = null, marcas = null, t0 = 0, timer = null, deshacer = [], diario = false, terminado = false;
+  let modo = "esc", ayuda = (() => { try { return localStorage.getItem("doku-ayuda") !== "0"; } catch (e) { return true; } })();
   const menu = () => {
     clearInterval(timer);
     a.innerHTML = `<div class="doku-intro">
       <div class="doku-cancha mini">${dokuCancha(tipo)}<div class="doku-escudo-grande">${escudo}</div></div>
-      <p><b>Coloca un ${fav ? "escudo de " + admEsc(fav.nombre) : "escudo"} en cada fila, en cada columna y en cada zona de color.</b> Dos escudos nunca pueden tocarse, ni en diagonal.</p>
-      <p class="hint" style="margin:0">Toca una casilla: 1 vez = ✕ (descartar) · 2 veces = escudo · 3 veces = vaciar. Mantén presionado para poner el escudo directo.</p>
+      <p><b>Pon ${fav ? "el escudo de " + admEsc(fav.nombre) : "un escudo"} en el tablero cumpliendo 4 reglas:</b></p>
+      <div class="doku-reglas"><div><b>↔️</b>1 por fila</div><div><b>↕️</b>1 por columna</div><div><b>🎨</b>1 por color</div><div><b>🚫</b>No se tocan, ni en diagonal</div></div>
+      <p class="hint" style="margin:0">Elige abajo del tablero si tocas para poner <b>escudo</b> o <b>✕</b> (para descartar casillas). Te marco con puntito las casillas que ya no pueden llevar escudo. Empieza por <b>Fácil</b>.</p>
       <button type="button" class="primary btn-grande" data-dia="1">📅 Reto del día · 10×10</button>
       <div class="doku-niveles">${NIVELES.map(([n, t]) => `<button type="button" data-n="${t}">${n}<small>${t}×${t}</small></button>`).join("")}</div>
     </div>`;
@@ -5138,24 +5153,42 @@ function juegoEquipodoku() {
     const z = juego.zonas;
     let h = `<div class="doku-top"><span>${diario ? "📅 Reto del día" : NIVELES.find(x => x[1] === N)[0]} · ${N}×${N}</span><b id="doku-reloj">${reloj()}</b><span>${n}/${N} ${fav && fav.logo ? "escudos" : "colocados"}</span></div>
       <div class="doku-cancha" style="--n:${N}">${dokuCancha(tipo)}<div class="doku-grid" role="grid" aria-label="Tablero">`;
+    // casillas bloqueadas por los escudos puestos (ayuda) y zonas ya completas
+    const bloq = new Set(), zonaOk = new Set();
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (marcas[r][c] === 2) {
+      zonaOk.add(z[r][c]);
+      for (let rr = 0; rr < N; rr++) for (let cc = 0; cc < N; cc++)
+        if ((rr === r || cc === c || z[rr][cc] === z[r][c] || (Math.abs(rr - r) <= 1 && Math.abs(cc - c) <= 1)) && !(rr === r && cc === c)) bloq.add(rr + "," + cc);
+    }
     for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
       const zz = z[r][c], col = DOKU_COLORES[zz % DOKU_COLORES.length];
-      const b = [r > 0 && z[r - 1][c] !== zz, c < N - 1 && z[r][c + 1] !== zz, r < N - 1 && z[r + 1][c] !== zz, c > 0 && z[r][c - 1] !== zz];
-      const m = marcas[r][c];
-      h += `<button type="button" class="doku-c${mal.has(r + "," + c) ? " mal" : ""}${m === 2 ? " esc" : ""}" data-r="${r}" data-c="${c}" role="gridcell"
-        style="--zc:${col};border-width:${b.map(x => x ? "3px" : "1px").join(" ")}" aria-label="Fila ${r + 1}, columna ${c + 1}${m === 2 ? ", escudo" : m === 1 ? ", descartada" : ""}">${m === 2 ? escudo : m === 1 ? "<i>✕</i>" : ""}</button>`;
+      const b = [r > 0 && z[r - 1][c] !== zz || r === 0, c < N - 1 && z[r][c + 1] !== zz, r < N - 1 && z[r + 1][c] !== zz, c > 0 && z[r][c - 1] !== zz];
+      const m = marcas[r][c], cls = ["zb-t", "zb-r", "zb-b", "zb-l"].filter((_, i) => b[i]).join(" ");
+      const dentro = m === 2 ? escudo : m === 1 ? "<i>✕</i>" : ayuda && bloq.has(r + "," + c) ? '<span class="punto"></span>' : "";
+      h += `<button type="button" class="doku-c ${cls}${mal.has(r + "," + c) ? " mal" : ""}${m === 2 ? " esc" : ""}${zonaOk.has(zz) ? " lista" : ""}" data-r="${r}" data-c="${c}" role="gridcell"
+        style="--zc:${col};border-width:${b.map(x => x ? "3px" : "1px").join(" ")}" aria-label="Fila ${r + 1}, columna ${c + 1}${m === 2 ? ", escudo" : m === 1 ? ", descartada" : ""}">${dentro}</button>`;
     }
-    h += `</div></div><div class="doku-acc"><button type="button" data-a="deshacer">↩️ Deshacer</button><button type="button" data-a="limpiar">🧹 Limpiar</button><button type="button" data-a="pista">💡 Pista</button><button type="button" data-a="menu">☰ Niveles</button></div>`;
+    const icoEsc = fav && /^https:\/\//.test(fav.logo || "") ? `<img src="${fav.logo}" alt="">` : ({ nfl: "🏈", nba: "🏀", mlb: "⚾" }[tipo] || "⚽");
+    h += `</div></div>
+      <p class="doku-tip" id="doku-tip">${mal.size ? "🔴 Hay escudos que rompen una regla (están en rojo)." : n === 0 ? "Toca una casilla para poner tu primer escudo." : n === N - 1 ? "¡Te falta uno!" : `Llevas ${n} de ${N}. ${ayuda ? "Los puntitos son casillas donde ya no cabe escudo." : ""}`}</p>
+      <div class="doku-modo" role="group" aria-label="Qué pone tu toque">
+        <button type="button" data-modo="esc" aria-pressed="${modo === "esc"}">${icoEsc} Escudo</button>
+        <button type="button" data-modo="x" aria-pressed="${modo === "x"}">✕ Descartar</button>
+        <button type="button" class="ayuda" data-a="ayuda" aria-pressed="${ayuda}">${ayuda ? "• Ayuda sí" : "• Ayuda no"}</button>
+      </div>
+      <div class="doku-acc"><button type="button" data-a="deshacer">↩️ Deshacer</button><button type="button" data-a="limpiar">🧹 Limpiar</button><button type="button" data-a="pista">💡 Pista</button><button type="button" data-a="menu">☰ Niveles</button></div>`;
     a.innerHTML = h;
     a.querySelectorAll(".doku-c").forEach(btn => {
       let largo = null;
-      btn.addEventListener("pointerdown", () => { largo = setTimeout(() => { largo = "ya"; poner(+btn.dataset.r, +btn.dataset.c, 2); }, 420); });
-      btn.addEventListener("pointerup", () => { if (largo === "ya") { largo = null; return; } clearTimeout(largo); largo = null; poner(+btn.dataset.r, +btn.dataset.c); });
+      btn.addEventListener("pointerdown", () => { largo = setTimeout(() => { largo = "ya"; tocar(+btn.dataset.r, +btn.dataset.c, true); }, 420); });
+      btn.addEventListener("pointerup", () => { if (largo === "ya") { largo = null; return; } clearTimeout(largo); largo = null; tocar(+btn.dataset.r, +btn.dataset.c); });
       btn.addEventListener("pointerleave", () => { if (largo && largo !== "ya") clearTimeout(largo); });
-      btn.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); poner(+btn.dataset.r, +btn.dataset.c); } });
+      btn.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); tocar(+btn.dataset.r, +btn.dataset.c); } });
     });
+    a.querySelectorAll("[data-modo]").forEach(b => b.onclick = () => { modo = b.dataset.modo; pintar(); });
     a.querySelectorAll("[data-a]").forEach(b => b.onclick = () => {
       if (b.dataset.a === "menu") return menu();
+      if (b.dataset.a === "ayuda") { ayuda = !ayuda; try { localStorage.setItem("doku-ayuda", ayuda ? "1" : "0"); } catch (e) {} pintar(); return; }
       if (b.dataset.a === "deshacer") { const u = deshacer.pop(); if (u) { marcas[u[0]][u[1]] = u[2]; pintar(); } return; }
       if (b.dataset.a === "limpiar") { deshacer = []; marcas = marcas.map(f => f.map(() => 0)); pintar(); return; }
       if (b.dataset.a === "pista") {
@@ -5166,6 +5199,12 @@ function juegoEquipodoku() {
         marcas[r][juego.sol[r]] = 2; juego.pistas = (juego.pistas || 0) + 1; pintar(); revisar();
       }
     });
+  };
+  // toque según el modo elegido (mantener presionado hace lo contrario)
+  const tocar = (r, c, contrario) => {
+    const m = (contrario ? (modo === "esc" ? "x" : "esc") : modo), act = marcas[r][c];
+    if (m === "esc") poner(r, c, act === 2 ? 0 : 2);
+    else poner(r, c, act === 1 ? 0 : 1);
   };
   const poner = (r, c, forzar) => {
     if (terminado) return;
