@@ -237,7 +237,7 @@ async function atenderTexto(chat, texto, esDueno, msgId) {
   }
   if (cmd === "partidos" || cmd === "pasados" || cmd === "archivo") {
     const q = args.join(" ").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9 .&'-]/g, " ").replace(/\s+/g, " ").trim().slice(0, 40);
-    if (!q) return enviar("Escribe el equipo, por ejemplo `partidos chivas` o `partidos real madrid`. Te muestro sus últimos partidos con lo que dijo el Gurú y Pinnacle.\n\nEn la página (menú > 🔮 Gurú > 🔎 Buscar partidos pasados) puedes filtrar y descargarlos en Excel.");
+    if (!q) return enviar("Escribe el equipo, por ejemplo `partidos chivas` o `partidos real madrid`. Te muestro sus últimos partidos con lo que dijo el Gurú y Pinnacle.\n\nEn la página (menú > 🗄️ Partidos pasados) puedes filtrar y descargarlos en Excel.");
     const r = await guru("buscar", { q, n: 8 });
     if (!r.total) return enviar(`No encontré partidos de *${q}*. Prueba con otro nombre (como sale en ESPN).`);
     const NOM = (x, k) => ({ L: x.local, E: "Empate", V: x.visita })[k];
