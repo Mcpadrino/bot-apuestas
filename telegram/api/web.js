@@ -114,6 +114,12 @@ export default async function handler(req, res) {
         if (!["gana", "pierde", "nula", "pendiente"].includes(d.resultado)) return res.status(400).json({ error: "Resultado inválido" });
         return res.status(200).json(await rpc("bot", "cerrar", { usuario, id: num(d.id), resultado: d.resultado }));
       }
+      case "cashout": {
+        // apuesta cerrada antes de que termine el partido: se guarda lo que te pagaron
+        const d = b.datos || {}, cobro = Number(d.cobro);
+        if (!(cobro >= 0 && cobro < 1e7)) return res.status(400).json({ error: "Escribe cuánto te pagaron al cerrarla." });
+        return res.status(200).json(await rpc("bot", "cashout", { usuario, id: num(d.id), cobro }));
+      }
       case "borrar":
         return res.status(200).json(await rpc("bot", "borrar", { usuario, id: num((b.datos || {}).id) }));
       case "sugerir":

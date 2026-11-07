@@ -630,6 +630,9 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
 /* ficha matemática en cada señal */
 .sen-pa { display: block; color: var(--muted); font-size: .76rem; }
 .sen-pa b { color: var(--fg); }
+.co-caja { display: grid; gap: 6px; flex: 1 1 100%; }
+.co-caja .co-inp { font: inherit; padding: 10px 12px; border-radius: 10px; }
+.co-prev { font-size: .8rem; }
 .chk-pa { display: flex; gap: 8px; align-items: flex-start; font-size: .88rem; }
 .chk-pa input { width: 20px; height: 20px; margin-top: 2px; flex: 0 0 auto; }
 .chk-pa small { display: block; color: var(--muted); font-size: .76rem; }
@@ -1926,7 +1929,7 @@ function ganancia(b) { return b.resultado === "gana" ? b.monto * (b.cuota - 1) :
 function esperada(b) { return b.prob ? b.monto * (b.prob * b.cuota - 1) : 0; }
 
 let limiteSemanal = 0;
-let apuestas = [], bancaInicial = 200, listo = false, confirmando = null;
+let apuestas = [], bancaInicial = 200, listo = false, confirmando = null, cobrando = null;
 let vista = "bot", filtro = "todas";
 const LLAVE = "bitacora-token";
 let token = null;
@@ -1967,7 +1970,9 @@ async function cargar() {
       liga: x.liga ? String(x.liga) : "", ligaLogo: /^https:\/\//.test(x.liga_logo || "") ? x.liga_logo : "",
       resultado: String(x.resultado || "pendiente"), creada: Date.parse(x.creada) || 0,
       cerrada: x.cerrada ? Date.parse(x.cerrada) : null,
-      clv: x.clv != null ? Number(x.clv) : null, probCierre: x.prob_cierre != null ? Number(x.prob_cierre) : null }));
+      clv: x.clv != null ? Number(x.clv) : null, probCierre: x.prob_cierre != null ? Number(x.prob_cierre) : null,
+      cobro: x.cobro != null ? Number(x.cobro) : null, montoOrig: x.monto_original != null ? Number(x.monto_original) : null,
+      cuotaOrig: x.cuota_original != null ? Number(x.cuota_original) : null }));
     listo = true; estado("");
     $("v-login").hidden = true; $("quien").hidden = false; $("abrir-menu").hidden = false;
     $("marca").hidden = true; $("sec-actual").hidden = false;
@@ -2162,7 +2167,8 @@ function dibujarBanca(cerradas) {
 }
 
 function meta(b) {
-  return [b.partido, b.casa, momioDoble(b.cuota), b.prob ? (b.prob * 100).toFixed(1) + "%" : ""]
+  return [b.partido, b.casa, momioDoble(b.cuotaOrig || b.cuota), b.prob ? (b.prob * 100).toFixed(1) + "%" : "",
+    b.cobro != null ? `💵 la cerraste: cobraste ${fmt(b.cobro)} de ${fmt(b.montoOrig || b.monto)} apostados` : ""]
     .filter(Boolean).join(" · ");
 }
 
@@ -2236,7 +2242,18 @@ function pintarPendientes(lista) {
     der.append(el("div", "num", fmt(b.monto)), el("div", "meta", "cobra " + fmt(b.monto * b.cuota)));
     top.append(izq, der); card.append(top);
     const act = el("div", "actions");
-    if (confirmando === b.id) {
+    if (cobrando === b.id) {
+      const inp = el("input"); inp.inputMode = "decimal"; inp.placeholder = "¿Cuánto te pagaron? $"; inp.className = "co-inp";
+      const ok = el("button", "primary", "Guardar"); ok.type = "button";
+      const no = el("button", "", "Cancelar"); no.type = "button"; no.onclick = () => { cobrando = null; render(); };
+      const prev = el("span", "meta co-prev", `Si pegaba cobrabas ${fmt(b.monto * b.cuota)}`);
+      inp.oninput = () => { const v = parseFloat(inp.value); prev.textContent = v >= 0 ? `Resultado: ${sign(v - b.monto)} (${v >= b.monto ? "ganancia" : "pérdida"} contra ${fmt(b.monto)} apostados)` : `Si pegaba cobrabas ${fmt(b.monto * b.cuota)}`; };
+      ok.onclick = async () => { const v = parseFloat(inp.value); if (!(v >= 0)) { inp.focus(); return; } ok.disabled = true;
+        cobrando = null; const r = await hacer("cashout", { id: b.id, cobro: v }, "No se pudo guardar el cierre.");
+        if (!r) { cobrando = b.id; render(); } };
+      const caja = el("div", "co-caja"); caja.append(el("b", "", "💵 Cerraste antes de que terminara"), inp, prev); act.append(caja, ok, no);
+      setTimeout(() => inp.focus(), 50);
+    } else if (confirmando === b.id) {
       const si = el("button", "btn-loss", "Sí, borrar"); si.type = "button"; si.onclick = () => borrar(b.id);
       const no = el("button", "", "Cancelar"); no.type = "button"; no.onclick = () => { confirmando = null; render(); };
       act.append(el("span", "meta", "¿Borrar esta apuesta?"), si, no);
@@ -2244,6 +2261,8 @@ function pintarPendientes(lista) {
       [["gana", "✓ Ganó", "btn-win"], ["pierde", "✗ Perdió", "btn-loss"], ["nula", "Nula", ""]].forEach(([r, t, c]) => {
         const bt = el("button", c, t); bt.type = "button"; bt.onclick = () => cerrar(b.id, r); act.append(bt);
       });
+      const co = el("button", "", "💵 La cerré"); co.type = "button"; co.title = "La cerraste (cash out) antes de que terminara el partido";
+      co.onclick = () => { cobrando = b.id; confirmando = null; render(); }; act.append(co);
       const del = el("button", "", "Borrar"); del.type = "button"; del.onclick = () => { confirmando = b.id; render(); };
       act.append(del);
     }
@@ -2297,7 +2316,9 @@ function pintarResultados(lista) {
     mid.append(escudo(b, b.resultado), txt);
     if (b.marcador) txt.append(el("div", "marcador", "🏁 " + b.marcador));
     const g = ganancia(b), der = el("div", "amt");
-    der.append(el("div", clase(g), b.resultado === "nula" ? "Nula" : sign(g)), el("div", "meta", "apostó " + fmt(b.monto)));
+    if (b.cobro != null) {
+      der.append(el("div", clase(g), g === 0 ? "±$0" : sign(g)), el("div", "meta", "💵 cerrada"));
+    } else der.append(el("div", clase(g), b.resultado === "nula" ? "Nula" : sign(g)), el("div", "meta", "apostó " + fmt(b.monto)));
     const re = el("button", "", "Reabrir"); re.type = "button"; re.style.cssText = "padding:4px 8px;font-size:.75rem;margin-top:4px";
     re.onclick = () => cerrar(b.id, "pendiente");
     der.append(re);
