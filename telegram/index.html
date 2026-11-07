@@ -555,6 +555,70 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
 .doku-top b { font: 700 1.3rem var(--font-mono, monospace); color: var(--fg); }
 .doku-acc { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 .doku-acc button { padding: 9px 4px; border-radius: 12px; font-size: .8rem; }
+/* ---------- 🧮 La matemática */
+.mt-hero { position: relative; overflow: hidden; border-radius: 22px; padding: 18px 18px 16px; color: #fff;
+  background: radial-gradient(120% 140% at 100% 0%, #2f6bff 0%, transparent 55%), linear-gradient(140deg, #0f1c3d, #13284f 55%, #0b1530); box-shadow: 0 14px 34px rgba(10,20,50,.35); }
+.mt-hero::after { content: "∑ % ÷ ×"; position: absolute; right: -6px; bottom: -14px; font: 800 4.4rem var(--font-mono, monospace); opacity: .07; letter-spacing: -.04em; }
+.mt-hero small { font: 700 .7rem var(--font-mono, monospace); letter-spacing: .18em; opacity: .75; }
+.mt-hero h2 { margin: 4px 0 6px; font-size: 1.45rem; color: #fff; }
+.mt-hero p { margin: 0; font-size: .9rem; opacity: .88; line-height: 1.45; }
+.mt-tabs { display: flex; gap: 6px; overflow-x: auto; padding: 4px 2px 6px; scrollbar-width: none; margin: 4px -2px 0; }
+.mt-tabs::-webkit-scrollbar { display: none; }
+.mt-tabs button { flex: 0 0 auto; border-radius: 999px; padding: 8px 13px; font-size: .84rem; white-space: nowrap; background: var(--surface); border: 1px solid var(--line); color: var(--fg); }
+.mt-tabs button[aria-selected="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); font-weight: 700; }
+.mt-panel { display: grid; gap: 12px; animation: mtIn .25s ease; }
+@keyframes mtIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.mt-card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 14px; display: grid; gap: 10px; }
+.mt-card h3 { margin: 0; font-size: 1rem; }
+.mt-card .hint { margin: 0; }
+.mt-big { border-radius: 18px; padding: 16px; display: grid; gap: 4px; background: var(--surface); border: 1px solid var(--line); }
+.mt-big small { color: var(--muted); font-size: .8rem; }
+.mt-big > b { font: 800 2.3rem var(--font-mono, monospace); letter-spacing: -.02em; }
+.mt-big .pos, .mt-res .pos, .mt-kpis .pos { color: var(--win, #2ecc71); } .mt-big .neg, .mt-res .neg, .mt-kpis .neg { color: var(--loss, #e74c3c); }
+.mt-big p { margin: 2px 0 0; font-size: .88rem; color: var(--muted); line-height: 1.4; }
+.mt-kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.mt-kpis div { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; display: grid; gap: 2px; }
+.mt-kpis b { font: 700 1.15rem var(--font-mono, monospace); } .mt-kpis small { color: var(--muted); font-size: .74rem; }
+.mt-svg { width: 100%; height: 140px; display: block; } .mt-svg.alto { height: 190px; }
+.mt-inputs { display: grid; gap: 8px; } .mt-inputs.dos { grid-template-columns: 1fr 1fr; }
+.mt-inputs label, .mt-mini { display: grid; gap: 4px; font-size: .8rem; color: var(--muted); }
+.mt-mini { grid-auto-flow: row; } .mt-mini input, .mt-mini select { max-width: 130px; }
+.mt-fila { display: flex; gap: 8px; flex-wrap: wrap; align-items: end; }
+.mt-res { display: grid; gap: 8px; font-size: .9rem; line-height: 1.45; }
+.mt-res:empty { display: none; }
+.mt-veredicto { border-radius: 14px; padding: 12px; font-size: .92rem; line-height: 1.45; border: 1px solid var(--line); background: var(--bg); display: block; }
+.mt-veredicto b.t { font-size: 1.02rem; display: block; margin-bottom: 4px; }
+.mt-veredicto.rojo { border-color: #e74c3c; background: color-mix(in srgb, #e74c3c 10%, var(--bg)); }
+.mt-veredicto.amar { border-color: #f1c40f; background: color-mix(in srgb, #f1c40f 10%, var(--bg)); }
+.mt-veredicto.verde { border-color: #2ecc71; background: color-mix(in srgb, #2ecc71 10%, var(--bg)); }
+.mt-barra { height: 12px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); overflow: hidden; display: flex; }
+.mt-barra i { display: block; height: 100%; }
+.mt-num { font: 700 1rem var(--font-mono, monospace); }
+.mt-tabla { width: 100%; border-collapse: collapse; font-size: .84rem; }
+.mt-tabla th, .mt-tabla td { padding: 7px 6px; border-bottom: 1px solid var(--line); text-align: left; }
+.mt-tabla td.n, .mt-tabla th.n { text-align: right; font-family: var(--font-mono, monospace); }
+.mt-piernas { display: grid; gap: 8px; }
+.mt-pierna { display: grid; grid-template-columns: auto 1fr 84px auto; gap: 6px; align-items: center; }
+.mt-pierna > span:first-child { font: 700 .8rem var(--font-mono, monospace); color: var(--muted); width: 18px; }
+.mt-pierna .x { padding: 6px 10px; border-radius: 10px; }
+.mt-leyenda { display: flex; gap: 12px; flex-wrap: wrap; font-size: .74rem; color: var(--muted); }
+.mt-leyenda i { display: inline-block; width: 14px; height: 4px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
+.mt-leyenda .l1 { background: var(--accent); } .mt-leyenda .l2 { background: var(--muted); } .mt-leyenda .l3 { background: color-mix(in srgb, var(--accent) 30%, transparent); height: 9px; } .mt-leyenda .l4 { background: color-mix(in srgb, var(--fg) 30%, transparent); }
+.mt-lista { margin: 0; padding-left: 0; list-style: none; display: grid; gap: 8px; font-size: .9rem; line-height: 1.45; }
+.mt-hab { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.mt-hab:last-child { border-bottom: 0; }
+.mt-hab .ico { font-size: 1.4rem; grid-row: span 2; }
+.mt-hab small { color: var(--muted); font-size: .82rem; line-height: 1.4; }
+.mt-hab.alerta b { color: #f39c12; } .mt-hab.bien b { color: var(--win, #2ecc71); }
+.mt-pick { display: grid; gap: 2px; padding: 9px 11px; border-radius: 12px; background: var(--bg); border-left: 4px solid var(--line); font-size: .86rem; }
+.mt-pick.barata { border-left-color: #2ecc71; } .mt-pick.justa { border-left-color: #f1c40f; } .mt-pick.cara { border-left-color: #e74c3c; }
+.mt-pick small { color: var(--muted); }
+#mt-h-picks { width: 100%; resize: vertical; font: inherit; }
+/* ficha matemática en cada señal */
+.sen-ficha-btn { border: 0; background: transparent; color: var(--muted); font-size: .76rem; padding: 2px 0 0; text-decoration: underline dotted; cursor: pointer; }
+.sen-ficha { grid-column: 1 / -1; font-size: .8rem; line-height: 1.45; background: var(--bg); border: 1px dashed var(--line); border-radius: 12px; padding: 9px 11px; display: grid; gap: 3px; }
+.sen-ficha b { font-family: var(--font-mono, monospace); }
+@media (max-width: 360px) { .mt-inputs.dos { grid-template-columns: 1fr; } }
 .momio-campo { display: flex; gap: 6px; align-items: stretch; }
 .momio-campo input { flex: 1; min-width: 0; }
 .momio-campo .signos { display: flex; gap: 4px; }
@@ -1135,7 +1199,7 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
           <label>Monto $<input id="f-monto" required inputmode="decimal" placeholder="5" autocomplete="off"></label>
         </div>
         <label id="f-prob-wrap">% del bot (del mensaje de Telegram)<input id="f-prob" inputmode="decimal" placeholder="38.2" autocomplete="off"></label>
-        <p class="preview num" id="f-prev"></p>
+        <p class="preview num" id="f-prev" style="white-space:pre-line"></p>
         <button class="primary" type="submit" id="f-btn">Guardar apuesta</button>
       </form>
     </section>
@@ -1248,6 +1312,132 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
 
 
   <!-- ===================== GURÚ ===================== -->
+  <div id="v-mate" class="vista section" hidden>
+    <div class="mt-hero">
+      <small>SIN HUMO</small>
+      <h2>La matemática de apostar</h2>
+      <p>Aquí no hay "picks seguros": hay cuentas. Lo que de verdad llevas, cuánto te cobra la casa, qué tan probable es tu parlay y si un tipster vende humo.</p>
+    </div>
+    <div class="mt-tabs" role="tablist" aria-label="Herramientas">
+      <button type="button" role="tab" data-mt="cuenta" aria-selected="true">📒 Mi cuenta real</button>
+      <button type="button" role="tab" data-mt="impuesto" aria-selected="false">🏦 Impuesto</button>
+      <button type="button" role="tab" data-mt="parlay" aria-selected="false">🎰 Parlays</button>
+      <button type="button" role="tab" data-mt="suerte" aria-selected="false">🍀 ¿Suerte?</button>
+      <button type="button" role="tab" data-mt="humo" aria-selected="false">💨 Detector de humo</button>
+      <button type="button" role="tab" data-mt="sim" aria-selected="false">🎲 Simulador</button>
+      <button type="button" role="tab" data-mt="habitos" aria-selected="false">🧠 Mis hábitos</button>
+      <button type="button" role="tab" data-mt="modelo" aria-selected="false">🔮 Modelo abierto</button>
+    </div>
+
+    <section class="mt-panel" data-panel="cuenta">
+      <div class="mt-big" id="mt-neto"></div>
+      <div class="mt-kpis" id="mt-kpis"></div>
+      <div class="mt-card"><h3>Mes por mes</h3><svg id="mt-meses" viewBox="0 0 320 140" preserveAspectRatio="none" class="mt-svg"></svg><p class="hint" id="mt-meses-txt"></p></div>
+      <div class="mt-card"><h3>Lo que el casino te enseña… y lo que no</h3><div id="mt-espejo"></div></div>
+      <div class="mt-card"><h3>Por tipo de apuesta</h3><div id="mt-tipos"></div></div>
+    </section>
+
+    <section class="mt-panel" data-panel="impuesto" hidden>
+      <div class="mt-card">
+        <h3>¿Cuánto cobra la casa en este mercado?</h3>
+        <p class="hint">Pon el momio de <b>todas</b> las opciones (ej. Local, Empate y Visita). Si suman más de 100%, lo que sobra es lo que la casa se queda.</p>
+        <div class="mt-inputs" id="mt-imp-ops">
+          <label>Opción 1<span class="momio-campo"><input inputmode="decimal" placeholder="+150" data-imp autocomplete="off"><span class="signos"><button type="button" data-signo="+">+</button><button type="button" data-signo="-">−</button></span></span></label>
+          <label>Opción 2 (empate)<span class="momio-campo"><input inputmode="decimal" placeholder="+230" data-imp autocomplete="off"><span class="signos"><button type="button" data-signo="+">+</button><button type="button" data-signo="-">−</button></span></span></label>
+          <label>Opción 3 (si hay)<span class="momio-campo"><input inputmode="decimal" placeholder="+180" data-imp autocomplete="off"><span class="signos"><button type="button" data-signo="+">+</button><button type="button" data-signo="-">−</button></span></span></label>
+        </div>
+        <div id="mt-imp-res" class="mt-res"></div>
+      </div>
+      <div class="mt-card"><h3>Lo que tú le has pagado a la casa</h3><div id="mt-imp-mio"></div></div>
+    </section>
+
+    <section class="mt-panel" data-panel="parlay" hidden>
+      <div class="mt-card">
+        <h3>La verdad de tu parlay</h3>
+        <p class="hint">Pon el momio de cada pierna. Si sabes la probabilidad real (la del bot), ponla; si no, la calculo quitando el margen típico de la casa.</p>
+        <div id="mt-pl-piernas" class="mt-piernas"></div>
+        <div class="mt-fila"><button type="button" id="mt-pl-mas">＋ Agregar pierna</button>
+          <label class="mt-mini">Margen por pierna <select id="mt-pl-margen"><option value="0.04">4% (Pinnacle-ish)</option><option value="0.06" selected>6% (normal)</option><option value="0.08">8% (casa cara)</option></select></label>
+          <label class="mt-mini">Apuesta $<input id="mt-pl-monto" inputmode="decimal" value="50"></label></div>
+        <div id="mt-pl-res" class="mt-res"></div>
+      </div>
+      <div class="mt-card"><h3>Por qué los parlays son el negocio de la casa</h3><div id="mt-pl-tabla"></div></div>
+    </section>
+
+    <section class="mt-panel" data-panel="suerte" hidden>
+      <div class="mt-card"><h3>¿Vas bien por suerte o por habilidad?</h3>
+        <p class="hint">Comparo lo que ganaste contra lo que <b>deberías</b> haber ganado según las probabilidades reales. La banda es lo normal por pura suerte.</p>
+        <svg id="mt-suerte" viewBox="0 0 320 150" preserveAspectRatio="none" class="mt-svg"></svg>
+        <div class="mt-leyenda"><span><i class="l1"></i>Tu resultado real</span><span><i class="l2"></i>Lo esperado</span><span><i class="l3"></i>Zona de pura suerte</span></div>
+        <div id="mt-suerte-txt" class="mt-res"></div></div>
+      <div class="mt-card"><h3>Tus boletos más difíciles</h3><div id="mt-boletos"></div></div>
+    </section>
+
+    <section class="mt-panel" data-panel="humo" hidden>
+      <div class="mt-card"><h3>¿Lo que promete es posible?</h3>
+        <p class="hint">Lo que anuncia el tipster: su % de aciertos y el momio que suele dar.</p>
+        <div class="mt-inputs dos">
+          <label>Dice que acierta (%)<input id="mt-h-acierto" inputmode="decimal" value="80"></label>
+          <label>Momio promedio<span class="momio-campo"><input id="mt-h-momio" inputmode="decimal" value="-150" autocomplete="off"><span class="signos"><button type="button" data-signo="+">+</button><button type="button" data-signo="-">−</button></span></span></label>
+        </div>
+        <div id="mt-h-res" class="mt-res"></div></div>
+      <div class="mt-card"><h3>Revisa sus picks contra Pinnacle</h3>
+        <p class="hint">Pega sus picks, uno por renglón, con el momio (ej. <code>Ravens -250</code>, <code>Más de 2.5 +105</code>). Solo encuentro partidos que el bot escaneó.</p>
+        <textarea id="mt-h-picks" rows="4" placeholder="América -120&#10;Bayern -280&#10;Más de 2.5 +105"></textarea>
+        <button type="button" class="primary" id="mt-h-revisar">Revisar picks</button>
+        <div id="mt-h-picks-res" class="mt-res"></div></div>
+      <div class="mt-card"><h3>Señales de humo</h3><ul class="mt-lista">
+        <li>🚩 "Pick seguro", "candado", "100%": en apuestas no existe lo seguro.</li>
+        <li>🚩 Enseña solo los boletos que pegaron, nunca un historial completo con fechas.</li>
+        <li>🚩 Te cobra por grupo VIP: si de verdad ganara, no necesitaría venderte nada.</li>
+        <li>🚩 Parlays gigantes como "estrategia": pegan poco y la casa cobra margen en cada pierna.</li>
+        <li>🚩 No te dice <b>a qué momio</b> ya no conviene. Sin precio no hay análisis.</li>
+        <li>✅ Lo serio: probabilidad, momio mínimo, monto chico y el registro de TODO, también lo que pierde.</li></ul></div>
+    </section>
+
+    <section class="mt-panel" data-panel="sim" hidden>
+      <div class="mt-card"><h3>Si apuestas así muchas veces… ¿qué pasa?</h3>
+        <div class="mt-inputs dos">
+          <label>Banca inicial $<input id="mt-s-banca" inputmode="decimal" value="1000"></label>
+          <label>Monto por apuesta $<input id="mt-s-monto" inputmode="decimal" value="50"></label>
+          <label>Momio promedio<span class="momio-campo"><input id="mt-s-momio" inputmode="decimal" value="+150" autocomplete="off"><span class="signos"><button type="button" data-signo="+">+</button><button type="button" data-signo="-">−</button></span></span></label>
+          <label>Ventaja <select id="mt-s-ventaja"><option value="-0.06" selected>Normal (−6%, la casa gana)</option><option value="-0.15">Parlays (−15%)</option><option value="0">Precio justo (0%)</option><option value="0.03">Con valor (+3%, como el bot)</option></select></label>
+          <label>Número de apuestas <select id="mt-s-n"><option>100</option><option selected>300</option><option>1000</option></select></label>
+          <button type="button" id="mt-s-mios">Usar mis números</button>
+        </div>
+        <button type="button" class="primary" id="mt-s-correr">▶ Simular 400 apostadores</button>
+        <svg id="mt-s-svg" viewBox="0 0 320 170" preserveAspectRatio="none" class="mt-svg alto"></svg>
+        <div class="mt-leyenda"><span><i class="l1"></i>El apostador típico</span><span><i class="l3"></i>80% de los casos</span><span><i class="l4"></i>Algunos ejemplos</span></div>
+        <div id="mt-s-res" class="mt-res"></div></div>
+    </section>
+
+    <section class="mt-panel" data-panel="habitos" hidden>
+      <div class="mt-card"><h3>Cómo apuestas (sin regaños)</h3><div id="mt-hab"></div></div>
+      <div class="mt-card"><h3>Mis límites</h3>
+        <p class="hint">Te aviso al guardar una apuesta que se pase. Los guardo en este celular.</p>
+        <div class="mt-inputs dos">
+          <label>Máximo por apuesta $<input id="mt-l-max" inputmode="decimal" placeholder="sin límite"></label>
+          <label>Máximo de apuestas al día<input id="mt-l-dia" inputmode="numeric" placeholder="sin límite"></label>
+          <label>Pérdida máxima al mes $<input id="mt-l-mes" inputmode="decimal" placeholder="sin límite"></label>
+          <label>No apostar después de las<select id="mt-l-hora"><option value="">Sin límite</option><option value="22">10 pm</option><option value="23">11 pm</option><option value="0">12 am</option><option value="1">1 am</option></select></label>
+        </div>
+        <button type="button" class="primary" id="mt-l-guardar">Guardar límites</button>
+        <div id="mt-l-estado" class="mt-res"></div></div>
+    </section>
+
+    <section class="mt-panel" data-panel="modelo" hidden>
+      <div class="mt-card"><h3>Un modelo, no un gurú</h3>
+        <ul class="mt-lista">
+          <li>🧮 <b>De dónde sale el %:</b> los momios de Pinnacle (la casa con menos margen del mundo) quitándoles su margen. Es lo más parecido a la probabilidad real.</li>
+          <li>💲 <b>Cuándo conviene:</b> solo cuando tu casa paga más que ese precio justo. Si paga menos, no se recomienda aunque sea el favorito.</li>
+          <li>🔮 <b>El Gurú:</b> dos modelos propios (Dixon-Coles y xG) que se comparan contra Pinnacle a la vista de todos, con aciertos Y fallos.</li>
+          <li>🔧 <b>Aprende:</b> al juntar 200 partidos se recalibra cada semana con sus propios errores.</li>
+          <li>🗄️ <b>Todo queda guardado:</b> cada marcador, qué dijo cada quien y a qué momio. Nadie puede borrar los fallos.</li>
+          <li>🚫 <b>Lo que nunca hará:</b> decirte "seguro", cobrarte por picks o esconder lo que pierde.</li></ul>
+        <div class="mt-fila"><button type="button" data-ir="guru">🔮 Ver el duelo Gurú vs Pinnacle</button><button type="button" data-ir="guru" data-ancla="ar-sec">🔎 Buscar partidos pasados</button></div>
+      </div>
+    </section>
+  </div>
   <div id="v-guru" class="vista section" hidden>
     <section class="summary hero guru-hero" aria-label="Gurú contra Pinnacle">
       <div class="hero-saludo">🔮 Gurú vs 📌 Pinnacle · <span id="g-n">últimos 200</span></div>
@@ -1634,6 +1824,7 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
     <div class="menu-grupo" id="grupo-favs" hidden>⭐ Favoritos</div>
     <div id="menu-favs"></div>
     <button class="menu-item" data-v="inicio"><span class="mi">🏠</span><span class="txt">Inicio<small>Tu resumen del día</small></span><span class="flecha">›</span></button>
+    <button class="menu-item" data-v="mate"><span class="mi">🧮</span><span class="txt">La matemática<small>Sin humo: tu cuenta real, parlays, tipsters</small></span><span class="flecha">›</span></button>
     <div class="menu-grupo">Mis apuestas</div>
     <button class="menu-item" data-v="bot"><span class="mi">🤖</span><span class="txt">Banca del bot<small>Señales, banca y pendientes</small></span><span class="flecha">›</span></button>
     <button class="menu-item" data-v="conviene"><span class="mi">✅</span><span class="txt">¿Conviene?<small>Compara Caliente y Draftea con el bot</small></span><span class="punto" id="conv-punto" hidden></span><span class="flecha">›</span></button>
@@ -1714,7 +1905,7 @@ async function api(op, datos) {
 }
 function estado(msg) { const s = $("status"); s.textContent = msg || ""; s.hidden = !msg; }
 function mostrarLogin(msg) {
-  [...["v-bot", "v-normal", "v-reg", "v-resultados", "v-comunidad", "v-hoy", "v-lineas", "v-quiniela", "v-retos", "v-practica", "v-equipo", "v-opiniones", "v-avisos", "v-admin"], "quien", "abrir-menu", "sec-actual"].forEach(id => $(id).hidden = true);
+  [...["v-bot", "v-normal", "v-reg", "v-resultados", "v-comunidad", "v-hoy", "v-lineas", "v-quiniela", "v-retos", "v-practica", "v-equipo", "v-opiniones", "v-avisos", "v-admin", "v-mate"], "quien", "abrir-menu", "sec-actual"].forEach(id => $(id).hidden = true);
   $("marca").hidden = false; cerrarMenu();
   $("v-login").hidden = false; estado(msg || "");
 }
@@ -1757,7 +1948,7 @@ async function hacer(op, datos, errorTxt) {
 
 // ---------------------------------------------------------------- vistas
 const SECCIONES = {
-  inicio: ["🏠", "Inicio"], tablas: ["📊", "Tablas"], diseno: ["🎨", "Mi diseño"], bot: ["🤖", "Banca del bot"], conviene: ["✅", "¿Conviene?"], normal: ["🎲", "Normales"], resultados: ["📜", "Historial"], hoy: ["📺", "Hoy"],
+  inicio: ["🏠", "Inicio"], tablas: ["📊", "Tablas"], diseno: ["🎨", "Mi diseño"], bot: ["🤖", "Banca del bot"], conviene: ["✅", "¿Conviene?"], mate: ["🧮", "La matemática"], normal: ["🎲", "Normales"], resultados: ["📜", "Historial"], hoy: ["📺", "Hoy"],
   lineas: ["📈", "Líneas"], guru: ["🔮", "Gurú"], lol: ["🐉", "LoL Worlds"], comunidad: ["💬", "Comunidad"], quiniela: ["🏆", "Quiniela"], retos: ["⚔️", "Retos"],
   practica: ["🎮", "Práctica"], juegos: ["🕹️", "Minijuegos"], equipo: ["⭐", "Mi equipo"], opiniones: ["📝", "Opiniones"], avisos: ["🔔", "Mis avisos"], admin: ["🛠️", "Administrador"] };
 function irA(v) {
@@ -1778,6 +1969,7 @@ function irA(v) {
   if (vista === "lineas") cargarLineas();
   if (vista === "conviene") cargarConviene();
   if (vista === "guru") cargarGuru();
+  if (vista === "mate") { pintarMate(); if (mtTab === "parlay") mtParlay(); }
   if (vista === "juegos") cargarMascota();
   if (vista === "lol") cargarLol(); else { clearTimeout(lolTimer); }
   if (vista === "inicio") { pintarInicio(); preguntaMomio(); }
@@ -2115,6 +2307,7 @@ $("excel").addEventListener("click", async () => {
 async function cerrar(id, resultado) { await hacer("cerrar", { id, resultado }, "No se pudo guardar el resultado."); }
 async function borrar(id) { confirmando = null; await hacer("borrar", { id }, "No se pudo borrar."); }
 
+let limConfirma = null;
 function vistaPrevia() {
   const c = aDecimal($("f-cuota").value), p = parseFloat($("f-prob").value) / 100, m = parseFloat($("f-monto").value);
   let t = "";
@@ -2124,6 +2317,8 @@ function vistaPrevia() {
     const ev = p * c - 1;
     t += ` · valor ${ev >= 0 ? "+" : ""}${(ev * 100).toFixed(1)}%` + (ev < 0.03 ? " ⚠️ por debajo del mínimo del bot" : "");
   }
+  const lim = m > 0 ? avisoLimites(m) : "";
+  if (lim) t += (t ? "\n" : "") + lim;
   $("f-prev").textContent = t;
 }
 ["f-cuota", "f-prob", "f-monto"].forEach(id => $(id).addEventListener("input", vistaPrevia));
@@ -2136,6 +2331,9 @@ $("f").addEventListener("submit", async e => {
   if (!cuota) { estado("El momio no es válido. Escríbelo como +175, -150 o 2.75."); return; }
   if (!(monto > 0)) { estado("Escribe un monto mayor a cero."); return; }
   if (prob !== null && !(prob > 0 && prob < 1)) { estado("El % del bot debe estar entre 0 y 100."); return; }
+  const lim = avisoLimites(monto);
+  if (lim && limConfirma !== monto + "|" + cuota) { limConfirma = monto + "|" + cuota; estado(lim + ". Si aun así quieres guardarla, toca Guardar otra vez."); return; }
+  limConfirma = null;
   estado(""); $("f-btn").disabled = true;
   const ok = await hacer("registrar", { cartera: vista === "normal" ? "libre" : "bot", partido: $("f-partido").value.trim(),
     seleccion: $("f-sel").value.trim(), casa: $("f-casa").value, cuota, prob, monto }, "No se pudo guardar la apuesta.");
@@ -2879,6 +3077,15 @@ function pintarSenales() {
         const monto = montoSug(f.prob, f.minima);
         t.append(el("div", "s", `${i === 0 && filas.length > 1 ? "⭐ " : ""}${f.seleccion} · ${(f.prob * 100).toFixed(1)}%${Math.abs(f.mov) >= .02 ? " ⚡" : ""}`));
         const sm = el("small"); sm.append("paga ", el("b", "paga", aAmericano(f.minima)), ` o mejor → $${monto}`); t.append(sm);
+        const fb = el("button", "sen-ficha-btn", "🧮 ¿Por qué?"); fb.type = "button";
+        const fi = el("div", "sen-ficha"); fi.hidden = true;
+        const justo = 1 / f.prob, ganMin = 5 * (f.prob * f.minima - 1);
+        fi.innerHTML = `<span>📊 Probabilidad real (Pinnacle sin margen): <b>${(f.prob * 100).toFixed(1)}%</b></span>
+          <span>⚖️ Momio justo: <b>${aAmericano(justo)}</b> · el bot pide <b>${aAmericano(f.minima)}</b> o más para que haya ventaja</span>
+          <span>💲 A ${aAmericano(f.minima)}: en promedio ganas <b>${fmt(ganMin)}</b> por cada $5… y aun así pierdes <b>${Math.round((1 - f.prob) * 100)} de cada 100</b> veces.</span>
+          <span>🚫 Si tu casa paga menos de ${aAmericano(f.minima)}, <b>no conviene</b> aunque sea el favorito.</span>`;
+        fb.onclick = (ev) => { ev.stopPropagation(); fi.hidden = !fi.hidden; fb.textContent = fi.hidden ? "🧮 ¿Por qué?" : "▲ Ocultar"; };
+        t.append(fb, fi);
         const bt = el("button", "", "Lo aposté"); bt.type = "button";
         bt.onclick = () => {
           $("f-partido").value = p.partido; $("f-sel").value = f.seleccion; $("f-prob").value = (f.prob * 100).toFixed(1);
@@ -3365,7 +3572,8 @@ document.querySelectorAll("#g-hist-filtro [data-h]").forEach(b => b.onclick = ()
 $("g-ver-hist").onclick = () => $("g-hist-sec").scrollIntoView({ behavior: "smooth" });
 
 // Botones + / − para el momio: el teclado numérico del celular no tiene esos signos
-document.querySelectorAll(".momio-campo").forEach((c) => {
+function activarSignos(c) {
+  if (!c || c.dataset.listo) return; c.dataset.listo = "1";
   const inp = c.querySelector("input"), bs = c.querySelectorAll("[data-signo]");
   const marcar = () => { const t = inp.value.trim(); bs.forEach((b) => b.setAttribute("aria-pressed", String(t.startsWith(b.dataset.signo) || (b.dataset.signo === "-" && t.startsWith("−"))))); };
   bs.forEach((b) => b.addEventListener("click", () => {
@@ -3375,8 +3583,315 @@ document.querySelectorAll(".momio-campo").forEach((c) => {
     marcar(); inp.focus();
     try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch (e) {}
   }));
-  inp.addEventListener("input", marcar);
-});
+  inp.addEventListener("input", marcar); marcar();
+}
+document.querySelectorAll(".momio-campo").forEach(activarSignos);
+// ---------------------------------------------------------------- 🧮 La matemática (sin humo)
+const MT_MARGEN = 0.06;                // margen típico por selección en casas mexicanas
+const mtEsParlay = (b) => /parlay|combinad/i.test(b.seleccion + " " + b.partido) || /\S\s\+\s\S/.test(b.seleccion);
+const mtPiernas = (b) => Math.max(2, (b.seleccion.match(/\s\+\s/g) || []).length + 1);
+// probabilidad real de una apuesta: la del bot si existe; si no, el momio quitándole el margen típico
+function mtProb(b) {
+  if (b.prob) return { p: b.prob, est: false };
+  const m = mtEsParlay(b) ? Math.pow(1 + MT_MARGEN, mtPiernas(b)) - 1 : MT_MARGEN;
+  return { p: Math.min(.99, (1 / b.cuota) / (1 + m)), est: true };
+}
+const mtCerradas = () => apuestas.filter((b) => ["gana", "pierde", "nula"].includes(b.resultado));
+const mtPct = (x, d = 1) => (x * 100).toFixed(d) + "%";
+const mtSign = (n) => (n > 0 ? "+" : "") + fmt(n);
+const mtCls = (n) => (n > 0.004 ? "pos" : n < -0.004 ? "neg" : "");
+let mtTab = "cuenta";
+function mtSvg(svg) {
+  svg.innerHTML = "";
+  const ns = "http://www.w3.org/2000/svg";
+  return (t, at) => { const n = document.createElementNS(ns, t); for (const a in at) n.setAttribute(a, at[a]); svg.append(n); return n; };
+}
+function pintarMate() {
+  document.querySelectorAll(".mt-tabs [data-mt]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.mt === mtTab)));
+  document.querySelectorAll("#v-mate .mt-panel").forEach((p) => (p.hidden = p.dataset.panel !== mtTab));
+  ({ cuenta: mtCuenta, impuesto: mtImpuesto, parlay: () => mtParlay(), suerte: mtSuerte, humo: mtHumo, sim: () => {}, habitos: mtHabitos, modelo: () => {} })[mtTab]();
+  if (mtTab === "sim" && !$("mt-s-svg").childNodes.length) mtSimular();
+}
+document.querySelectorAll(".mt-tabs [data-mt]").forEach((b) => (b.onclick = () => {
+  mtTab = b.dataset.mt; pintarMate();
+  b.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+}));
+document.querySelectorAll("#v-mate [data-ir]").forEach((b) => (b.onclick = () => {
+  irA(b.dataset.ir);
+  if (b.dataset.ancla) setTimeout(() => { const a = $(b.dataset.ancla); if (a) a.scrollIntoView({ behavior: "smooth" }); }, 700);
+}));
+
+// ---- 📒 Mi cuenta real
+function mtCuenta() {
+  const c = mtCerradas(), ahora = new Date();
+  const neto = c.reduce((s, b) => s + ganancia(b), 0), apostado = c.reduce((s, b) => s + (b.resultado === "nula" ? 0 : b.monto), 0);
+  const mes = c.filter((b) => { const d = new Date(b.cerrada || b.creada); return d.getMonth() === ahora.getMonth() && d.getFullYear() === ahora.getFullYear(); });
+  const anio = c.filter((b) => new Date(b.cerrada || b.creada).getFullYear() === ahora.getFullYear());
+  const nm = mes.reduce((s, b) => s + ganancia(b), 0), na = anio.reduce((s, b) => s + ganancia(b), 0);
+  const gan = c.filter((b) => b.resultado === "gana"), per = c.filter((b) => b.resultado === "pierde");
+  const big = $("mt-neto");
+  if (!c.length) { big.innerHTML = `<small>Todavía no hay apuestas cerradas</small><p>Registra tus apuestas (las del bot y las normales, también las que pierdes) y aquí verás tu cuenta real.</p>`; }
+  else big.innerHTML = `<small>Tu resultado real, todas tus apuestas</small><b class="${mtCls(neto)}">${mtSign(neto)}</b>
+    <p>En ${c.length} apuestas cerradas apostaste ${fmt(apostado)}. Por cada $100 apostados ${neto >= 0 ? "ganaste" : "perdiste"} <b>${fmt(Math.abs(apostado ? neto / apostado * 100 : 0))}</b>.</p>`;
+  const k = $("mt-kpis"); k.innerHTML = "";
+  [[mtSign(nm), mtCls(nm), "este mes"], [mtSign(na), mtCls(na), "este año"],
+   [c.length ? mtPct(gan.length / Math.max(1, gan.length + per.length), 0) : "—", "", "boletos que pegaron"],
+   [apostado ? (neto / apostado * 100 > 0 ? "+" : "") + (neto / apostado * 100).toFixed(1) + "%" : "—", mtCls(neto), "rendimiento (ROI)"]].forEach(([v, cl, t]) => {
+    const d = el("div"); d.append(el("b", cl, v), el("small", "", t)); k.append(d); });
+  // meses
+  const meses = [];
+  for (let i = 11; i >= 0; i--) { const d = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1); meses.push({ y: d.getFullYear(), m: d.getMonth(), n: 0, c: 0 }); }
+  c.forEach((b) => { const d = new Date(b.cerrada || b.creada); const x = meses.find((q) => q.y === d.getFullYear() && q.m === d.getMonth()); if (x) { x.n += ganancia(b); x.c++; } });
+  const mk = mtSvg($("mt-meses")), max = Math.max(1, ...meses.map((q) => Math.abs(q.n))), W = 320, H = 140, cero = H / 2, bw = W / 12;
+  mk("line", { x1: 0, x2: W, y1: cero, y2: cero, stroke: "var(--line)" });
+  meses.forEach((q, i) => {
+    const h = Math.abs(q.n) / max * (H / 2 - 16);
+    if (q.c) mk("rect", { x: i * bw + 4, y: q.n >= 0 ? cero - h : cero, width: bw - 8, height: Math.max(1.5, h), rx: 3, fill: q.n >= 0 ? "var(--win, #2ecc71)" : "var(--loss, #e74c3c)" });
+    const t = mk("text", { x: i * bw + bw / 2, y: H - 2, "text-anchor": "middle", "font-size": 9, fill: "var(--muted)" });
+    t.textContent = new Date(q.y, q.m, 1).toLocaleDateString("es-MX", { month: "short" }).slice(0, 3);
+  });
+  const malos = meses.filter((q) => q.c && q.n < 0).length, buenos = meses.filter((q) => q.c && q.n > 0).length;
+  $("mt-meses-txt").textContent = c.length ? `${buenos} mes(es) arriba y ${malos} abajo en el último año.` : "";
+  // espejo: lo que el casino enseña vs la realidad
+  const premios = gan.reduce((s, b) => s + b.monto * b.cuota, 0), perdido = per.reduce((s, b) => s + b.monto, 0);
+  const mayor = gan.slice().sort((a, b) => b.monto * (b.cuota - 1) - a.monto * (a.cuota - 1))[0];
+  const dep = (typeof movs !== "undefined" && movs && movs.libre) ? movs.libre : null;
+  $("mt-espejo").innerHTML = !c.length ? `<p class="hint">Aparece cuando tengas apuestas cerradas.</p>` : `
+    <div class="mt-veredicto verde"><b class="t">🎉 Lo que presumes</b>${gan.length} boletos ganadores · cobraste <span class="mt-num">${fmt(premios)}</span>${mayor ? `<br>El más grande: ${admEsc(mayor.seleccion)} (${aAmericano(mayor.cuota)}) → ${fmt(mayor.monto * mayor.cuota)}` : ""}</div>
+    <div class="mt-veredicto rojo"><b class="t">🙈 Lo que no se ve</b>${per.length} boletos perdidos · se fueron <span class="mt-num">${fmt(perdido)}</span></div>
+    <div class="mt-veredicto ${neto >= 0 ? "verde" : "rojo"}"><b class="t">🧮 La cuenta completa</b>Cobrado ${fmt(premios)} − apostado ${fmt(apostado)} = <span class="mt-num ${mtCls(neto)}">${mtSign(neto)}</span></div>
+    ${dep && (dep.depositado || dep.retirado) ? `<div class="mt-veredicto"><b class="t">🏦 Depósitos y retiros (apuestas normales)</b>Metiste ${fmt(dep.depositado)} y sacaste ${fmt(dep.retirado)}: ${dep.retirado - dep.depositado >= 0 ? "vas arriba" : "la casa se ha quedado con"} <span class="mt-num">${fmt(Math.abs(dep.retirado - dep.depositado))}</span>.</div>` : ""}`;
+  // tipos
+  const grupos = { "Sencillas del bot": c.filter((b) => b.cartera === "bot" && !mtEsParlay(b)), "Sencillas por tu cuenta": c.filter((b) => b.cartera !== "bot" && !mtEsParlay(b)), "Parlays": c.filter(mtEsParlay) };
+  $("mt-tipos").innerHTML = `<table class="mt-tabla"><tr><th>Tipo</th><th class="n">Apuestas</th><th class="n">Pegaron</th><th class="n">Neto</th><th class="n">ROI</th></tr>` +
+    Object.entries(grupos).map(([n, l]) => { const ap = l.reduce((s, b) => s + (b.resultado === "nula" ? 0 : b.monto), 0), ne = l.reduce((s, b) => s + ganancia(b), 0);
+      return `<tr><td>${n}</td><td class="n">${l.length}</td><td class="n">${l.length ? mtPct(l.filter((b) => b.resultado === "gana").length / l.length, 0) : "—"}</td><td class="n ${mtCls(ne)}">${l.length ? mtSign(ne) : "—"}</td><td class="n ${mtCls(ne)}">${ap ? (ne / ap * 100).toFixed(1) + "%" : "—"}</td></tr>`; }).join("") + `</table>`;
+}
+
+// ---- 🏦 Impuesto de la casa
+function mtImpuesto() {
+  const ds = [...document.querySelectorAll("[data-imp]")].map((i) => aDecimal(i.value)).filter((d) => d && d > 1);
+  const r = $("mt-imp-res");
+  if (ds.length < 2) r.innerHTML = `<p class="hint">Pon al menos 2 momios del mismo mercado.</p>`;
+  else {
+    const suma = ds.reduce((s, d) => s + 1 / d, 0), margen = suma - 1, colores = ["#4c8dff", "#9aa5b1", "#ff8a3d"];
+    r.innerHTML = `<div class="mt-veredicto ${margen > 0.07 ? "rojo" : margen > 0.035 ? "amar" : "verde"}"><b class="t">La casa se queda con ${mtPct(margen / suma)} de todo lo que se apuesta aquí</b>
+      Los momios suman ${mtPct(suma)} de probabilidad (debería ser 100%). ${margen > 0.07 ? "Es un mercado caro." : margen > 0.035 ? "Margen normal de casa." : "Margen bajo: buen precio."}</div>
+      <div class="mt-barra">${ds.map((d, i) => `<i style="width:${(1 / d) / suma * 100}%;background:${colores[i]}"></i>`).join("")}</div>
+      <table class="mt-tabla"><tr><th>Opción</th><th class="n">Te pagan</th><th class="n">Prob. justa</th><th class="n">Momio justo</th></tr>
+      ${ds.map((d, i) => `<tr><td><i style="display:inline-block;width:9px;height:9px;border-radius:3px;background:${colores[i]};margin-right:6px"></i>${i + 1}</td><td class="n">${aAmericano(d)}</td><td class="n">${mtPct((1 / d) / suma)}</td><td class="n">${aAmericano(suma * d)}</td></tr>`).join("")}</table>
+      <p class="hint">Momio justo = lo que pagaría una casa sin margen. Lo que te pagan de menos es el "impuesto".</p>`;
+  }
+  // lo que yo le he pagado
+  const c = mtCerradas().filter((b) => b.resultado !== "nula");
+  let costo = 0, conProb = 0, apostado = 0;
+  c.forEach((b) => { const { p, est } = mtProb(b); costo += b.monto * (1 - p * b.cuota); apostado += b.monto; if (!est) conProb++; });
+  $("mt-imp-mio").innerHTML = !c.length ? `<p class="hint">Aparece cuando tengas apuestas cerradas.</p>` : `
+    <div class="mt-veredicto ${costo > 0 ? "rojo" : "verde"}"><b class="t">${costo > 0 ? `Aprox. ${fmt(costo)} en "impuesto" a la casa` : `Tus apuestas tenían ventaja: ${fmt(-costo)} a tu favor`}</b>
+    Es lo que, en promedio, te cuestan tus ${c.length} apuestas (${fmt(apostado)} apostados) por el margen, sin importar si ganaste o perdiste.</div>
+    <p class="hint">${conProb} con el % real del bot; las demás estimadas con un margen típico de ${mtPct(MT_MARGEN, 0)} por selección (más en parlays).</p>`;
+}
+document.querySelectorAll("[data-imp]").forEach((i) => i.addEventListener("input", mtImpuesto));
+
+// ---- 🎰 Parlays
+let mtPl = [{ m: "-150", p: "" }, { m: "+120", p: "" }, { m: "-110", p: "" }];
+function mtParlayPiernas() {
+  const cont = $("mt-pl-piernas"); cont.innerHTML = "";
+  mtPl.forEach((x, i) => {
+    const f = el("div", "mt-pierna");
+    f.innerHTML = `<span>${i + 1}</span><span class="momio-campo"><input inputmode="decimal" placeholder="Momio" value="${admEsc(x.m)}" autocomplete="off"><span class="signos"><button type="button" data-signo="+">+</button><button type="button" data-signo="-">−</button></span></span>
+      <input inputmode="decimal" placeholder="% real" value="${admEsc(x.p)}" aria-label="Probabilidad real %"><button type="button" class="x" aria-label="Quitar">✕</button>`;
+    const [im, ip] = f.querySelectorAll("input");
+    im.addEventListener("input", () => { mtPl[i].m = im.value; mtParlay(true); });
+    ip.addEventListener("input", () => { mtPl[i].p = ip.value; mtParlay(true); });
+    f.querySelector(".x").onclick = () => { if (mtPl.length > 2) { mtPl.splice(i, 1); mtParlay(); } };
+    activarSignos(f.querySelector(".momio-campo"));
+    cont.append(f);
+  });
+}
+function mtParlay(soloRes) {
+  if (!soloRes) mtParlayPiernas();
+  const margen = Number($("mt-pl-margen").value), monto = parseFloat($("mt-pl-monto").value) || 0;
+  const legs = mtPl.map((x) => { const d = aDecimal(x.m); const pr = parseFloat(x.p); return d ? { d, p: pr > 0 && pr < 100 ? pr / 100 : (1 / d) / (1 + margen), real: pr > 0 } : null; }).filter(Boolean);
+  const r = $("mt-pl-res");
+  if (legs.length < 2) { r.innerHTML = `<p class="hint">Pon al menos 2 piernas con su momio.</p>`; }
+  else {
+    const D = legs.reduce((s, l) => s * l.d, 1), P = legs.reduce((s, l) => s * l.p, 1), ev = P * D - 1, uno = Math.round(1 / P);
+    r.innerHTML = `<div class="mt-kpis"><div><b>${aAmericano(D)}</b><small>momio del parlay</small></div><div><b>${fmt(monto * D)}</b><small>cobras si pega</small></div>
+      <div><b>${mtPct(P, P < 0.01 ? 2 : 1)}</b><small>probabilidad real de que pegue</small></div><div><b>1 de ${uno.toLocaleString("es-MX")}</b><small>boletos así pegan</small></div></div>
+      <div class="mt-veredicto ${ev < -0.1 ? "rojo" : ev < 0 ? "amar" : "verde"}"><b class="t">${ev < 0 ? `La casa se queda con ${mtPct(-ev)} de lo que apuestas` : `Tiene valor: +${mtPct(ev)}`}</b>
+      En promedio, cada ${fmt(monto)} apostados en este boleto ${ev < 0 ? "pierden" : "ganan"} <span class="mt-num">${fmt(Math.abs(monto * ev))}</span>.
+      ${ev < 0 ? `Para que fuera justo tendría que pagar ${aAmericano(1 / P)}.` : ""}</div>
+      <p class="hint">${legs.some((l) => !l.real) ? `Las piernas sin % real se calcularon quitando ${mtPct(margen, 0)} de margen a cada una.` : "Calculado con tus % reales."}</p>`;
+  }
+  // tabla de cómo se acumula el margen
+  $("mt-pl-tabla").innerHTML = `<table class="mt-tabla"><tr><th>Piernas</th><th class="n">Margen acumulado</th><th class="n">De cada $100</th></tr>` +
+    [1, 2, 3, 4, 6, 8, 10].map((n) => { const m = 1 - Math.pow(1 / (1 + margen), n); return `<tr><td>${n}</td><td class="n">${mtPct(m)}</td><td class="n neg">−${fmt(m * 100)}</td></tr>`; }).join("") +
+    `</table><p class="hint">Cada pierna trae su margen y se multiplican. Por eso las casas promocionan tanto los parlays: entre más piernas, más se quedan. Un parlay grande puede pegar (¡y qué bonito!), pero a la larga cuesta más de lo que paga.</p>`;
+}
+$("mt-pl-mas").onclick = () => { if (mtPl.length < 12) { mtPl.push({ m: "", p: "" }); mtParlay(); } };
+$("mt-pl-margen").onchange = () => mtParlay(true);
+$("mt-pl-monto").oninput = () => mtParlay(true);
+
+// ---- 🍀 ¿Suerte o habilidad?
+function mtSuerte() {
+  const c = mtCerradas().filter((b) => b.resultado !== "nula").sort((a, b) => (a.cerrada || a.creada) - (b.cerrada || b.creada));
+  const svg = $("mt-suerte"), txt = $("mt-suerte-txt");
+  if (c.length < 3) { svg.innerHTML = ""; txt.innerHTML = `<p class="hint">Con al menos 3 apuestas cerradas aparece la gráfica.</p>`; $("mt-boletos").innerHTML = ""; return; }
+  let r = 0, e = 0, v = 0, est = 0; const pts = [{ r: 0, e: 0, s: 0 }];
+  c.forEach((b) => { const { p, est: es } = mtProb(b); if (es) est++; r += ganancia(b); e += b.monto * (p * b.cuota - 1); v += b.monto * b.monto * b.cuota * b.cuota * p * (1 - p); pts.push({ r, e, s: Math.sqrt(v) }); });
+  const mk = mtSvg(svg), W = 320, H = 150;
+  const lo = Math.min(...pts.map((p) => Math.min(p.r, p.e - 1.64 * p.s))), hi = Math.max(...pts.map((p) => Math.max(p.r, p.e + 1.64 * p.s)));
+  const x = (i) => i / (pts.length - 1) * W, y = (val) => H - 6 - (val - lo) / ((hi - lo) || 1) * (H - 12);
+  mk("polygon", { points: pts.map((p, i) => `${x(i)},${y(p.e + 1.64 * p.s)}`).concat(pts.slice().reverse().map((p, j) => `${x(pts.length - 1 - j)},${y(p.e - 1.64 * p.s)}`)).join(" "), fill: "var(--accent)", "fill-opacity": ".15" });
+  mk("line", { x1: 0, x2: W, y1: y(0), y2: y(0), stroke: "var(--line)", "stroke-dasharray": "2 3" });
+  mk("polyline", { points: pts.map((p, i) => `${x(i)},${y(p.e)}`).join(" "), fill: "none", stroke: "var(--muted)", "stroke-width": 1.6, "stroke-dasharray": "5 4", "vector-effect": "non-scaling-stroke" });
+  mk("polyline", { points: pts.map((p, i) => `${x(i)},${y(p.r)}`).join(" "), fill: "none", stroke: "var(--accent)", "stroke-width": 2.6, "stroke-linejoin": "round", "vector-effect": "non-scaling-stroke" });
+  const ult = pts[pts.length - 1], z = ult.s ? (ult.r - ult.e) / ult.s : 0;
+  const ver = z > 1.64 ? ["verde", "Vas arriba de lo esperado más de lo que explica la suerte normal", "Puede ser habilidad (o una racha muy buena). Con más apuestas se confirma."]
+    : z < -1.64 ? ["rojo", "Vas peor de lo esperado, más allá de la mala suerte normal", "Revisa a qué momios estás apostando: quizá tomas precios más bajos de lo que valen."]
+    : ["amar", "Tu resultado está dentro de lo que explica la suerte", ult.e < 0 ? "Matemáticamente tus apuestas tienen valor negativo: a la larga, lo esperado es perder." : "Tus apuestas tienen valor positivo: si sigues así, a la larga deberías ir arriba."];
+  txt.innerHTML = `<div class="mt-kpis"><div><b class="${mtCls(ult.r)}">${mtSign(ult.r)}</b><small>lo que llevas</small></div><div><b class="${mtCls(ult.e)}">${mtSign(ult.e)}</b><small>lo que "debías" llevar</small></div></div>
+    <div class="mt-veredicto ${ver[0]}"><b class="t">${ver[1]}</b>${ver[2]}<br><small>Diferencia de ${Math.abs(z).toFixed(1)} desviaciones (más de 1.6 ya no es solo suerte).</small></div>
+    ${est ? `<p class="hint">${est} de ${c.length} apuestas no tenían % del bot: las estimé quitando el margen típico.</p>` : ""}`;
+  // boletos más difíciles que pegaron
+  const top = c.filter((b) => b.resultado === "gana").map((b) => ({ b, p: mtProb(b).p })).sort((a, b) => a.p - b.p).slice(0, 5);
+  $("mt-boletos").innerHTML = top.length ? top.map(({ b, p }) => `<div class="mt-pick barata"><b>${admEsc(b.seleccion)}</b><span>${aAmericano(b.cuota)} · apostaste ${fmt(b.monto)} → cobraste ${fmt(b.monto * b.cuota)}</span>
+      <small>Tenía ${mtPct(p, p < .01 ? 2 : 1)} de pegar: <b>1 de cada ${Math.round(1 / p)}</b> boletos así gana.</small></div>`).join("") +
+    `<p class="hint">Los boletos grandes sí pegan… de vez en cuando. Lo que la casa no te dice es cuántos así perdiste antes.</p>` : `<p class="hint">Aquí aparecen tus boletos ganadores más difíciles.</p>`;
+}
+
+// ---- 💨 Detector de humo
+function mtHumo() {
+  const a = parseFloat($("mt-h-acierto").value) / 100, d = aDecimal($("mt-h-momio").value), r = $("mt-h-res");
+  if (!(a > 0 && a <= 1) || !d) { r.innerHTML = `<p class="hint">Pon el % de aciertos y el momio.</p>`; return; }
+  const equilibrio = 1 / d, roi = a * d - 1;
+  let cls, t, txt;
+  if (roi > 0.25) { cls = "rojo"; t = "💨 Humo casi seguro"; txt = `Con ${mtPct(a, 0)} de aciertos a ${aAmericano(d)} ganaría ${mtPct(roi, 0)} de todo lo que apuesta. Los mejores apostadores profesionales del mundo ganan entre 2% y 8% a la larga. Si fuera cierto, las casas ya lo habrían limitado.`; }
+  else if (roi > 0.08) { cls = "amar"; t = "🤨 Muy difícil de creer"; txt = `Promete ${mtPct(roi, 0)} de ganancia. Es posible en una racha corta, pero no sostenido. Pídele su historial COMPLETO con fechas y momios.`; }
+  else if (roi > 0) { cls = "verde"; t = "✅ Es posible (si lo demuestra)"; txt = `${mtPct(roi, 1)} de ganancia es realista para alguien bueno. Aun así, exige historial completo y verificable.`; }
+  else { cls = "rojo"; t = "📉 Ni siquiera gana"; txt = `A ${aAmericano(d)} necesitas acertar ${mtPct(equilibrio)} solo para no perder. Con ${mtPct(a, 0)} pierde ${mtPct(-roi)} de lo que apuesta.`; }
+  r.innerHTML = `<div class="mt-veredicto ${cls}"><b class="t">${t}</b>${txt}</div>
+    <p class="hint">A ${aAmericano(d)} se necesita acertar <b>${mtPct(equilibrio)}</b> para quedar tablas. Un "${mtPct(a, 0)} de aciertos" solo significa algo si dice a qué momio.</p>`;
+}
+["mt-h-acierto", "mt-h-momio"].forEach((id) => $(id).addEventListener("input", mtHumo));
+$("mt-h-revisar").onclick = async () => {
+  const lineas = $("mt-h-picks").value.split(/\n+/).map((s) => s.trim()).filter(Boolean).slice(0, 12), out = $("mt-h-picks-res");
+  if (!lineas.length) { out.innerHTML = `<p class="hint">Pega al menos un pick con su momio.</p>`; return; }
+  out.innerHTML = `<p class="hint">Revisando ${lineas.length} pick(s)…</p>`;
+  const res = [];
+  for (const l of lineas) {
+    try { const r = await api("checar", { texto: l }); res.push({ l, r }); } catch (e) { res.push({ l, err: e.message }); }
+  }
+  let bar = 0, jus = 0, car = 0, nada = 0;
+  out.innerHTML = res.map(({ l, r, err }) => {
+    const o = r && r.ops && r.ops[0];
+    if (err || !o) { nada++; return `<div class="mt-pick"><b>${admEsc(l)}</b><small>${err ? admEsc(err) : "No lo encontré en lo que escaneó el bot (o falta el momio)."}</small></div>`; }
+    if (o.nivel === "barata") bar++; else if (o.nivel === "justa") jus++; else car++;
+    return `<div class="mt-pick ${o.nivel}"><b>${admEsc(l)}</b><span>${admEsc(o.seleccion)} · ${admEsc(o.partido)}</span>
+      <small>${o.nivel === "barata" ? "🟢 Tenía valor" : o.nivel === "justa" ? "🟡 Precio justo, sin ventaja" : "🔴 Pagado de menos"} · prob. real ${mtPct(o.prob)} · justo ${aAmericano(o.justa)}</small></div>`;
+  }).join("") + (bar + jus + car ? `<div class="mt-veredicto ${bar / (bar + jus + car) >= .5 ? "verde" : "rojo"}"><b class="t">De ${bar + jus + car} picks revisados, ${bar} tenían valor real</b>
+      ${car ? `${car} estaban pagados de menos: aunque peguen, a la larga pierden.` : ""}${nada ? ` (${nada} no los pude revisar)` : ""}</div>` : "");
+};
+
+// ---- 🎲 Simulador
+function mtSimular() {
+  const banca = parseFloat($("mt-s-banca").value) || 1000, monto = parseFloat($("mt-s-monto").value) || 50, d = aDecimal($("mt-s-momio").value) || 2.5;
+  const ventaja = Number($("mt-s-ventaja").value), n = Number($("mt-s-n").value), p = Math.min(.99, (1 + ventaja) / d), N = 400;
+  const caminos = [], finales = []; let quiebras = 0;
+  for (let k = 0; k < N; k++) {
+    let b = banca; const cam = [b];
+    for (let i = 0; i < n; i++) { if (b < monto) { cam.push(b); continue; } b += Math.random() < p ? monto * (d - 1) : -monto; cam.push(b); }
+    if (b < monto) quiebras++;
+    caminos.push(cam); finales.push(b);
+  }
+  const pct = (arr, q) => { const s = arr.slice().sort((a, b) => a - b); return s[Math.floor(q * (s.length - 1))]; };
+  const bandas = Array.from({ length: n + 1 }, (_, i) => { const col = caminos.map((c) => c[i]); return [pct(col, .1), pct(col, .5), pct(col, .9)]; });
+  const mk = mtSvg($("mt-s-svg")), W = 320, H = 170;
+  const lo = Math.min(0, ...bandas.map((b) => b[0])), hi = Math.max(banca * 1.2, ...bandas.map((b) => b[2]));
+  const x = (i) => i / n * W, y = (v) => H - 6 - (v - lo) / ((hi - lo) || 1) * (H - 12);
+  mk("polygon", { points: bandas.map((b, i) => `${x(i)},${y(b[2])}`).concat(bandas.slice().reverse().map((b, j) => `${x(n - j)},${y(b[0])}`)).join(" "), fill: "var(--accent)", "fill-opacity": ".18" });
+  caminos.slice(0, 6).forEach((c) => mk("polyline", { points: c.map((v, i) => `${x(i)},${y(v)}`).join(" "), fill: "none", stroke: "var(--fg)", "stroke-opacity": ".22", "stroke-width": 1, "vector-effect": "non-scaling-stroke" }));
+  mk("line", { x1: 0, x2: W, y1: y(banca), y2: y(banca), stroke: "var(--muted)", "stroke-dasharray": "3 4", "vector-effect": "non-scaling-stroke" });
+  mk("polyline", { points: bandas.map((b, i) => `${x(i)},${y(b[1])}`).join(" "), fill: "none", stroke: "var(--accent)", "stroke-width": 2.8, "vector-effect": "non-scaling-stroke" });
+  const t = mk("text", { x: 4, y: y(banca) - 4, "font-size": 9, fill: "var(--muted)" }); t.textContent = "banca inicial";
+  const perdieron = finales.filter((f) => f < banca).length / N, med = pct(finales, .5), esperado = banca + n * monto * ventaja;
+  $("mt-s-res").innerHTML = `<div class="mt-kpis"><div><b class="${perdieron > .5 ? "neg" : "pos"}">${mtPct(perdieron, 0)}</b><small>terminaron perdiendo</small></div>
+      <div><b class="${quiebras ? "neg" : ""}">${mtPct(quiebras / N, 0)}</b><small>se quedaron sin banca</small></div>
+      <div><b class="${mtCls(med - banca)}">${fmt(med)}</b><small>banca del apostador típico</small></div>
+      <div><b class="${mtCls(esperado - banca)}">${mtSign(n * monto * ventaja)}</b><small>lo que dice la matemática</small></div></div>
+    <div class="mt-veredicto ${ventaja < 0 ? "rojo" : ventaja > 0 ? "verde" : "amar"}"><b class="t">${ventaja < 0 ? "Con margen en contra, el tiempo juega para la casa" : ventaja > 0 ? "Con ventaja, el tiempo juega para ti (con altibajos)" : "Sin ventaja, es un volado largo"}</b>
+      ${n} apuestas de ${fmt(monto)} a ${aAmericano(d)} con ${ventaja >= 0 ? "+" : ""}${mtPct(ventaja, 0)} de ventaja. Algunos ganan por suerte (las líneas grises), pero el grupo completo termina donde dice la matemática.</div>`;
+}
+$("mt-s-correr").onclick = mtSimular;
+$("mt-s-mios").onclick = () => {
+  const c = mtCerradas().filter((b) => b.resultado !== "nula");
+  if (!c.length) { $("mt-s-res").innerHTML = `<p class="hint">Todavía no tienes apuestas cerradas para usar tus números.</p>`; return; }
+  const montoP = c.reduce((s, b) => s + b.monto, 0) / c.length, dP = Math.exp(c.reduce((s, b) => s + Math.log(b.cuota), 0) / c.length);
+  const ev = c.reduce((s, b) => s + b.monto * (mtProb(b).p * b.cuota - 1), 0) / c.reduce((s, b) => s + b.monto, 0);
+  $("mt-s-monto").value = Math.round(montoP); $("mt-s-momio").value = soloAmericano(dP);
+  $("mt-s-banca").value = Math.round(bancaInicial || 1000);
+  const sel = $("mt-s-ventaja"); let op = [...sel.options].find((o) => o.dataset.mio);
+  if (!op) { op = document.createElement("option"); op.dataset.mio = "1"; sel.append(op); }
+  op.value = ev.toFixed(4); op.textContent = `La tuya (${ev >= 0 ? "+" : ""}${mtPct(ev)})`; sel.value = op.value;
+  mtSimular();
+};
+
+// ---- 🧠 Hábitos y límites
+const MT_LIM = "limites-apuesta";
+function mtLimites() { try { return JSON.parse(localStorage.getItem(MT_LIM) || "{}"); } catch (e) { return {}; } }
+function avisoLimites(monto) {
+  const L = mtLimites(), av = [], hoy = new Date();
+  if (L.max && monto > L.max) av.push(`pasa tu máximo por apuesta (${fmt(L.max)})`);
+  if (L.dia) { const n = apuestas.filter((b) => new Date(b.creada).toDateString() === hoy.toDateString()).length; if (n >= L.dia) av.push(`ya llevas ${n} apuestas hoy (tu límite: ${L.dia})`); }
+  if (L.mes) { const neto = mtCerradas().filter((b) => { const d = new Date(b.cerrada || b.creada); return d.getMonth() === hoy.getMonth() && d.getFullYear() === hoy.getFullYear(); }).reduce((s, b) => s + ganancia(b), 0);
+    if (-neto >= L.mes) av.push(`este mes ya perdiste ${fmt(-neto)} (tu límite: ${fmt(L.mes)})`); }
+  if (L.hora !== undefined && L.hora !== "") { const h = hoy.getHours(), lim = Number(L.hora); if (lim >= 12 ? (h >= lim || h < 6) : (h >= lim && h < 6)) av.push("es más tarde de la hora que te pusiste"); }
+  return av.length ? "⚠️ Ojo: " + av.join("; ") : "";
+}
+function mtHabitos() {
+  const L = mtLimites();
+  $("mt-l-max").value = L.max || ""; $("mt-l-dia").value = L.dia || ""; $("mt-l-mes").value = L.mes || ""; $("mt-l-hora").value = L.hora ?? "";
+  const todas = apuestas.slice().sort((a, b) => a.creada - b.creada), c = mtCerradas();
+  const h = $("mt-hab"); h.innerHTML = "";
+  const item = (ico, tit, txt, tipo) => { const d = el("div", "mt-hab " + (tipo || "")); d.innerHTML = `<span class="ico">${ico}</span><b>${tit}</b><small>${txt}</small>`; h.append(d); };
+  if (todas.length < 5) { item("📋", "Faltan datos", "Con al menos 5 apuestas registradas te digo cómo apuestas.", ""); return; }
+  // persecución: después de perder, ¿sube el monto?
+  let trasPerder = [], trasGanar = [];
+  const ord = c.slice().sort((a, b) => (a.cerrada || a.creada) - (b.cerrada || b.creada));
+  ord.forEach((b) => { const sig = todas.find((x) => x.creada > (b.cerrada || b.creada) && x.creada - (b.cerrada || b.creada) < 864e5);
+    if (sig && b.monto) (b.resultado === "pierde" ? trasPerder : b.resultado === "gana" ? trasGanar : []).push(sig.monto / b.monto); });
+  const prom = (a) => (a.length ? a.reduce((s, x) => s + x, 0) / a.length : null), pp = prom(trasPerder), pg = prom(trasGanar);
+  if (pp != null && trasPerder.length >= 3) {
+    if (pp > 1.3) item("🔥", "Persigues pérdidas", `Después de perder, tu siguiente apuesta es en promedio ${(pp).toFixed(1)}× más grande (${trasPerder.length} veces). Es la forma más rápida de hundir una banca.`, "alerta");
+    else item("🧊", "No persigues pérdidas", `Después de perder mantienes tus montos (${pp.toFixed(1)}×). Muy bien.`, "bien");
+  }
+  // horario
+  const noche = todas.filter((b) => { const x = new Date(b.creada).getHours(); return x >= 0 && x < 5; }).length / todas.length;
+  if (noche > .15) item("🌙", "Apuestas de madrugada", `${mtPct(noche, 0)} de tus apuestas son entre 12 y 5 am. De noche se decide peor.`, "alerta");
+  else item("☀️", "Horario sano", `Casi no apuestas de madrugada (${mtPct(noche, 0)}).`, "bien");
+  // parlays
+  const parl = todas.filter(mtEsParlay).length / todas.length;
+  if (parl > .4) item("🎰", "Muchos parlays", `${mtPct(parl, 0)} de tus apuestas son parlays: ahí la casa cobra margen en cada pierna. Revisa la pestaña 🎰.`, "alerta");
+  else item("🎯", "Sobre todo sencillas", `Solo ${mtPct(parl, 0)} son parlays.`, "bien");
+  // montos crecientes
+  const mesAtras = Date.now() - 30 * 864e5, rec = todas.filter((b) => b.creada >= mesAtras), ant = todas.filter((b) => b.creada < mesAtras);
+  const mr = prom(rec.map((b) => b.monto)), ma = prom(ant.map((b) => b.monto));
+  if (mr && ma && rec.length >= 3 && ant.length >= 3) {
+    if (mr > ma * 1.5) item("📈", "Tus montos van subiendo", `Este mes apuestas en promedio ${fmt(mr)} contra ${fmt(ma)} antes.`, "alerta");
+    else item("📏", "Montos estables", `Promedio ${fmt(mr)} este mes (antes ${fmt(ma)}).`, "bien");
+  }
+  // frecuencia
+  const dias = new Set(todas.filter((b) => b.creada >= mesAtras).map((b) => new Date(b.creada).toDateString())).size;
+  item(dias > 20 ? "📅" : "🗓️", dias > 20 ? "Apuestas casi diario" : "Frecuencia", `${dias} de los últimos 30 días hiciste al menos una apuesta.`, dias > 20 ? "alerta" : "");
+}
+$("mt-l-guardar").onclick = () => {
+  const n = (v) => (parseFloat(v) > 0 ? parseFloat(v) : undefined);
+  const L = { max: n($("mt-l-max").value), dia: n($("mt-l-dia").value), mes: n($("mt-l-mes").value), hora: $("mt-l-hora").value };
+  try { localStorage.setItem(MT_LIM, JSON.stringify(L)); $("mt-l-estado").innerHTML = `<div class="mt-veredicto verde"><b class="t">✅ Límites guardados</b>Te aviso al registrar una apuesta que se pase.</div>`; }
+  catch (e) { $("mt-l-estado").textContent = "No se pudieron guardar en este navegador."; }
+};
+
 // ---------------------------------------------------------------- 🔎 archivo de partidos pasados
 const LIGAS_AR = [["", "Todas las ligas"], ["soccer/mex.1", "Liga MX"], ["soccer/eng.1", "Premier"], ["soccer/esp.1", "LaLiga"], ["soccer/ita.1", "Serie A"],
   ["soccer/ger.1", "Bundesliga"], ["soccer/fra.1", "Ligue 1"], ["soccer/uefa.champions", "Champions"], ["soccer/uefa.europa", "Europa League"],
