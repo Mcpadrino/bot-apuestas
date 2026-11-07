@@ -14,6 +14,7 @@ import sys
 
 import requests
 
+import anticipado
 import espn
 
 BOT_URL = os.getenv("BOT_URL") or "https://bot-apuestas-telegram.vercel.app"
@@ -44,6 +45,15 @@ def es_combinada(a):
     return bool(re.search(r"\b(parlay|parley|combinada)\b", s)) or "+" in re.sub(r"[+-]\d", "", a["seleccion"])
 
 
+NO_ML = re.compile(r"\b(m[aá]s de|menos de|over|under|empate|draw|ambos|btts|h[aá]ndicap|handicap|spread|total)\b", re.I)
+
+
+def es_ml(a):
+    """¿Apuesta sencilla a ganador del partido? (las que tienen pago anticipado en Caliente/Draftea)"""
+    s = a.get("seleccion") or ""
+    return not es_combinada(a) and not NO_ML.search(s) and not re.search(r"[+-]\d+(\.\d+)?\s*(pts|puntos|goles|carreras)?\s*$", s)
+
+
 def mejor_partido(a, partidos):
     """El partido terminado que más se parece a lo que escribió el usuario, o None."""
     try:
@@ -70,10 +80,12 @@ def mejor_partido(a, partidos):
     return mejor
 
 
-def enviar(a, p, propuesta, logo):
+def enviar(a, p, propuesta, logo, nota=""):
     tipo = p["liga"].split("_")[0]
     linea = {"gana": "Parece que ✅ *ganaste*", "pierde": "Parece que ❌ *perdiste*",
              "nula": "Parece que quedó ➖ *nula*"}.get(propuesta, "¿Cómo quedó tu apuesta?")
+    if nota:
+        linea = f"{nota}\n{linea}"
     seleccion = re.sub(r"[_*`\[\]]", "", a["seleccion"])
     texto = (f"{EMOJI.get(tipo, '🏁')} Final: *{espn.texto_marcador(p)}*\n"
              f"Tu apuesta #{a['id']}: {seleccion} {amer(a['cuota'])} · ${float(a['monto']):.2f}\n\n"
@@ -132,11 +144,24 @@ def main():
         ml, mv = espn.menciona(a["seleccion"], loc), espn.menciona(a["seleccion"], vis)
         equipo = loc if ml > mv else vis if mv > ml else (loc if loc["ganador"] else vis)
         logo = equipo.get("logo")
-        print(f"#{a['id']} «{a['seleccion']}» -> {espn.texto_marcador(p)} · propuesta: {propuesta}")
+        nota = ""
+        # Pago anticipado: si su equipo llegó a ir arriba por la ventaja de la casa, se cobra como ganada
+        tipo = p["liga"].split("_")[0]
+        con_pa = a.get("anticipado") if a.get("anticipado") is not None else es_ml(a)
+        if con_pa and propuesta != "gana" and tipo in anticipado.UMBRAL and ml != mv:
+            v = espn.ventajas(p["evento"])
+            if v:
+                maxima = v[0] if equipo is loc else v[1]
+                k = anticipado.UMBRAL[tipo]
+                if maxima >= k:
+                    propuesta = "gana"
+                    unidad = {"soccer": "goles", "basketball": "puntos", "americanfootball": "puntos", "baseball": "carreras"}[tipo]
+                    nota = f"⏩ *Pago anticipado*: tu equipo llegó a ir arriba por {maxima} {unidad} (la casa paga desde {k})."
+        print(f"#{a['id']} «{a['seleccion']}» -> {espn.texto_marcador(p)} · propuesta: {propuesta} {nota}")
         if prueba:
             continue
         if proponer(a["id"], p["evento"], espn.texto_marcador(p), logo):
-            enviar(a, p, propuesta, logo)
+            enviar(a, p, propuesta, logo, nota)
 
 
 if __name__ == "__main__":

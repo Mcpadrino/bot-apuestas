@@ -231,3 +231,36 @@ def prueba_noticias():
 
 if __name__ == "__main__" and len(sys.argv) > 1 and sys.argv[1] == "noticias":
     prueba_noticias()
+
+
+# ---------------------------------------------------------------- pago anticipado
+def ventajas(evento):
+    """Máxima ventaja que tuvo cada lado durante el partido: (local, visita). None si ESPN no lo da.
+    evento = "liga:id" como lo regresa marcadores()."""
+    import re as _re
+    liga, _, eid = evento.rpartition(":")
+    ruta = LIGAS.get(liga)
+    if not ruta or not eid:
+        return None
+    j = _get(BASE.format(ruta=f"{ruta}/summary"), event=eid)
+    if not j:
+        return None
+    marcas = []
+    if ruta.startswith("soccer"):
+        for k in j.get("keyEvents") or []:
+            tipo = ((k.get("type") or {}).get("type") or (k.get("type") or {}).get("text") or "").lower()
+            if not (k.get("scoringPlay") or "goal" in tipo):
+                continue
+            m = _re.findall(r"(\d+),\s[^,\d]+?\s(\d+)\.", k.get("text") or "")
+            if m:
+                marcas.append((int(m[-1][0]), int(m[-1][1])))
+    else:
+        for k in (j.get("scoringPlays") or j.get("plays") or []):
+            if "homeScore" in k and "awayScore" in k:
+                try:
+                    marcas.append((int(k["homeScore"]), int(k["awayScore"])))
+                except (TypeError, ValueError):
+                    pass
+    if not marcas:
+        return None
+    return max([0] + [h - a for h, a in marcas]), max([0] + [a - h for h, a in marcas])

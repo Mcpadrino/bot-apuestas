@@ -23,6 +23,7 @@ import sys
 from collections import Counter
 from pathlib import Path
 from zoneinfo import ZoneInfo
+import anticipado
 
 try:
     import requests
@@ -546,6 +547,7 @@ def mensaje_telegram(tabla):
             msg.append("")
             msg.append(TITULO_MERCADO[mk])
             mejor = max(filas, key=lambda x: x["prob"])
+            p_emp = next((x["prob"] for x in filas if x["seleccion"] in ("Empate", "Draw")), None)
             for f in sorted(filas, key=lambda x: -x["prob"]):
                 marca = "⭐" if f is mejor and len(filas) > 1 else "▫️"
                 rayo = " ⚡" if abs(f["mov"]) >= MOVIMIENTO else ""
@@ -554,6 +556,10 @@ def mensaje_telegram(tabla):
                     sel += f" {UNIDAD.get(tipo, '')}"
                 msg.append(f"{marca} {sel} · {f['prob']:.1%}{rayo}")
                 msg.append(f"      paga {momio_usuario(f['minima'])} o mejor → ${f['monto']:,.0f}")
+                if mk == "h2h" and f["seleccion"] not in ("Empate", "Draw"):
+                    ma = anticipado.minima_anticipado(tipo, f["prob"], f["minima"], p_emp)
+                    if ma and momio_usuario(ma) != momio_usuario(f["minima"]):
+                        msg.append(f"      ⏩ con pago anticipado: {momio_usuario(ma)}")
     return msg
 
 

@@ -7,21 +7,13 @@ jobs:
   d:
     runs-on: ubuntu-latest
     steps:
-      - name: Estructura de summary ESPN (pago anticipado)
+      - uses: actions/checkout@v4
+      - run: pip install requests -q
+      - name: Prueba pago anticipado
         run: |
           python3 - <<'P'
-          import json, urllib.request
-          B="https://site.api.espn.com/apis/site/v2/sports/{}/summary?event={}"
-          for ruta, ev in [("soccer/eng.1","401879242"),("basketball/nba","401909294"),("football/nfl","401873037"),("baseball/mlb","401908046")]:
-              j=json.load(urllib.request.urlopen(B.format(ruta,ev)))
-              print("=====",ruta, sorted(j.keys()))
-              for k in ("keyEvents","scoringPlays","plays"):
-                  v=j.get(k)
-                  if isinstance(v,list) and v:
-                      print("--",k,len(v))
-                      for x in v[:3]: print(json.dumps(x)[:600])
-                      sc=[x for x in v if x.get("scoringPlay") or "homeScore" in x]
-                      print("   con marcador:",len(sc), json.dumps(sc[-1])[:400] if sc else "")
-              hd=j.get("header",{}).get("competitions",[{}])[0].get("competitors",[])
-              print("equipos:", [(c.get("homeAway"), c.get("team",{}).get("id"), c.get("team",{}).get("displayName")) for c in hd])
+          import espn
+          for ev in ["soccer_epl:401879242","basketball_nba:401909294","americanfootball_nfl:401873037","baseball_mlb:401908046"]:
+              print(ev, espn.ventajas(ev))
           P
+          python3 resultados.py --prueba || true
