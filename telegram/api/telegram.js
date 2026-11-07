@@ -95,7 +95,7 @@ function parsearApuesta(texto) {
   return { seleccion, cuota, monto, prob, casa, cartera };
 }
 
-const TERMINOS_URL = "https://bot-apuestas-telegram.vercel.app/terminos.html";
+const TERMINOS_URL = WEB_URL + "/terminos.html";
 const TERMINOS_CORTO = "⚖️ *Importante:* los porcentajes son de modelos predictivos y pueden fallar; no hay ganancias garantizadas. " +
   "Cada quien decide y es responsable de lo que apuesta. Solo mayores de 18. Términos completos: " + TERMINOS_URL;
 
@@ -216,7 +216,7 @@ async function atenderTexto(chat, texto, esDueno, msgId) {
     return enviar(AYUDA + (esDueno ? AYUDA_ADMIN : ""), { reply_markup: TECLADO });
 
   if (["guia", "manual", "folleto", "instrucciones", "📘"].includes(cmd) || texto.includes("Guía")) {
-    const base = "https://bot-apuestas-telegram.vercel.app/docs/";
+    const base = WEB_URL + "/docs/";
     const docs = [
       ["folleto.pdf", "📄 *Folleto*: qué es el bot y todo lo que incluye. Compártelo con quien le interese."],
       ["guia-usuario.pdf", "📘 *Guía del usuario*: todo paso a paso, explicado desde cero aunque nunca hayas apostado."],
@@ -658,7 +658,7 @@ async function pedirAcceso(u, chatId) {
   // primera vez (o cualquier mensaje): pedir el número con un botón
   const nuevo = await mas("aviso", { usuario: env("TELEGRAM_CHAT_ID"), clave: `solicitud:${chatId}` }).catch(() => true);
   await tg("sendMessage", { chat_id: chatId,
-    text: "🔒 Este bot es privado.\n\nToca el botón de abajo 👇 para pedir acceso: le llega tu nombre y tu número al dueño para que te acepte.\n\nAl pedir acceso confirmas que eres mayor de 18 y aceptas los términos: https://bot-apuestas-telegram.vercel.app/terminos.html", disable_web_page_preview: true,
+    text: "🔒 Este bot es privado.\n\nToca el botón de abajo 👇 para pedir acceso: le llega tu nombre y tu número al dueño para que te acepte.\n\nAl pedir acceso confirmas que eres mayor de 18 y aceptas los términos: " + TERMINOS_URL, disable_web_page_preview: true,
     reply_markup: { keyboard: [[{ text: "📱 Pedir acceso (compartir mi número)", request_contact: true }]], resize_keyboard: true, one_time_keyboard: true } });
   if (nuevo) await tg("sendMessage", { chat_id: env("TELEGRAM_CHAT_ID"), parse_mode: "Markdown",
     text: `👀 ${limpiar(nombre)}${quien.username ? ` (@${limpiar(quien.username)})` : ""} le escribió al bot y no tiene acceso. Ya le pedí que comparta su número.\n🆔 \`${chatId}\``,
@@ -696,7 +696,7 @@ export default async function handler(req, res) {
   if (req.query.guru !== undefined && req.method === "POST") {
     if (!tokenOk()) return res.status(401).json({ error: "no" });
     const b = req.body || {};
-    if (!["guardar", "pendientes", "resultado", "excel", "archivo", "archivo_n", "calibrar_datos", "config_get", "config_set"].includes(b.accion)) return res.status(400).json({ error: "acción" });
+    if (!["guardar", "pendientes", "resultado", "excel", "archivo", "archivo_n", "calibrar_datos", "config_get", "config_set", "esquema"].includes(b.accion)) return res.status(400).json({ error: "acción" });
     return res.status(200).json(await guru(b.accion, b.datos || {}));
   }
   if (req.query.semana !== undefined) {

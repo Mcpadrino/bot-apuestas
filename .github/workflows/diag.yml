@@ -1,5 +1,8 @@
 name: diag
 on: workflow_dispatch
+env:
+  BOT_URL: ${{ vars.BOT_URL }}   # la dirección de TU página en Vercel (variable del repositorio)
+
 jobs:
   d:
     runs-on: ubuntu-latest

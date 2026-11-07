@@ -23,7 +23,7 @@ import requests
 
 import espn
 
-BOT_URL = os.getenv("BOT_URL", "https://bot-apuestas-telegram.vercel.app")
+BOT_URL = os.getenv("BOT_URL") or "https://bot-apuestas-telegram.vercel.app"
 TOKEN = "".join(os.getenv("TELEGRAM_TOKEN", "").split())
 PRUEBA = "--prueba" in sys.argv
 AHORA = dt.datetime.now(dt.timezone.utc)

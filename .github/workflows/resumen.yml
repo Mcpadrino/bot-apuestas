@@ -9,6 +9,9 @@ on:
         type: boolean
         default: true
 
+env:
+  BOT_URL: ${{ vars.BOT_URL }}   # la dirección de TU página en Vercel (variable del repositorio)
+
 jobs:
   resumen:
     runs-on: ubuntu-latest

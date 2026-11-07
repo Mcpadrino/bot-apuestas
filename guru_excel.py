@@ -22,7 +22,7 @@ from openpyxl.formatting.rule import CellIsRule
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
-BOT_URL = os.getenv("BOT_URL", "https://bot-apuestas-telegram.vercel.app")
+BOT_URL = os.getenv("BOT_URL") or "https://bot-apuestas-telegram.vercel.app"
 TOKEN = "".join(os.getenv("TELEGRAM_TOKEN", "").split())
 DUENO = "".join(os.getenv("TELEGRAM_CHAT_ID", "").split())
 PRUEBA = "--prueba" in sys.argv

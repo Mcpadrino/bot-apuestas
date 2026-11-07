@@ -16,7 +16,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
-BOT_URL = os.getenv("BOT_URL", "https://bot-apuestas-telegram.vercel.app")
+BOT_URL = os.getenv("BOT_URL") or "https://bot-apuestas-telegram.vercel.app"
 TOKEN = "".join(os.getenv("TELEGRAM_TOKEN", "").split())
 PRUEBA = "--prueba" in sys.argv
 MX = dt.timezone(dt.timedelta(hours=-6))

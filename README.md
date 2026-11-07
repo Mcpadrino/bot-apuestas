@@ -1,132 +1,100 @@
-# Bot de señales de apuestas — guía
+# 🧮 Bitácora de apuestas — sin humo
 
-## Qué hace
-1. Descarga las cuotas de Pinnacle (la casa más precisa del mercado) para
-   Liga MX, Premier, LaLiga, Champions, NFL, NBA y MLB.
-2. Les quita el margen con el **método power**, que corrige el sesgo de las
-   cuotas altas, y obtiene la probabilidad real de cada resultado.
-3. Te manda a **Telegram**, 2 veces al día (7:00 y 18:00), la **cuota mínima** que debes
-   encontrar en Caliente o Draftea y **cuánto apostar** (Kelly fraccional).
-4. Marca con ⚡ las líneas que se movieron desde el escaneo anterior: ahí es
-   más probable que Caliente se haya quedado atrás.
+**Una herramienta abierta y gratuita para apostar con matemáticas, no con corazonadas ni con tipsters.**
 
-No apuesta solo: tú comparas y apuestas a mano.
+La mayoría de la gente que apuesta pierde, no por mala suerte, sino porque cada momio trae escondido el margen de la casa y porque nadie lleva la cuenta real. Los "gurús" venden picks "seguros" sin enseñar su historial. Este proyecto hace lo contrario:
 
----
+- Te dice **cuánto vale de verdad** cada apuesta (probabilidad real de Pinnacle sin margen) y **a qué momio deja de convenir**.
+- Lleva **tu cuenta real**: lo que ganas y también lo que pierdes.
+- Te enseña la verdad de los **parlays**, el **"impuesto" de la casa**, si vas bien por **suerte o habilidad**, y tiene un **detector de humo** para tipsters.
+- Sus modelos propios (el "Gurú") se comparan **en público** contra Pinnacle, con aciertos **y fallos**, y se recalibran solos.
 
-## Instalación en GitHub + Telegram (gratis, sin computadora prendida)
+No es una casa de apuestas, no mueve dinero y no vende nada. **Si te sirve, móntalo para ti y tus amigos y hazlo tuyo.**
 
-### 1. Clave de cuotas
-Crea cuenta en **the-odds-api.com** (plan gratis: 500 créditos/mes, sin tarjeta).
-Copia tu clave.
-
-### 2. Bot de Telegram
-1. En Telegram busca **@BotFather** → `/newbot` → ponle nombre.
-   Te da un **token** (algo como `123456:ABC-xyz`).
-2. Abre tu bot nuevo y mándale cualquier mensaje ("hola").
-3. En el navegador abre
-   `https://api.telegram.org/botTU_TOKEN/getUpdates`
-   y busca `"chat":{"id":123456789` → ese número es tu **chat id**.
-
-### 3. GitHub
-1. Crea cuenta en **github.com** y un repositorio nuevo **privado**
-   (por ejemplo `bot-apuestas`).
-2. Sube estos archivos: `bot_apuestas.py`, `requirements.txt`,
-   `demo_momios.json`.
-3. Crea el archivo `.github/workflows/alertas.yml` (botón *Add file → Create
-   new file*, escribe esa ruta tal cual) y pega el contenido de `alertas.yml`.
-4. Ve a *Settings → Secrets and variables → Actions → New repository secret*
-   y crea tres:
-   - `ODDS_API_KEY` → tu clave de the-odds-api
-   - `TELEGRAM_TOKEN` → el token de BotFather
-   - `TELEGRAM_CHAT_ID` → tu chat id
-5. Pruébalo: pestaña *Actions → Alertas de apuestas → Run workflow*.
-   En un minuto te llega el mensaje a Telegram.
-
-Desde ahí corre solo a las **7:00 y 18:00** (hora CDMX), según el calendario: NFL lun/jue/dom, Champions mar/mié, Europa League jue, Liga MX + 5 grandes ligas vie/sáb/dom, NBA y MLB lun–jue. También puedes
-correrlo cuando quieras desde la app de GitHub en el celular.
-
-> Nunca pegues tus claves dentro del código si el repositorio es público.
-> Los *secrets* las mantienen ocultas.
+> ⚠️ Solo mayores de 18. Las probabilidades salen de modelos y pueden fallar; nada aquí garantiza ganancias. Apuesta solo lo que puedas perder. Si sientes que el juego te está afectando: Línea de la Vida 800 911 2000 (México).
 
 ---
 
-## Cómo leer el mensaje
-```
-🕐 Jue 05 20:00  Los Angeles Lakers @ Boston Celtics
-Boston Celtics (Ganador): mín -150 / 1.67 → $2
-⚡Los Angeles Lakers (Ganador): mín +170 / 2.70 → $2
-```
-- Abre Caliente. Si Lakers paga **+170 o más**, apuesta **$2**.
-- Si paga menos, no apuestas. La mayoría de los días casi nada califica: eso es normal.
-- Revisa primero las ⚡.
+## Qué trae
 
-## Registro (en tu computadora)
-```
-python bot_apuestas.py revisar --cuota +175 --justa 2.62
-python bot_apuestas.py registrar --partido "Lakers @ Celtics" --seleccion Lakers --casa Caliente --cuota +175 --justa 2.62 --monto 2
-python bot_apuestas.py liquidar --id 1 --resultado gana      (o pierde / nula)
-python bot_apuestas.py resumen
-```
-Si prefieres, lleva el registro en una hoja de cálculo con las mismas columnas.
+| Parte | Qué hace |
+|---|---|
+| 🤖 **Escáner** (`bot_apuestas.py`) | 2 veces al día baja momios de Pinnacle (The Odds API), les quita el margen y calcula el **momio mínimo** que necesitas en tu casa (Caliente, Draftea…) para que haya valor. |
+| 💬 **Bot de Telegram** (`telegram/api/telegram.js`) | Manda las señales, registra apuestas, revisa momios ("checa Ravens -250"), busca partidos pasados (`partidos chivas`), PDFs de ayuda. |
+| 🌐 **Página / app** (`telegram/index.html`) | Bitácora, **🧮 La matemática** (cuenta real, impuesto, parlays, suerte, detector de humo, simulador, hábitos y límites), Gurú, líneas, marcadores en vivo, quiniela y retos entre amigos, minijuegos con mascota… Se instala en el celular como app. |
+| 🔮 **Gurú** (`pronosticos.py`) | Modelos open source (Dixon-Coles, xG, Elo) que se miden contra Pinnacle. Guarda **todos los marcadores** para siempre y se **recalibra cada semana** al juntar 200 partidos. |
+| ✅ **Resultados** (`resultados.py`) | Califica solas las apuestas cuando terminan los partidos (ESPN, gratis). |
+
+**Cuesta $0**: GitHub (procesos automáticos), Vercel (página), Supabase (base de datos), Telegram, ESPN y el plan gratis de The Odds API (500 créditos/mes).
 
 ---
 
-## Ajustes
-Se cambian al inicio de `bot_apuestas.py`, o como *variables* en GitHub
-(*Settings → Secrets and variables → Actions → Variables*).
+## Monta tu propia copia (≈ 1 hora, sin saber programar mucho)
 
-| Variable | Valor | Qué hace |
-|---|---|---|
-| `BANCA` | 200 | tu banca en MXN; actualízala cada semana |
-| `EDGE_MIN` | 0.03 | ventaja mínima para apostar (3 %) |
-| `CUOTA_MIN` / `CUOTA_MAX` | 1.25 / 4.0 | descarta favoritos extremos y no favoritos |
-| `KELLY_FRAC` | 0.25 | fracción de Kelly |
-| `TOPE_APUESTA` | 0.025 | máximo por apuesta (2.5 % de la banca) |
-| `APUESTA_MIN` | 2 | mínimo que acepta tu casa |
-| `METODO_DEVIG` | power | o `multiplicativo` |
-| `MOVIMIENTO` | 0.02 | cuánto debe moverse la prob. para marcar ⚡ |
+### 0. Lo que necesitas (todo gratis)
+- Cuenta de **GitHub**, **Vercel** (entra con GitHub) y **Supabase**.
+- Una clave de **the-odds-api.com** (plan gratis).
+- Un bot de **Telegram**: en Telegram busca **@BotFather** → `/newbot` → te da un **token**.
+- Tu **chat id**: manda "hola" a tu bot y abre `https://api.telegram.org/botTU_TOKEN/getUpdates`; busca `"chat":{"id":123456789`.
 
-## Créditos de la API
-El bot reparte solo los 500 créditos del mes: cada corrida revisa cuántos
-quedan y cuántos días faltan. Siempre busca el ganador (h2h); si sobra
-presupuesto agrega hándicap y totales en este orden: NFL, Liga MX, Champions,
-Europa League, Premier, LaLiga, Serie A, Bundesliga, Ligue 1, NBA y MLB. Las ligas fuera de temporada no
-gastan. Guarda 15 créditos de reserva y te avisa por Telegram si se acaban.
+### 1. Copia el proyecto
+Botón **Fork** arriba a la derecha (o *Use this template*). Ahora tienes `tuusuario/bot-apuestas`.
 
-## Que no se apague
-- Si una corrida falla, te llega un ⚠️ a Telegram con el enlace al error.
-- GitHub apaga los workflows de repos públicos tras 60 días sin actividad;
-  el bot hace un commit vacío cada 20 días para evitarlo.
-- GitHub puede retrasar las corridas programadas unos minutos en horas pico.
+### 2. Base de datos (Supabase)
+1. Crea un proyecto nuevo.
+2. Abre **SQL Editor**, pega TODO el archivo [`supabase/esquema.sql`](supabase/esquema.sql) y córrelo. Crea tablas, funciones y horarios.
+3. Al final del archivo hay dos secretos que **debes cambiar** (corre esto con tus valores):
+   ```sql
+   update privado.secretos set valor = 'una-clave-larga-que-inventes' where nombre = 'bot';
+   update privado.secretos set valor = 'tu-token-de-github' where nombre = 'github';
+   ```
+   El token de GitHub: *Settings → Developer settings → Fine-grained tokens*, solo tu repo, permiso **Actions: Read and write**.
+4. Edita la función `privado.disparar` y cambia `Mcpadrino/bot-apuestas` por `tuusuario/bot-apuestas`.
+5. En *Project Settings → API* copia la **URL** y la **publishable (anon) key**.
 
-## Reglas del experimento
-- Banca $200, sin recargas a mitad del experimento.
-- Evalúa después de unas 200 apuestas. 25 apuestas no dicen nada:
-  una racha de -5 unidades es normal aun con un método ganador.
-- Lo que importa en `resumen` es si tu ganancia real sigue a la esperada.
+### 3. Página y bot (Vercel)
+1. **Add New → Project** → importa tu repo. **Root Directory: `telegram`**. Framework: *Other*.
+2. En *Environment Variables* pon:
 
-## Funciones nuevas (no gastan créditos de cuotas)
+   | Variable | Valor |
+   |---|---|
+   | `SUPABASE_URL` | la URL de tu proyecto |
+   | `SUPABASE_KEY` | la publishable (anon) key |
+   | `BOT_CLAVE` | la misma clave larga que pusiste en `privado.secretos` ('bot') |
+   | `TELEGRAM_TOKEN` | el token de BotFather |
+   | `TELEGRAM_CHAT_ID` | tu chat id (tú eres el dueño/administrador) |
+   | `WEBHOOK_SECRET` | otra palabra secreta inventada |
+   | `WEB_URL` | la dirección que te dé Vercel, ej. `https://mi-bitacora.vercel.app` |
+3. Deploy. Luego abre una vez `https://TU-PAGINA.vercel.app/api/telegram?setup=TU_WEBHOOK_SECRET` para conectar el bot.
 
-- **🎯 Señales**: botón en Telegram y sección en la página con lo último que mandó el bot (se lee de la base de datos).
-- **✅ ¿Conviene?**: capturas lo que paga Caliente/Draftea y te dice si conviene; tus amigos votan y les llega aviso si hay valor. Pestaña de análisis con ventaja y margen de cada casa.
-- **🔎 Checador**: escribe lo que te ofrece el casino (`Ravens -250?` en Telegram o en la página) y te dice si está barata, justa o cara.
-- **💸 Retiros y depósitos**: `retiro 50` / `deposito 50` (o en la página) cambian la banca del bot y los montos sugeridos; `retiro normal 50` / `deposito normal 50` llevan el saldo de tus apuestas normales.
-- **🔮 Gurú**: pronósticos de modelos open source (Dixon-Coles con `penaltyblog` para fútbol, Elo para NFL/NBA/MLB) comparados contra Pinnacle; guarda el historial y lleva el marcador de quién acierta más (`pronosticos.py`, `pronosticos.yml`).
-- **📏 ¿Vas bien o es suerte?**: CLV contra el último escaneo antes del partido y gráfica de ganancia real contra la esperada con franja de suerte normal.
-- **⚡ Movimientos fuertes**: aviso por Telegram si una línea de Pinnacle se mueve 3 puntos o más entre escaneos.
-- **🧪 Gurú xG**: modelo aparte con xG estimado con los tiros de ESPN (Liga MX y 5 grandes).
-- **🕹️ Minijuegos**: mascota con tienda (cartera virtual = lo ganado en apuestas + premios, no es dinero real), Adivina el logo, Penales, Canasta y Gol de campo.
-- **🏆 Pick'em del Mundial de LoL**, **🐾 mascota que festeja o se pone triste** con tus apuestas (y avisa si tiene hambre), **🏅 logros** con premio, **🏆 tabla general** y **📸 tarjeta semanal** para compartir.
-- **🏠 Inicio editable**, **🎨 Mi diseño** (colores, modo, fondo con estadios reales de ESPN/Wikipedia, letra, esquinas, menú con favoritos), **📋 ficha del partido**, **📊 tablas y goleadores**, **⭐ página de tu equipo** y **📷 llenar apuesta con foto** (Tesseract.js en el celular).
-- **🙋 Solicitudes de acceso**: quien escribe al bot sin acceso comparte su número y al dueño le llegan botones para aceptarlo.
-- **🐉 LoL Worlds**: calendario y resultados de la API pública de LoL Esports, Elo por equipo y transmisión en vivo.
-- **⏰ Horarios**: los dispara Supabase (pg_cron + pg_net) con un token de GitHub guardado en `privado.secretos`.
-- **📈 Movimiento de líneas**: cómo cambió la probabilidad de Pinnacle entre escaneos.
-- **🏆 Quiniela**: pronósticos de la jornada sin dinero, con tabla entre amigos.
-- **⚔️ Retos 1 vs 1**: retas a un amigo; el bot avisa quién ganó.
-- **🎮 Modo práctica**: apuestas simples y parlays de mentira con los momios mínimos del bot (banca virtual de $1,000).
-- **⭐ Mi equipo**: la página toma los colores y el escudo de tu equipo, y el bot te avisa antes de cada partido suyo.
-- **🗂 Respaldo mensual**: el día 1 de cada mes llega por Telegram un Excel con todas tus apuestas (`respaldo.yml`).
+### 4. Procesos automáticos (GitHub)
+En tu repo: *Settings → Secrets and variables → Actions*:
+- **Secrets**: `ODDS_API_KEY`, `TELEGRAM_TOKEN`, `TELEGRAM_CHAT_ID`.
+- **Variables**: `BOT_URL` = tu dirección de Vercel. (Opcional `BANCA`.)
 
-`juegos.py` corre cada hora junto con `resultados.py` (quiniela, retos, práctica y avisos del equipo favorito).
+Pruébalo en *Actions → Alertas de apuestas → Run workflow*. Los horarios los dispara Supabase solo (pg_cron), así que no tienes que dejar nada prendido.
+
+### 5. Úsalo
+Escríbele `/start` a tu bot. Para invitar a amigos sin Telegram: en la página, menú → 🛠️ Administrador → crear invitación.
+
+---
+
+## Personalízalo
+- **Casas y mercados**: `bot_apuestas.py` (variables `LIBROS`, `EDGE_MIN`, `CUOTA_MIN/MAX`, calendario por liga).
+- **Ligas del Gurú**: `pronosticos.py` (`GRUPOS_FUTBOL`, `NOMBRES`).
+- **Monto mínimo de tu casa**: variable `APUESTA_MIN` (por defecto $5).
+- **Textos, colores y secciones**: `telegram/index.html` (todo en un archivo).
+- **PDFs de ayuda**: `telegram/docs/`.
+
+## Reglas de oro
+- **Nunca** escribas llaves, tokens ni contraseñas en el código: van en Vercel, GitHub Secrets o `privado.secretos`.
+- No uses esto para vender picks ni para afiliarte con casas: rompe la idea del proyecto (y la licencia te obliga a compartir tus cambios).
+
+## Licencia
+[GNU AGPL v3](LICENSE): puedes usarlo, copiarlo, modificarlo y montarlo para quien quieras, **gratis**. Si publicas una versión modificada (aunque sea como página web), debes compartir tu código con la misma licencia y dar crédito. Así nadie puede tomarlo, cerrarlo y cobrarlo.
+
+## Apoya el proyecto
+Es y será gratis. Si te ayudó y quieres invitar un café, se agradece (ver botón **Sponsor** si está activo). Lo más valioso: **compártelo** y manda ideas o fallas en la sección 📝 Opiniones o en *Issues*.
+
+---
+Creado por **Luis y amigos**. Hecho con datos públicos de ESPN y The Odds API; no está afiliado a ninguna casa de apuestas.

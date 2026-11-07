@@ -1,0 +1,32 @@
+name: Exportar esquema de la base de datos
+
+# Guarda supabase/esquema.sql (tablas, funciones y horarios, SIN secretos) para que otros puedan montar su propia copia.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "40 9 * * 0"     # cada domingo
+
+permissions:
+  contents: write
+
+jobs:
+  esquema:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Descargar esquema
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          BOT_URL: ${{ vars.BOT_URL || 'https://bot-apuestas-telegram.vercel.app' }}
+        run: |
+          mkdir -p supabase
+          curl -sf -X POST "$BOT_URL/api/telegram?guru=1" -H "x-bot-token: $TELEGRAM_TOKEN" -H "content-type: application/json" \
+            -d '{"accion":"esquema","datos":{}}' | python3 -c "import sys,json; open('supabase/esquema.sql','w').write(json.load(sys.stdin))"
+          # nunca subir algo que parezca llave
+          if grep -Eq "(ghp_|github_pat_|eyJhbGci|sb_secret_)" supabase/esquema.sql; then echo "Parece que hay una llave, no se sube"; exit 1; fi
+      - name: Guardar en el repositorio
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add supabase/esquema.sql
+          git diff --cached --quiet || (git commit -m "Actualizar esquema de la base de datos" && git push)

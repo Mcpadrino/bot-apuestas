@@ -319,7 +319,7 @@ def monto_sugerido(p, cuota):
 
 # ---------------------------------------------------------------- alertas
 DUENO = "".join(os.getenv("TELEGRAM_CHAT_ID", "").split())
-BOT_URL = os.getenv("BOT_URL", "https://bot-apuestas-telegram.vercel.app")
+BOT_URL = os.getenv("BOT_URL") or "https://bot-apuestas-telegram.vercel.app"
 
 
 AVISOS = {}          # chat_id -> preferencias de avisos de cada usuario (ligas, % mínimo, horas de silencio)
