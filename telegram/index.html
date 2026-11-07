@@ -555,6 +555,11 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
 .doku-top b { font: 700 1.3rem var(--font-mono, monospace); color: var(--fg); }
 .doku-acc { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 .doku-acc button { padding: 9px 4px; border-radius: 12px; font-size: .8rem; }
+.momio-campo { display: flex; gap: 6px; align-items: stretch; }
+.momio-campo input { flex: 1; min-width: 0; }
+.momio-campo .signos { display: flex; gap: 4px; }
+.momio-campo .signos button { min-width: 36px; padding: 0 8px; font: 700 1.15rem var(--font-mono, monospace); border-radius: 12px; }
+.momio-campo .signos button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink, #fff); border-color: var(--accent); }
 .ar-form { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .ar-form #ar-q { grid-column: 1 / -1; }
 .ar-form button { grid-column: 1 / -1; }
@@ -1126,7 +1131,7 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
           <label>Casa<select id="f-casa"><option>Caliente</option><option>Draftea</option><option>Otra</option></select></label>
         </div>
         <div class="row">
-          <label>Momio que tomaste<input id="f-cuota" required inputmode="decimal" placeholder="+175 o 2.75" autocomplete="off"></label>
+          <label>Momio que tomaste<span class="momio-campo"><input id="f-cuota" required inputmode="decimal" placeholder="+175 o 2.75" autocomplete="off"><span class="signos" role="group" aria-label="Signo del momio"><button type="button" data-signo="+" aria-label="Momio positivo">+</button><button type="button" data-signo="-" aria-label="Momio negativo">−</button></span></span></label>
           <label>Monto $<input id="f-monto" required inputmode="decimal" placeholder="5" autocomplete="off"></label>
         </div>
         <label id="f-prob-wrap">% del bot (del mensaje de Telegram)<input id="f-prob" inputmode="decimal" placeholder="38.2" autocomplete="off"></label>
@@ -1670,10 +1675,11 @@ const clase = n => "num " + (n > 0 ? "pos" : n < 0 ? "neg" : "");
 const fecha = t => t ? new Date(t).toLocaleDateString("es-MX", { day: "numeric", month: "short" }) : "";
 
 function aDecimal(txt) {
-  const t = String(txt || "").replace(/\s/g, "");
+  const t = String(txt || "").replace(/\s/g, "").replace(/[−–—]/g, "-");
   const n = parseFloat(t);
   if (!isFinite(n)) return null;
   if (/^[+-]/.test(t) && Math.abs(n) >= 100) return n > 0 ? 1 + n / 100 : 1 + 100 / Math.abs(n);
+  if (n >= 100) return 1 + n / 100;          // "175" sin signo = +175 (nadie paga 175.00 decimal)
   return n > 1 ? n : null;
 }
 function soloAmericano(d) { return d >= 2 ? "+" + Math.round((d - 1) * 100) : "-" + Math.round(100 / (d - 1)); }
@@ -3357,6 +3363,20 @@ document.querySelectorAll("#g-hist-filtro [data-h]").forEach(b => b.onclick = ()
   if (guruDatos) pintarHistGuru();
 });
 $("g-ver-hist").onclick = () => $("g-hist-sec").scrollIntoView({ behavior: "smooth" });
+
+// Botones + / − para el momio: el teclado numérico del celular no tiene esos signos
+document.querySelectorAll(".momio-campo").forEach((c) => {
+  const inp = c.querySelector("input"), bs = c.querySelectorAll("[data-signo]");
+  const marcar = () => { const t = inp.value.trim(); bs.forEach((b) => b.setAttribute("aria-pressed", String(t.startsWith(b.dataset.signo) || (b.dataset.signo === "-" && t.startsWith("−"))))); };
+  bs.forEach((b) => b.addEventListener("click", () => {
+    const num = inp.value.replace(/[^0-9.,]/g, "");
+    inp.value = b.dataset.signo + num;
+    inp.dispatchEvent(new Event("input", { bubbles: true }));
+    marcar(); inp.focus();
+    try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch (e) {}
+  }));
+  inp.addEventListener("input", marcar);
+});
 // ---------------------------------------------------------------- 🔎 archivo de partidos pasados
 const LIGAS_AR = [["", "Todas las ligas"], ["soccer/mex.1", "Liga MX"], ["soccer/eng.1", "Premier"], ["soccer/esp.1", "LaLiga"], ["soccer/ita.1", "Serie A"],
   ["soccer/ger.1", "Bundesliga"], ["soccer/fra.1", "Ligue 1"], ["soccer/uefa.champions", "Champions"], ["soccer/uefa.europa", "Europa League"],
