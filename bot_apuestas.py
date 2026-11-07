@@ -44,7 +44,7 @@ CUOTA_MIN = float(os.getenv("CUOTA_MIN", 1.25))    # ignora favoritos extremos
 CUOTA_MAX = float(os.getenv("CUOTA_MAX", 4.0))     # ignora no favoritos (sesgo longshot + varianza)
 FRACCION_KELLY = float(os.getenv("KELLY_FRAC", 0.25))   # Kelly fraccional
 TOPE_APUESTA = float(os.getenv("TOPE_APUESTA", 0.025))  # máximo por apuesta: 2.5 % de la banca
-APUESTA_MIN = float(os.getenv("APUESTA_MIN", 2))        # mínimo que acepta tu casa (MXN)
+APUESTA_MIN = float(os.getenv("APUESTA_MIN", 5))        # mínimo que acepta tu casa (MXN)
 APUESTA_FIJA = float(os.getenv("APUESTA_FIJA", 0))      # >0 = monto fijo en lugar de Kelly
 METODO_DEVIG = os.getenv("METODO_DEVIG", "power")       # power (recomendado) o multiplicativo
 LIBROS = os.getenv("LIBROS", "pinnacle")                # 1 crédito API por mercado y liga

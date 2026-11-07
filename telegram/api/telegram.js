@@ -103,7 +103,7 @@ const AYUDA = [
   "🧾 *Cómo registrar una apuesta*",
   "Escribe la selección, la cuota, el monto y (opcional) el % del bot y la casa:",
   "`Jaguars -150 $5 62% caliente`",
-  "`Más de 39 +105 $2 51% draftea`",
+  "`Más de 39 +105 $5 51% draftea`",
   "",
   "La cuota puede ser americana (+150, -200) o decimal (2.50).",
   "",

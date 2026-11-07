@@ -46,11 +46,11 @@ export async function avisarRespuesta(r) {
 }
 
 // ---------------------------------------------------------------- las señales del último escaneo (sin gastar créditos)
-// Monto sugerido igual que el escáner: Kelly fraccional 0.25, tope 2.5 % de la banca, mínimo $2.
+// Monto sugerido igual que el escáner: Kelly fraccional 0.25, tope 2.5 % de la banca, mínimo $5 (lo que acepta Draftea).
 export function montoSugerido(p, cuota, banca) {
   if (!(p * cuota - 1 > 0)) return 0;
   const kelly = (p * cuota - 1) / (cuota - 1);
-  return Math.max(Math.round(Math.min(kelly * 0.25, 0.025) * banca), 2);
+  return Math.max(Math.round(Math.min(kelly * 0.25, 0.025) * banca), 5);
 }
 const americano = (d) => (d >= 2 ? "+" + Math.round((d - 1) * 100) : "-" + Math.round(100 / (d - 1)));
 // Formato de momio de quien recibe el mensaje (americano +150 / decimal 2.50); se fija al empezar cada petición

@@ -1122,7 +1122,7 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
         </div>
         <div class="row">
           <label>Momio que tomaste<input id="f-cuota" required inputmode="decimal" placeholder="+175 o 2.75" autocomplete="off"></label>
-          <label>Monto $<input id="f-monto" required inputmode="decimal" placeholder="2" autocomplete="off"></label>
+          <label>Monto $<input id="f-monto" required inputmode="decimal" placeholder="5" autocomplete="off"></label>
         </div>
         <label id="f-prob-wrap">% del bot (del mensaje de Telegram)<input id="f-prob" inputmode="decimal" placeholder="38.2" autocomplete="off"></label>
         <p class="preview num" id="f-prev"></p>
@@ -2793,7 +2793,7 @@ function bancaBotActual() {
 }
 function montoSug(p, c) {
   if (!(p * c - 1 > 0)) return 0;
-  return Math.max(Math.round(Math.min((p * c - 1) / (c - 1) * 0.25, 0.025) * bancaBotActual()), 2);
+  return Math.max(Math.round(Math.min((p * c - 1) / (c - 1) * 0.25, 0.025) * bancaBotActual()), 5);
 }
 let senFiltro = "todas", senTodas = false;
 const SEN_FILTROS = [["todas", "Todas"], ["hoy", "Hoy"], ["manana", "Mañana"], ["futbol", "⚽ Futbol"], ["nfl", "🏈 NFL"], ["nba", "🏀 NBA"], ["mlb", "⚾ MLB"], ["top", "⭐ Solo la más probable"]];
