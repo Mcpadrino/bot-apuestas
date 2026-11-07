@@ -261,6 +261,16 @@ def probabilidades_justas(evento, mercado):
     return promedio, f"consenso de {n} casas"
 
 
+def precios_pinnacle(evento, mercado):
+    """Momio real de Pinnacle (con su margen) por selección, para guardarlo en el archivo."""
+    for casa in evento["bookmakers"]:
+        if casa["key"] == CASA_SHARP:
+            m = mercado_de(casa, mercado)
+            if m:
+                return {etiqueta(o, mercado): o["price"] for o in m["outcomes"]}
+    return {}
+
+
 def mejores_cuotas(evento, mercado):
     """Mejor cuota disponible por selección en las casas del feed (sin Pinnacle)."""
     mejores = {}
@@ -388,7 +398,8 @@ def guardar_senales(tabla):
     lote = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%d%H%M%S")
     filas = [{"evento": str(f["evento"]), "partido": f["partido"], "deporte": f["deporte"],
               "inicio": f["inicio"].isoformat(), "mercado": f["mk"], "seleccion": f["seleccion"],
-              "prob": round(f["prob"], 4), "minima": round(f["minima"], 3)} for f in tabla]
+              "prob": round(f["prob"], 4), "minima": round(f["minima"], 3),
+              "pin": round(f["pin"], 3) if f.get("pin") else None} for f in tabla]
     try:
         r = requests.post(f"{BOT_URL}/api/telegram", params={"senales": "1"}, headers={"x-bot-token": token},
                           json={"lote": lote, "filas": filas}, timeout=20)
@@ -622,6 +633,7 @@ def escanear(args):
                     continue
                 probs, fuente = res
                 mejores = mejores_cuotas(ev, mk)
+                pin = precios_pinnacle(ev, mk)
                 for sel, p in probs.items():
                     justa = 1 / p
                     minima = justa * (1 + EDGE_MIN)
@@ -637,6 +649,7 @@ def escanear(args):
                         "mov": (p - antes) if antes is not None else 0.0,
                         "inicio": inicio, "deporte": sport, "mk": mk,
                         "local": ev["home_team"], "visita": ev["away_team"], "evento": ev.get("id", partido),
+                        "pin": pin.get(sel),
                     }
                     tabla.append(fila)
                     c[3] += 1

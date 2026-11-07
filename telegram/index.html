@@ -555,6 +555,11 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
 .doku-top b { font: 700 1.3rem var(--font-mono, monospace); color: var(--fg); }
 .doku-acc { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 .doku-acc button { padding: 9px 4px; border-radius: 12px; font-size: .8rem; }
+.ar-form { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ar-form #ar-q { grid-column: 1 / -1; }
+.ar-form button { grid-column: 1 / -1; }
+.ar-pie { display: flex; gap: 8px; flex-wrap: wrap; justify-content: space-between; align-items: center; }
+.gh-q .gh-mo { font-family: var(--font-mono); font-size: .78rem; color: var(--muted); }
 .gh { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px; display: grid; gap: 6px; }
 .gh-cab { display: grid; gap: 2px; } .gh-cab small { color: var(--muted); font-size: .75rem; }
 .gh-res { font-size: .88rem; }
@@ -1262,6 +1267,30 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
       <div class="gh-resumen" id="g-hist-extra"></div>
       <div class="list" id="g-hist"></div>
       <button type="button" class="sen-mas" id="g-hist-mas" hidden></button>
+    </section>
+    <section class="section" id="ar-sec">
+      <div class="head"><h2>🔎 Buscar partidos pasados</h2><span class="label" id="ar-n"></span></div>
+      <p class="hint">Todos los marcadores se guardan para siempre: quién ganó, qué dijo el Gurú, qué dijo Pinnacle y a qué momio. Busca por equipo, liga o fecha.</p>
+      <form id="ar-form" class="ar-form" autocomplete="off">
+        <input id="ar-q" placeholder="Equipo (ej. Chivas, Real Madrid)" aria-label="Equipo">
+        <select id="ar-liga" aria-label="Liga"></select>
+        <select id="ar-per" aria-label="Periodo">
+          <option value="7">Última semana</option><option value="30" selected>Último mes</option><option value="90">3 meses</option>
+          <option value="365">1 año</option><option value="0">Todo</option>
+        </select>
+        <button type="submit" class="primary">Buscar</button>
+      </form>
+      <div class="chips-ligas" id="ar-filtro" role="group" aria-label="Filtrar">
+        <button type="button" data-a="todos" aria-pressed="true">Todos</button>
+        <button type="button" data-a="con" aria-pressed="false">Con pronóstico</button>
+        <button type="button" data-a="guru" aria-pressed="false">🔮 Acertó el Gurú</button>
+        <button type="button" data-a="pinn" aria-pressed="false">📌 Acertó Pinnacle</button>
+        <button type="button" data-a="ninguno" aria-pressed="false">❌ Fallaron</button>
+      </div>
+      <div class="gh-resumen" id="ar-resumen"></div>
+      <div class="list" id="ar-lista"></div>
+      <div class="ar-pie"><button type="button" class="sen-mas" id="ar-mas" hidden>▼ Cargar más</button>
+        <button type="button" id="ar-csv" hidden>⬇️ Descargar (Excel/CSV)</button></div>
     </section>
     <h2 style="margin-top:6px">🔮 Próximos partidos</h2>
     <div class="filters" role="group" aria-label="Deporte">
@@ -3179,7 +3208,7 @@ $("ck-form").addEventListener("submit", e => { e.preventDefault(); checar($("ck-
 let guruDatos = null, guruFiltro = "todos";
 const DEP_G = { futbol: "⚽", nfl: "🏈", nba: "🏀", mlb: "⚾" };
 async function cargarGuru() {
-  try { guruDatos = await api("guru"); pintarGuru(); }
+  try { guruDatos = await api("guru"); pintarGuru(); if (!arTotal && !arBusy) arBuscar(false); }
   catch (e) { $("g-lista").innerHTML = ""; $("g-lista").append(el("p", "empty", e.message || "No se pudo cargar el gurú.")); }
 }
 function pctx(x) { return x == null ? "—" : Math.round(Number(x) * 100) + "%"; }
@@ -3328,6 +3357,112 @@ document.querySelectorAll("#g-hist-filtro [data-h]").forEach(b => b.onclick = ()
   if (guruDatos) pintarHistGuru();
 });
 $("g-ver-hist").onclick = () => $("g-hist-sec").scrollIntoView({ behavior: "smooth" });
+// ---------------------------------------------------------------- 🔎 archivo de partidos pasados
+const LIGAS_AR = [["", "Todas las ligas"], ["soccer/mex.1", "Liga MX"], ["soccer/eng.1", "Premier"], ["soccer/esp.1", "LaLiga"], ["soccer/ita.1", "Serie A"],
+  ["soccer/ger.1", "Bundesliga"], ["soccer/fra.1", "Ligue 1"], ["soccer/uefa.champions", "Champions"], ["soccer/uefa.europa", "Europa League"],
+  ["soccer/uefa.europa.conf", "Conference"], ["soccer/ned.1", "Eredivisie"], ["soccer/por.1", "Portugal"], ["soccer/bel.1", "Bélgica"],
+  ["soccer/sco.1", "Escocia"], ["soccer/tur.1", "Turquía"], ["soccer/aut.1", "Austria"], ["soccer/gre.1", "Grecia"], ["soccer/sui.1", "Suiza"],
+  ["soccer/den.1", "Dinamarca"], ["soccer/cze.1", "Rep. Checa"], ["football/nfl", "🏈 NFL"], ["basketball/nba", "🏀 NBA"], ["baseball/mlb", "⚾ MLB"]];
+let arFiltro = "todos", arFilas = [], arTotal = 0, arBusy = false;
+$("ar-liga").innerHTML = LIGAS_AR.map(([v, n]) => `<option value="${v}">${n}</option>`).join("");
+function arParams(extra) {
+  const dias = Number($("ar-per").value);
+  return { q: $("ar-q").value.trim(), ruta: $("ar-liga").value, filtro: arFiltro,
+    desde: dias ? new Date(Date.now() - dias * 864e5).toISOString() : "", ...extra };
+}
+function arAnalizar(r) {
+  const NOM = { L: r.local, E: "Empate", V: r.visita };
+  const tope = (o) => { const e = Object.entries(o).filter(([, v]) => v != null && isFinite(v)); return e.length ? e.sort((a, b) => b[1] - a[1])[0][0] : null; };
+  const g = r.dl != null ? { L: +r.dl, E: r.de == null ? null : +r.de, V: +r.dv } : null;
+  const x = r.xl != null ? { L: +r.xl, E: r.xe == null ? null : +r.xe, V: +r.xv } : null;
+  const pm = r.pm && r.pm.L != null ? { L: +r.pm.L, E: r.pm.E == null ? null : +r.pm.E, V: +r.pm.V } : null;
+  const momios = (r.pm && r.pm.momios) || {};
+  return { NOM, g, x, pm, momios, fg: g && tope(g), fx: x && tope(x), fp: pm && tope(pm) };
+}
+function arTarjeta(r) {
+  const a = arAnalizar(r), c = el("div", "gh");
+  const fecha = new Date(r.fecha).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" });
+  const res = r.res === "E" ? "Empate" : `Ganó ${a.NOM[r.res]}`;
+  const gl = Number(r.goles_local), gv = Number(r.goles_visita);
+  const fila = (ico, quien, pk, probs, momio) => {
+    if (!pk) return "";
+    const ok = pk === r.res;
+    return `<div class="gh-q ${ok ? "ok" : "no"}"><span>${ico} ${quien} dijo <b>${admEsc(a.NOM[pk])}</b> (${pctx(probs[pk])})</span><span class="gh-v">${ok ? "✓ acertó" : "✗ falló"}</span>
+      <small>Al resultado real le daba ${pctx(probs[r.res] || 0)}${momio ? ` · <span class="gh-mo">${momio}</span>` : ""}</small></div>`;
+  };
+  let pinMomio = "";
+  if (a.pm && a.fp) {
+    const real = a.momios[a.fp], justo = a.pm[a.fp] > 0 ? 1 / a.pm[a.fp] : null;
+    pinMomio = real ? `momio Pinnacle ${aAmericano(real)}` : justo ? `momio justo ${aAmericano(justo)} (sin margen)` : "";
+  }
+  const nadie = !a.g && !a.x && !a.pm;
+  let extras = "";
+  const d = r.dd || r.xd || {};
+  if (r.deporte === "futbol" && d.marcador) {
+    const [ml, mv] = String(d.marcador).split("-").map(Number), over = Number(d.over25), tot = gl + gv;
+    const chip = (ok, t) => `<span class="gh-chip ${ok ? "ok" : "no"}">${ok ? "✓" : "✗"} ${t}</span>`;
+    extras = `<div class="gh-extras">${chip(ml === gl && mv === gv, `Marcador ${d.marcador}`)}${isFinite(over) ? chip((over >= .5) === (tot >= 3), `${over >= .5 ? "Más" : "Menos"} de 2.5`) : ""}</div>`;
+  }
+  c.innerHTML = `<div class="gh-cab"><b>${admEsc(r.local)} <span class="num">${gl} – ${gv}</span> ${admEsc(r.visita)}</b><small>${DEP_G[r.deporte] || ""} ${admEsc(r.liga || "")} · ${fecha}</small></div>
+    <div class="gh-res">Resultado: <b>${admEsc(res)}</b></div>
+    ${a.g ? fila("🔮", r.deporte === "futbol" ? "Gurú" : "Gurú (Elo)", a.fg, a.g) : ""}
+    ${a.x ? fila("🧪", "Gurú xG", a.fx, a.x) : ""}
+    ${a.pm ? fila("📌", "Pinnacle", a.fp, a.pm, pinMomio) : ""}
+    ${nadie ? `<div class="gh-q sin"><span>Sin pronósticos</span><small>Partido guardado del historial (antes de que el Gurú o el bot lo siguieran).</small></div>` : ""}${extras}`;
+  return c;
+}
+function arPintar() {
+  const l = $("ar-lista"); l.innerHTML = "";
+  if (!arFilas.length) l.append(el("p", "empty", "No encontré partidos con esa búsqueda."));
+  arFilas.forEach((r) => l.append(arTarjeta(r)));
+  $("ar-n").textContent = arTotal ? `${arTotal} partido(s)` : "";
+  $("ar-mas").hidden = arFilas.length >= arTotal;
+  $("ar-csv").hidden = !arTotal;
+}
+async function arBuscar(mas) {
+  if (arBusy) return; arBusy = true;
+  const btn = $("ar-form").querySelector("button"); btn.disabled = true;
+  try {
+    const r = await api("archivo", arParams({ n: 40, desde_n: mas ? arFilas.length : 0 }));
+    arTotal = r.total || 0;
+    arFilas = mas ? arFilas.concat(r.filas || []) : (r.filas || []);
+    const s = r.resumen || {}, pc = (a, b) => (b ? `<b>${a}/${b}</b> (${Math.round(a / b * 100)}%)` : "—");
+    $("ar-resumen").innerHTML = arTotal ? `<span>🔮 Gurú: ${pc(s.guru, s.con_guru)}</span><span>🧪 xG: ${pc(s.xg, s.con_xg)}</span><span>📌 Pinnacle: ${pc(s.pinn, s.con_pinn)}</span>` : "";
+    arPintar();
+  } catch (e) { $("ar-lista").innerHTML = ""; $("ar-lista").append(el("p", "empty", "No se pudo buscar: " + e.message)); }
+  finally { arBusy = false; btn.disabled = false; }
+}
+$("ar-form").addEventListener("submit", (e) => { e.preventDefault(); arBuscar(false); });
+$("ar-mas").onclick = () => arBuscar(true);
+document.querySelectorAll("#ar-filtro [data-a]").forEach((b) => b.onclick = () => {
+  arFiltro = b.dataset.a;
+  document.querySelectorAll("#ar-filtro [data-a]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  arBuscar(false);
+});
+$("ar-csv").onclick = async () => {
+  const b = $("ar-csv"); b.disabled = true; b.textContent = "Preparando…";
+  try {
+    const r = await api("archivo", arParams({ n: 2000, exportar: true }));
+    const q = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`, p = (v) => (v == null ? "" : (Number(v) * 100).toFixed(1));
+    const filas = [["fecha", "liga", "local", "visita", "goles_local", "goles_visita", "ganador", "guru_dijo", "guru_%", "guru_acerto",
+      "xg_dijo", "xg_%", "xg_acerto", "pinnacle_dijo", "pinnacle_%", "pinnacle_momio_real", "pinnacle_momio_justo", "pinnacle_acerto", "guru_marcador", "guru_mas_de_2.5_%"]];
+    (r.filas || []).forEach((x) => {
+      const a = arAnalizar(x), gan = a.NOM[x.res], d = x.dd || x.xd || {};
+      filas.push([new Date(x.fecha).toISOString().slice(0, 16).replace("T", " "), x.liga, x.local, x.visita, x.goles_local, x.goles_visita, gan,
+        a.fg ? a.NOM[a.fg] : "", a.fg ? p(a.g[a.fg]) : "", a.fg ? (a.fg === x.res ? "sí" : "no") : "",
+        a.fx ? a.NOM[a.fx] : "", a.fx ? p(a.x[a.fx]) : "", a.fx ? (a.fx === x.res ? "sí" : "no") : "",
+        a.fp ? a.NOM[a.fp] : "", a.fp ? p(a.pm[a.fp]) : "", a.fp && a.momios[a.fp] ? aAmericano(a.momios[a.fp]) : "",
+        a.fp && a.pm[a.fp] > 0 ? aAmericano(1 / a.pm[a.fp]) : "", a.fp ? (a.fp === x.res ? "sí" : "no") : "",
+        d.marcador || "", d.over25 != null ? p(d.over25) : ""]);
+    });
+    const blob = new Blob(["﻿" + filas.map((f) => f.map(q).join(",")).join("\n")], { type: "text/csv;charset=utf-8" });
+    const u = URL.createObjectURL(blob), aEl = document.createElement("a");
+    aEl.href = u; aEl.download = `partidos-${new Date().toISOString().slice(0, 10)}.csv`; document.body.append(aEl); aEl.click(); aEl.remove();
+    setTimeout(() => URL.revokeObjectURL(u), 5000);
+  } catch (e) { estado("No se pudo descargar: " + e.message); }
+  finally { b.disabled = false; b.textContent = "⬇️ Descargar (Excel/CSV)"; }
+};
+
 document.querySelectorAll("[data-g]").forEach(b => b.addEventListener("click", () => {
   guruFiltro = b.dataset.g;
   document.querySelectorAll("[data-g]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));

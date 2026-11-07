@@ -131,7 +131,49 @@ def eventos(ruta, desde, hasta):
         if e["id"] not in vistos:
             vistos.add(e["id"])
             unicos.append(e)
+            if e.get("terminado"):
+                ARCHIVO[f"{e['ruta']}:{e['id']}"] = e
     return unicos
+
+
+# ---------------------------------------------------------------- archivo permanente de marcadores (Supabase)
+ARCHIVO = {}
+
+
+def guardar_archivo():
+    """Guarda para siempre los partidos terminados que bajó de ESPN (no gasta créditos).
+    La primera vez sube todo el historial; después solo los últimos 12 días."""
+    if not ARCHIVO:
+        return
+    try:
+        n = (api("guru", "archivo_n") or {}).get("n") or 0
+    except requests.RequestException as e:
+        print("⚠️ archivo:", e)
+        return
+    corte = AHORA - dt.timedelta(days=12)
+    filas = []
+    for clave, e in ARCHIVO.items():
+        if n >= 1000 and e["fecha"] < corte:
+            continue
+        gl, gv = e["local"]["goles"], e["visita"]["goles"]
+        filas.append({
+            "evento": clave, "ruta": e["ruta"], "liga": NOMBRES.get(e["ruta"], e["ruta"]),
+            "deporte": "futbol" if e["ruta"].startswith("soccer") else e["ruta"].split("/")[1],
+            "fecha": e["fecha"].isoformat(), "local": e["local"]["nombre"], "visita": e["visita"]["nombre"],
+            "local_completo": e["local"].get("completo"), "visita_completo": e["visita"].get("completo"),
+            "logo_local": e["local"].get("logo"), "logo_visita": e["visita"].get("logo"),
+            "goles_local": gl, "goles_visita": gv, "res": "L" if gl > gv else "V" if gv > gl else "E",
+            "busca": espn.normalizar(" ".join(filter(None, [e["local"]["nombre"], e["local"].get("completo"),
+                                                           e["visita"]["nombre"], e["visita"].get("completo")]))).lower(),
+        })
+    print(f"🗄️ archivo: {len(filas)} partidos por guardar (ya había {n})")
+    if PRUEBA:
+        return
+    for i in range(0, len(filas), 400):
+        try:
+            api("guru", "archivo", {"filas": filas[i:i + 400]})
+        except requests.RequestException as e:
+            print("⚠️ archivo lote:", e)
 
 
 # ---------------------------------------------------------------- Pinnacle (lo que guardó el escáner)
@@ -140,6 +182,7 @@ def mercado_pinnacle(lineas, partido):
     loc, vis = partido["local"], partido["visita"]
     t0 = partido["fecha"]
     grupos = defaultdict(dict)
+    precios = defaultdict(dict)
     for l in lineas:
         if l.get("mercado") != "h2h" or (l.get("deporte") and ODDS.get(partido["ruta"]) and l["deporte"] != ODDS[partido["ruta"]]):
             continue
@@ -150,15 +193,22 @@ def mercado_pinnacle(lineas, partido):
         if abs((ini - t0).total_seconds()) > 6 * 3600:
             continue
         grupos[l["evento"]][l["seleccion"]] = float(l["serie"][-1][1])
-    for sels in grupos.values():
-        m = {}
+        if l.get("pin"):
+            precios[l["evento"]][l["seleccion"]] = float(l["pin"])
+    for ev, sels in grupos.items():
+        m, momios = {}, {}
         for sel, p in sels.items():
+            k = None
             if espn.normalizar(sel).strip() in ("empate", "draw"):
-                m["E"] = p
+                k = "E"
             elif max(espn.parecido(sel, loc["completo"]), espn.parecido(sel, loc["nombre"])) >= 0.72:
-                m["L"] = p
+                k = "L"
             elif max(espn.parecido(sel, vis["completo"]), espn.parecido(sel, vis["nombre"])) >= 0.72:
-                m["V"] = p
+                k = "V"
+            if k:
+                m[k] = p
+                if sel in precios[ev]:
+                    momios[k] = round(precios[ev][sel], 3)
         futbol = partido["ruta"].startswith("soccer")
         if not futbol and "E" in m:
             continue
@@ -168,7 +218,10 @@ def mercado_pinnacle(lineas, partido):
             m[faltan[0]] = max(0.0, 1 - sum(m.values()))          # las probabilidades sin margen suman 1
             faltan = []
         if not faltan and ("L" in m or "V" in m):
-            return {k: round(v, 4) for k, v in m.items()}
+            out = {k: round(v, 4) for k, v in m.items()}
+            if momios:
+                out["momios"] = momios          # momio real de Pinnacle (con su margen), decimal
+            return out
     return None
 
 
@@ -357,6 +410,7 @@ def elo_deporte(ruta, lineas):
 
 def fila(e, modelo, pl, pe, pv, datos, lineas):
     m = mercado_pinnacle(lineas, e)
+    pl, pe, pv, datos = calibrar_fila(modelo, pl, pe, pv, datos)
     return {
         "evento": f"{e['ruta']}:{e['id']}", "ruta": e["ruta"], "liga": NOMBRES.get(e["ruta"], e["ruta"]),
         "deporte": "futbol" if e["ruta"].startswith("soccer") else e["ruta"].split("/")[1],
@@ -365,6 +419,138 @@ def fila(e, modelo, pl, pe, pv, datos, lineas):
         "p_local": round(pl, 4), "p_empate": None if pe is None else round(pe, 4), "p_visita": round(pv, 4),
         "datos": datos, "mercado": m,
     }
+
+
+# ---------------------------------------------------------------- calibración automática (aprende de sus errores)
+# Se activa sola cuando hay 200+ partidos calificados y se recalcula una vez por semana.
+# Para cada modelo ajusta: "temperatura" del 1X2 (si se pasa de seguro o se queda corto) y el sesgo de más/menos 2.5.
+CAL_MIN = 200
+CAL = {}
+
+
+def _sig(x):
+    return 1 / (1 + math.exp(-x))
+
+
+def _logit(p):
+    p = min(max(p, 1e-4), 1 - 1e-4)
+    return math.log(p / (1 - p))
+
+
+def _temp(ps, t):
+    vs = [max(p, 1e-6) ** (1 / t) if p is not None else None for p in ps]
+    s = sum(v for v in vs if v is not None)
+    return [v / s if v is not None else None for v in vs]
+
+
+def calibrar_fila(modelo, pl, pe, pv, datos):
+    c = (CAL.get("modelos") or {}).get(modelo)
+    datos = dict(datos or {})
+    datos["cruda"] = [round(pl, 4), None if pe is None else round(pe, 4), round(pv, 4)]
+    if "over25" in datos:
+        datos["o25_crudo"] = datos["over25"]
+    if not c:
+        return pl, pe, pv, datos
+    t = c.get("t", 1.0)
+    if abs(t - 1) > 1e-6:
+        pl, pe, pv = _temp([pl, pe, pv], t)
+    if "over25" in datos and c.get("ou"):
+        a, b = c["ou"]
+        datos["over25"] = round(_sig(a + b * _logit(datos["over25"])), 4)
+    datos["calibrado"] = CAL.get("fecha", "")
+    return pl, pe, pv, datos
+
+
+def _goles(marcador):
+    import re
+    n = [float(x) for x in re.findall(r"(\d+(?:\.\d+)?)", marcador or "")]
+    return sum(n[:2]) if len(n) >= 2 else None
+
+
+def cargar_calibracion():
+    global CAL
+    try:
+        v = api("guru", "config_get", {"clave": "guru_calibracion"})
+        CAL = json.loads(v) if v else {}
+    except (requests.RequestException, ValueError):
+        CAL = {}
+    if CAL.get("modelos"):
+        print("🔧 Calibración activa:", CAL.get("fecha"), CAL["modelos"])
+
+
+def recalibrar():
+    """Ajusta la calibración si ya hay suficientes partidos y pasó una semana desde la última. Avisa al dueño."""
+    global CAL
+    if CAL.get("fecha"):
+        try:
+            if AHORA - dt.datetime.fromisoformat(CAL["fecha"]) < dt.timedelta(days=7):
+                return
+        except ValueError:
+            pass
+    datos = api("guru", "calibrar_datos")
+    if len(datos) < CAL_MIN:
+        print(f"🔧 Calibración: {len(datos)}/{CAL_MIN} partidos calificados, todavía no.")
+        return
+    idx = {"L": 0, "E": 1, "V": 2}
+    nuevos, lineas_msg = {}, []
+    por_modelo = defaultdict(list)
+    for d in datos:
+        por_modelo[d["modelo"]].append(d)
+    for modelo, filas in por_modelo.items():
+        if len(filas) < 100:
+            continue
+        crudas = []
+        for f in filas:
+            dd = f.get("datos") or {}
+            ps = dd.get("cruda") or [f["p_local"], f["p_empate"], f["p_visita"]]
+            ps = [None if x is None else float(x) for x in ps]
+            if ps[idx[f["res"]]] is None:
+                continue
+            crudas.append((ps, idx[f["res"]], dd, f.get("marcador")))
+        def ll(t):
+            return sum(-math.log(max(_temp(ps, t)[k], 1e-6)) for ps, k, _, _ in crudas) / len(crudas)
+        antes = ll(1.0)
+        t_mejor = min((x / 50 for x in range(25, 101)), key=ll)     # 0.5 a 2.0
+        despues = ll(t_mejor)
+        if antes - despues < 0.002:
+            t_mejor, despues = 1.0, antes
+        c = {"t": round(t_mejor, 3), "n": len(crudas), "ll_antes": round(antes, 4), "ll_despues": round(despues, 4)}
+        msg = (f"• {modelo} ({len(crudas)} partidos): ganador {'sin cambio' if t_mejor == 1 else ('se volvió más prudente' if t_mejor > 1 else 'se volvió más seguro')}"
+               f" · error {antes:.3f} → {despues:.3f}")
+        ou = [(float((dd.get('o25_crudo') if dd.get('o25_crudo') is not None else dd.get('over25'))), 1 if g > 2.5 else 0)
+              for _, _, dd, m in crudas if (dd.get('o25_crudo') is not None or dd.get('over25') is not None) and (g := _goles(m)) is not None]
+        if len(ou) >= 100:
+            def llou(a, b):
+                return sum(-math.log(max(_sig(a + b * _logit(p)) if y else 1 - _sig(a + b * _logit(p)), 1e-6)) for p, y in ou) / len(ou)
+            a0 = llou(0, 1)
+            a_m, b_m = min(((a / 20, b / 20) for a in range(-20, 21) for b in range(6, 31)), key=lambda ab: llou(*ab))
+            a1 = llou(a_m, b_m)
+            real = sum(y for _, y in ou) / len(ou)
+            prom = sum(p for p, _ in ou) / len(ou)
+            if a0 - a1 >= 0.002:
+                c["ou"] = [round(a_m, 3), round(b_m, 3)]
+                prom2 = sum(_sig(a_m + b_m * _logit(p)) for p, _ in ou) / len(ou)
+                msg += f"\n   más de 2.5: decía {prom:.0%} en promedio, pasó {real:.0%} → ahora dirá ~{prom2:.0%}"
+            else:
+                msg += f"\n   más de 2.5: bien calibrado ({prom:.0%} dicho vs {real:.0%} real)"
+        nuevos[modelo] = c
+        lineas_msg.append(msg)
+    if not nuevos:
+        return
+    CAL = {"fecha": AHORA.isoformat(), "n": len(datos), "modelos": nuevos}
+    print("🔧 Nueva calibración:", CAL)
+    if PRUEBA:
+        return
+    api("guru", "config_set", {"clave": "guru_calibracion", "valor": json.dumps(CAL)})
+    chat = "".join(os.getenv("TELEGRAM_CHAT_ID", "").split())
+    if chat and TOKEN:
+        texto = (f"🔧 *El Gurú se recalibró* con {len(datos)} partidos calificados.\n\n" + "\n".join(lineas_msg) +
+                 "\n\n(Error = log-loss: entre más bajo, mejor. Se vuelve a revisar cada semana.)")
+        try:
+            requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage",
+                          json={"chat_id": chat, "text": texto, "parse_mode": "Markdown"}, timeout=20)
+        except requests.RequestException:
+            pass
 
 
 # ---------------------------------------------------------------- calificar los que ya terminaron
@@ -385,6 +571,11 @@ def calificar():
 def main():
     if not TOKEN:
         sys.exit("Falta TELEGRAM_TOKEN")
+    try:
+        cargar_calibracion()
+        recalibrar()
+    except Exception as e:
+        print(f"⚠️ calibración: {type(e).__name__}: {e}")
     try:
         lineas = api("mas", "lineas2")
     except requests.RequestException as e:
@@ -409,6 +600,10 @@ def main():
         calificar()
     except Exception as e:
         print(f"⚠️ calificar: {type(e).__name__}: {e}")
+    try:
+        guardar_archivo()
+    except Exception as e:
+        print(f"⚠️ archivo: {type(e).__name__}: {e}")
     guardar_cache_dias()
 
 

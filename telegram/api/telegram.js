@@ -123,6 +123,7 @@ const AYUDA = [
   "`limite 300` — tope semanal para apuestas normales (opcional; `limite off` lo quita)",
   "🌐 *Mi página* — la dirección de tu bitácora web",
   "📘 *Guía* — te mando el folleto y la guía en PDF",
+  "📚 `partidos chivas` — marcadores pasados de un equipo y si acertaron el Gurú y Pinnacle",
   "⚖️ `terminos` — términos, responsabilidad y privacidad",
   "🔢 `momio decimal` / `momio americano` — cómo quieres ver los momios",
   "📝 `idea ...` · `error ...` · `opinion ... 5` — mándame ideas, fallas o tu calificación",
@@ -233,6 +234,27 @@ async function atenderTexto(chat, texto, esDueno, msgId) {
     if (!f) return enviar("¿Cómo quieres ver los momios?\n`momio americano` → +150 / -200\n`momio decimal` → 2.50 / 1.50\n\nTambién lo cambias en la página: menú > Mi diseño.");
     await admin("momio_set", { usuario: chat, momio: f }); setFormato(f);
     return enviar(`✅ Listo, te muestro los momios en *${f}* (ej. ${amer(2.5)} y ${amer(1.5)}). Puedes escribirlos como quieras, yo entiendo los dos.`);
+  }
+  if (cmd === "partidos" || cmd === "pasados" || cmd === "archivo") {
+    const q = args.join(" ").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9 .&'-]/g, " ").replace(/\s+/g, " ").trim().slice(0, 40);
+    if (!q) return enviar("Escribe el equipo, por ejemplo `partidos chivas` o `partidos real madrid`. Te muestro sus últimos partidos con lo que dijo el Gurú y Pinnacle.\n\nEn la página (menú > 🔮 Gurú > 🔎 Buscar partidos pasados) puedes filtrar y descargarlos en Excel.");
+    const r = await guru("buscar", { q, n: 8 });
+    if (!r.total) return enviar(`No encontré partidos de *${q}*. Prueba con otro nombre (como sale en ESPN).`);
+    const NOM = (x, k) => ({ L: x.local, E: "Empate", V: x.visita })[k];
+    const tope = (o) => Object.entries(o).filter(([, v]) => v != null).sort((a, b) => b[1] - a[1])[0][0];
+    const lin = r.filas.map((x) => {
+      const f = new Date(x.fecha).toLocaleDateString("es-MX", { day: "numeric", month: "short", timeZone: "America/Mexico_City" });
+      let t = `*${x.local} ${Number(x.goles_local)}–${Number(x.goles_visita)} ${x.visita}* (${f}, ${x.liga})`;
+      if (x.dl != null) { const k = tope({ L: +x.dl, E: x.de == null ? null : +x.de, V: +x.dv }); t += `\n   🔮 Gurú: ${NOM(x, k)} ${k === x.res ? "✅" : "❌"}`; }
+      if (x.pm && x.pm.L != null) {
+        const k = tope({ L: +x.pm.L, E: x.pm.E == null ? null : +x.pm.E, V: +x.pm.V }), mo = x.pm.momios && x.pm.momios[k];
+        t += `\n   📌 Pinnacle: ${NOM(x, k)}${mo ? ` (${amer(mo)})` : ""} ${k === x.res ? "✅" : "❌"}`;
+      }
+      return t;
+    });
+    const s = r.resumen || {};
+    return enviar(`📚 *Últimos partidos de "${q}"* (${r.total} guardados)\n\n${lin.join("\n\n")}` +
+      (s.con_guru || s.con_pinn ? `\n\nEn total: 🔮 Gurú ${s.guru}/${s.con_guru} · 📌 Pinnacle ${s.pinn}/${s.con_pinn}` : ""));
   }
   if (["terminos", "condiciones", "privacidad", "aviso"].includes(cmd))
     return enviar("⚖️ *Términos y condiciones (resumen)*\n\n• Es una herramienta de información y estadística, no una casa de apuestas ni asesoría financiera. No recibe ni mueve dinero real.\n" +

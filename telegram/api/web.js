@@ -249,6 +249,15 @@ export default async function handler(req, res) {
           guru("duelo"), guru("historial", { n: 200 }), guru("duelo", { modelo: "xG" }), guru("historial", { n: 200, modelo: "xG" })]);
         return res.status(200).json({ lista, precision, duelo, historial, duelo_xg, historial_xg });
       }
+      case "archivo": {
+        // buscador de partidos pasados: marcador, quién ganó, qué dijo el Gurú y Pinnacle
+        const txt = (v, n) => String(v || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9 .&'-]/g, " ").replace(/\s+/g, " ").trim().slice(0, n);
+        const f = (v) => (/^\d{4}-\d{2}-\d{2}/.test(String(v || "")) ? String(v).slice(0, 25) : "");
+        const filtro = ["todos", "con", "guru", "pinn", "ninguno"].includes(d.filtro) ? d.filtro : "todos";
+        return res.status(200).json(await guru("buscar", { q: txt(d.q, 40), ruta: String(d.ruta || "").replace(/[^a-z0-9/._-]/gi, "").slice(0, 40), deporte: txt(d.deporte, 12),
+          desde: f(d.desde), hasta: f(d.hasta), filtro, n: Math.min(Math.max(Number(d.n) || 40, 1), d.exportar ? 2000 : 100),
+          desde_n: Math.max(Number(d.desde_n) || 0, 0) }));
+      }
       case "analisis":
         return res.status(200).json(await conv("analisis", { dias: 90 }));
       case "lineas":
