@@ -696,7 +696,7 @@ export default async function handler(req, res) {
   if (req.query.guru !== undefined && req.method === "POST") {
     if (!tokenOk()) return res.status(401).json({ error: "no" });
     const b = req.body || {};
-    if (!["guardar", "pendientes", "resultado", "excel"].includes(b.accion)) return res.status(400).json({ error: "acción" });
+    if (!["guardar", "pendientes", "resultado", "excel", "archivo", "archivo_n", "calibrar_datos", "config_get", "config_set"].includes(b.accion)) return res.status(400).json({ error: "acción" });
     return res.status(200).json(await guru(b.accion, b.datos || {}));
   }
   if (req.query.semana !== undefined) {
