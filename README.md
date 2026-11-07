@@ -31,6 +31,10 @@ No es una casa de apuestas, no mueve dinero y no vende nada. **Si te sirve, món
 
 ## Monta tu propia copia (≈ 1 hora, sin saber programar mucho)
 
+👉 **Guía visual paso a paso, con botón de Deploy y generador de claves: [bot-apuestas-telegram.vercel.app/monta.html](https://bot-apuestas-telegram.vercel.app/monta.html)**
+
+O a mano:
+
 ### 0. Lo que necesitas (todo gratis)
 - Cuenta de **GitHub**, **Vercel** (entra con GitHub) y **Supabase**.
 - Una clave de **the-odds-api.com** (plan gratis).
@@ -50,7 +54,7 @@ Botón **Fork** arriba a la derecha (o *Use this template*). Ahora tienes `tuusu
    ```
    El token de GitHub: *Settings → Developer settings → Fine-grained tokens*, solo tu repo, permiso **Actions: Read and write**.
 4. Edita la función `privado.disparar` y cambia `Mcpadrino/bot-apuestas` por `tuusuario/bot-apuestas`.
-5. En *Project Settings → API* copia la **URL** y la **publishable (anon) key**.
+5. En *Project Settings → Data API* copia la **URL**, y en *API Keys → Legacy API keys* la **anon public** key.
 
 ### 3. Página y bot (Vercel)
 1. **Add New → Project** → importa tu repo. **Root Directory: `telegram`**. Framework: *Other*.
@@ -59,7 +63,7 @@ Botón **Fork** arriba a la derecha (o *Use this template*). Ahora tienes `tuusu
    | Variable | Valor |
    |---|---|
    | `SUPABASE_URL` | la URL de tu proyecto |
-   | `SUPABASE_KEY` | la publishable (anon) key |
+   | `SUPABASE_KEY` | la anon public key |
    | `BOT_CLAVE` | la misma clave larga que pusiste en `privado.secretos` ('bot') |
    | `TELEGRAM_TOKEN` | el token de BotFather |
    | `TELEGRAM_CHAT_ID` | tu chat id (tú eres el dueño/administrador) |

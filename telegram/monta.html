@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Monta tu propia Bitácora</title>
+<meta name="description" content="Guía paso a paso para tener tu propia app de apuesta consciente, gratis y sin saber programar.">
+<link rel="icon" href="/icon-192.png">
+<style>
+:root { --bg: #0d1117; --surface: #161b22; --line: #2a313c; --fg: #e8edf3; --muted: #93a0b0; --accent: #36c48e; --accent-ink: #062016; --warn: #f1c40f; --loss: #e74c3c;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) { --bg: #f5f7fa; --surface: #ffffff; --line: #dde3ea; --fg: #14202b; --muted: #5d6b7a; --accent: #12935f; --accent-ink: #fff; } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 760px; margin: 0 auto; padding: 16px 16px 80px; }
+.hero { border-radius: 22px; padding: 22px 20px; color: #fff; background: radial-gradient(120% 140% at 100% 0%, #2f6bff 0%, transparent 55%), linear-gradient(140deg, #0f1c3d, #13284f 55%, #0b1530); }
+.hero small { font: 700 .72rem var(--mono); letter-spacing: .18em; opacity: .8; }
+.hero h1 { margin: 6px 0 8px; font-size: clamp(1.6rem, 6vw, 2.2rem); line-height: 1.15; }
+.hero p { margin: 0; opacity: .9; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+.chips span { background: rgba(255,255,255,.12); border-radius: 999px; padding: 4px 10px; font-size: .82rem; }
+.barra { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 12px 0 8px; }
+.barra .t { display: flex; justify-content: space-between; font-size: .85rem; color: var(--muted); }
+.barra .b { height: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; overflow: hidden; margin-top: 6px; }
+.barra .b i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s; }
+.paso { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px; margin: 14px 0; }
+.paso.hecho { border-color: var(--accent); }
+.paso h2 { margin: 0; font-size: 1.15rem; display: flex; gap: 10px; align-items: center; }
+.paso h2 .n { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--bg); border: 1px solid var(--line); font: 700 .9rem var(--mono); }
+.paso.hecho h2 .n { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.paso .tiempo { color: var(--muted); font-size: .8rem; margin: 2px 0 10px 40px; }
+.paso ol, .paso ul { padding-left: 22px; margin: 8px 0; } .paso li { margin: 6px 0; }
+.listo { display: flex; gap: 8px; align-items: center; margin-top: 12px; font-weight: 600; cursor: pointer; }
+.listo input { width: 22px; height: 22px; accent-color: var(--accent); }
+code, .code { font-family: var(--mono); font-size: .86em; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 1px 5px; }
+pre { background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 12px; overflow-x: auto; font: .8rem/1.5 var(--mono); white-space: pre-wrap; word-break: break-all; margin: 8px 0; }
+.btn { display: inline-flex; align-items: center; gap: 8px; border-radius: 12px; padding: 11px 16px; font-weight: 700; text-decoration: none; border: 1px solid var(--line); background: var(--bg); color: var(--fg); cursor: pointer; font-size: .95rem; }
+.btn.prim { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.fila { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 10px 0; }
+.nota { border-left: 4px solid var(--warn); background: color-mix(in srgb, var(--warn) 10%, var(--surface)); padding: 10px 12px; border-radius: 10px; font-size: .9rem; margin: 10px 0; }
+.ok { border-left-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
+label.f { display: grid; gap: 4px; font-size: .85rem; color: var(--muted); margin: 8px 0; }
+label.f input { font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
+table { width: 100%; border-collapse: collapse; font-size: .86rem; table-layout: fixed; }
+td:first-child { width: 38%; } td .code { word-break: break-all; } td { overflow-wrap: anywhere; } td, th { text-align: left; padding: 7px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+td:first-child { font-family: var(--mono); font-size: .76rem; overflow-wrap: anywhere; }
+.copiar { font-size: .78rem; padding: 4px 9px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; }
+footer { color: var(--muted); font-size: .82rem; text-align: center; margin-top: 30px; }
+a { color: var(--accent); overflow-wrap: anywhere; }
+</style>
+</head>
+<body>
+<main>
+  <header class="hero">
+    <small>APUESTA CONSCIENTE · OPEN SOURCE</small>
+    <h1>Monta tu propia Bitácora, gratis</h1>
+    <p>La app que te dice cuánto vale de verdad cada apuesta, lleva tu cuenta real y desenmascara a los tipsters. Tuya, para ti y tus amigos, sin pagarle a nadie.</p>
+    <div class="chips"><span>⏱️ 40–60 min</span><span>💸 $0</span><span>📱 Se puede desde el celular (mejor en compu)</span><span>🧑‍💻 No necesitas programar</span></div>
+  </header>
+
+  <div class="barra"><div class="t"><span>Tu avance</span><span id="av">0 de 7</span></div><div class="b"><i id="avb"></i></div></div>
+
+  <section class="paso" data-p="1">
+    <h2><span class="n">1</span>Crea tus cuentas</h2><div class="tiempo">~10 min · todas gratis, sin tarjeta</div>
+    <ol>
+      <li><b>GitHub</b> — <a href="https://github.com/signup" target="_blank" rel="noopener">github.com/signup</a>. Ahí vive el código y los procesos automáticos.</li>
+      <li><b>Vercel</b> — <a href="https://vercel.com/signup" target="_blank" rel="noopener">vercel.com/signup</a> → "Continue with GitHub". Ahí vive tu página.</li>
+      <li><b>Supabase</b> — <a href="https://supabase.com/dashboard" target="_blank" rel="noopener">supabase.com</a> → "Continue with GitHub". Es tu base de datos.</li>
+      <li><b>The Odds API</b> — <a href="https://the-odds-api.com/" target="_blank" rel="noopener">the-odds-api.com</a> → plan <b>Starter (gratis)</b>. Te llega una <b>clave</b> al correo: guárdala.</li>
+    </ol>
+    <label class="listo"><input type="checkbox"> Ya tengo las 4 cuentas</label>
+  </section>
+
+  <section class="paso" data-p="2">
+    <h2><span class="n">2</span>Crea tu bot de Telegram</h2><div class="tiempo">~3 min</div>
+    <ol>
+      <li>En Telegram busca <b>@BotFather</b> y escríbele <code>/newbot</code>.</li>
+      <li>Ponle un nombre (ej. "Bitácora de Juan") y un usuario que termine en <code>bot</code>.</li>
+      <li>Te da un <b>token</b> parecido a <code>123456789:AAH...</code>. Guárdalo, <b>es secreto</b>.</li>
+      <li>Abre tu bot nuevo y mándale "hola".</li>
+      <li>Para saber tu <b>chat id</b>: busca <b>@userinfobot</b> en Telegram y escríbele cualquier cosa; te responde tu número (Id).</li>
+    </ol>
+    <label class="listo"><input type="checkbox"> Tengo mi token y mi chat id</label>
+  </section>
+
+  <section class="paso" data-p="3">
+    <h2><span class="n">3</span>Prepara tus claves (aquí mismo)</h2><div class="tiempo">~2 min · todo se queda en tu celular, nada se envía</div>
+    <p>Te genero dos contraseñas largas al azar y armo los textos que vas a pegar en los siguientes pasos.</p>
+    <label class="f">Tu usuario de GitHub<input id="gh" placeholder="ej. juanperez" autocomplete="off"></label>
+    <label class="f">Nombre que le darás a tu página (solo letras, números y guiones)<input id="proy" placeholder="ej. bitacora-juan" autocomplete="off"></label>
+    <div class="fila"><button class="btn" id="gen" type="button">🎲 Generar claves nuevas</button></div>
+    <table>
+      <tr><td>BOT_CLAVE</td><td><span class="code" id="k1">—</span> <button class="copiar" data-c="k1">Copiar</button></td></tr>
+      <tr><td>WEBHOOK_SECRET</td><td><span class="code" id="k2">—</span> <button class="copiar" data-c="k2">Copiar</button></td></tr>
+      <tr><td>Tu página será</td><td><span class="code" id="url">—</span></td></tr>
+    </table>
+    <div class="nota">📝 Guarda estas dos claves en tus notas: las vas a pegar en Supabase y en Vercel. Si recargas la página se quedan guardadas en este navegador.</div>
+    <label class="listo"><input type="checkbox"> Ya guardé mis claves</label>
+  </section>
+
+  <section class="paso" data-p="4">
+    <h2><span class="n">4</span>Arma la base de datos (Supabase)</h2><div class="tiempo">~8 min</div>
+    <ol>
+      <li>En Supabase: <b>New project</b>. Nombre el que quieras, contraseña larga, región <b>East US</b> (la más cercana a Vercel). Espera ~2 min a que se cree.</li>
+      <li>Abre el archivo del esquema: <a href="https://github.com/Mcpadrino/bot-apuestas/blob/main/supabase/esquema.sql" target="_blank" rel="noopener">supabase/esquema.sql</a> → botón <b>Copy raw file</b> (el ícono de copiar).</li>
+      <li>En Supabase ve a <b>SQL Editor</b> → <b>New query</b>, pega todo y presiona <b>Run</b>. Debe decir "Success".</li>
+      <li>Nueva query: pega esto (ya trae tus datos) y <b>Run</b>:
+        <pre id="sql">Llena el paso 3 primero.</pre><button class="copiar" data-c="sql">Copiar SQL</button>
+        <div class="nota">El token de GitHub del renglón "github" lo sacas en el paso 6 y regresas a pegarlo. Mientras, déjalo así.</div></li>
+      <li>Ve a <b>Project Settings → API Keys</b>, pestaña <b>"Legacy API keys"</b>, y copia la <b>anon public</b> (empieza con <code>eyJ</code>). La <b>Project URL</b> está en <b>Project Settings → Data API</b> (es tipo <code>https://xxxx.supabase.co</code>).</li>
+    </ol>
+    <label class="listo"><input type="checkbox"> Mi base de datos está lista</label>
+  </section>
+
+  <section class="paso" data-p="5">
+    <h2><span class="n">5</span>Publica tu página (un botón)</h2><div class="tiempo">~5 min</div>
+    <p>Este botón copia el proyecto a <b>tu</b> GitHub y lo publica en <b>tu</b> Vercel. Te va a pedir 7 datos:</p>
+    <div class="fila"><a class="btn prim" id="deploy" target="_blank" rel="noopener" href="#">▲ Deploy en Vercel</a></div>
+    <table>
+      <tr><td>SUPABASE_URL</td><td>Project URL de Supabase (paso 4)</td></tr>
+      <tr><td>SUPABASE_KEY</td><td>La anon public key (paso 4)</td></tr>
+      <tr><td>BOT_CLAVE</td><td>La del paso 3</td></tr>
+      <tr><td>TELEGRAM_TOKEN</td><td>El token de BotFather (paso 2)</td></tr>
+      <tr><td>TELEGRAM_CHAT_ID</td><td>Tu chat id (paso 2). Tú serás el administrador.</td></tr>
+      <tr><td>WEBHOOK_SECRET</td><td>La del paso 3</td></tr>
+      <tr><td>WEB_URL</td><td id="weburl">La dirección de tu página</td></tr>
+    </table>
+    <ol>
+      <li>Al terminar, Vercel te enseña tu página. Si la dirección no es la que pusiste en <code>WEB_URL</code>, cámbiala en <b>Settings → Environment Variables</b> y vuelve a publicar (<b>Deployments → ⋯ → Redeploy</b>).</li>
+      <li>Conecta tu bot abriendo este link <b>una sola vez</b>: <br><a id="hook" href="#" target="_blank" rel="noopener">Llena el paso 3 primero</a><br>Debe decir <code>"ok":true</code>.</li>
+    </ol>
+    <label class="listo"><input type="checkbox"> Mi página abre y el bot está conectado</label>
+  </section>
+
+  <section class="paso" data-p="6">
+    <h2><span class="n">6</span>Enciende los procesos automáticos (GitHub)</h2><div class="tiempo">~8 min</div>
+    <p>Son los que escanean momios 2 veces al día, califican resultados y calculan el Gurú. Corren solos en GitHub, gratis.</p>
+    <ol>
+      <li>En tu repositorio nuevo (<span class="code" id="repo">tuusuario/bot-apuestas</span>): <b>Settings → Secrets and variables → Actions</b>.</li>
+      <li>Pestaña <b>Secrets</b> → <b>New repository secret</b>, crea 3:
+        <ul><li><code>ODDS_API_KEY</code> → tu clave de The Odds API</li><li><code>TELEGRAM_TOKEN</code> → el token de BotFather</li><li><code>TELEGRAM_CHAT_ID</code> → tu chat id</li></ul></li>
+      <li>Pestaña <b>Variables</b> → <b>New repository variable</b>: <code>BOT_URL</code> → <span class="code" id="boturl">la dirección de tu página</span></li>
+      <li>Pestaña <b>Actions</b>: si te pregunta, presiona <b>"I understand my workflows, go ahead and enable them"</b>.</li>
+      <li>Para que Supabase pueda despertar los procesos a su hora, crea un token: <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub → Fine-grained token</a> → Repository access: <b>solo tu repositorio</b> → Permissions → <b>Actions: Read and write</b> → Generate. Cópialo y en Supabase (SQL Editor) corre:
+        <pre id="sqltok">update privado.secretos set valor = 'PEGA-AQUI-TU-TOKEN' where nombre = 'github';</pre><button class="copiar" data-c="sqltok">Copiar</button></li>
+    </ol>
+    <label class="listo"><input type="checkbox"> Secrets, variable y token listos</label>
+  </section>
+
+  <section class="paso" data-p="7">
+    <h2><span class="n">7</span>Pruébalo</h2><div class="tiempo">~3 min</div>
+    <ol>
+      <li>En Telegram escríbele <code>/start</code> a tu bot.</li>
+      <li>En GitHub: <b>Actions → Alertas de apuestas → Run workflow</b>. En un minuto te llegan las señales (si hay partidos ese día).</li>
+      <li>En tu página crea tu usuario: en el bot escribe <code>cuenta tuusuario tucontraseña</code>.</li>
+      <li>Para invitar amigos: menú → 🛠️ Administrador → crear invitación y compartes el link.</li>
+    </ol>
+    <div class="nota ok">🎉 ¡Listo! Ya tienes tu propia Bitácora. Personalízala: colores, ligas, textos… todo está en el código y es tuyo.</div>
+    <label class="listo"><input type="checkbox"> ¡Funciona!</label>
+  </section>
+
+  <section class="paso">
+    <h2><span class="n">?</span>Si algo falla</h2>
+    <ul>
+      <li><b>La página dice "error de base de datos"</b>: revisa <code>SUPABASE_URL</code>, <code>SUPABASE_KEY</code> y que <code>BOT_CLAVE</code> sea igual en Vercel y en Supabase.</li>
+      <li><b>El bot no contesta</b>: abre otra vez el link del paso 5; revisa que <code>TELEGRAM_TOKEN</code> esté bien.</li>
+      <li><b>No llegan señales</b>: corre "Alertas de apuestas" a mano en Actions y abre el registro; casi siempre es la <code>ODDS_API_KEY</code> o que ese día no hay partidos.</li>
+      <li><b>Los procesos no corren solos</b>: falta el token de GitHub del paso 6 o el usuario/repositorio en la función <code>privado.disparar</code> (lo pone el SQL del paso 4).</li>
+      <li>¿Atorado? Abre un <a href="https://github.com/Mcpadrino/bot-apuestas/issues" target="_blank" rel="noopener">Issue en GitHub</a> y la comunidad te ayuda.</li>
+    </ul>
+  </section>
+
+  <footer>Bitácora de apuestas · open source (AGPL v3) · creado por Luis y amigos · No es casa de apuestas ni asesoría financiera. Solo mayores de 18.<br>
+    Si el juego te está afectando: Línea de la Vida 800 911 2000.</footer>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const REPO = "https://github.com/Mcpadrino/bot-apuestas";
+const guardar = (k, v) => { try { localStorage.setItem("monta-" + k, v); } catch (e) {} };
+const leer = (k) => { try { return localStorage.getItem("monta-" + k) || ""; } catch (e) { return ""; } };
+function azar(n) { const a = new Uint8Array(n); crypto.getRandomValues(a); return Array.from(a, (b) => "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"[b % 56]).join(""); }
+function limpio(t) { return String(t || "").toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "").slice(0, 40); }
+function pintar() {
+  const gh = String($("gh").value || "").trim().replace(/[^A-Za-z0-9-]/g, ""), proy = limpio($("proy").value) || "mi-bitacora";
+  const k1 = leer("k1"), k2 = leer("k2"), url = `https://${proy}.vercel.app`;
+  $("k1").textContent = k1 || "—"; $("k2").textContent = k2 || "—"; $("url").textContent = url;
+  $("weburl").textContent = url; $("boturl").textContent = url; $("repo").textContent = `${gh || "tuusuario"}/${proy}`;
+  const repo = `${gh || "TUUSUARIO"}/${proy}`;
+  $("sql").textContent = k1 ? `update privado.secretos set valor = '${k1}' where nombre = 'bot';
+
+create or replace function privado.disparar(p_workflow text, p_inputs jsonb default '{}'::jsonb)
+returns bigint language plpgsql security definer set search_path to '' as $f$
+declare v_token text; v_id bigint;
+begin
+  select valor into v_token from privado.secretos where nombre = 'github';
+  if v_token is null or v_token like 'CAMBIA%' then return null; end if;
+  select net.http_post(
+    url := 'https://api.github.com/repos/${repo}/actions/workflows/' || p_workflow || '/dispatches',
+    body := jsonb_build_object('ref', 'main', 'inputs', p_inputs),
+    headers := jsonb_build_object('Authorization', 'Bearer ' || v_token, 'Accept', 'application/vnd.github+json',
+      'User-Agent', 'bitacora-apuestas', 'X-GitHub-Api-Version', '2022-11-28', 'Content-Type', 'application/json')
+  ) into v_id;
+  return v_id;
+end $f$;` : "Llena el paso 3 primero (genera tus claves).";
+  const env = "SUPABASE_URL,SUPABASE_KEY,BOT_CLAVE,TELEGRAM_TOKEN,TELEGRAM_CHAT_ID,WEBHOOK_SECRET,WEB_URL";
+  $("deploy").href = "https://vercel.com/new/clone?" + new URLSearchParams({ "repository-url": REPO, "root-directory": "telegram", "project-name": proy, "repository-name": proy, env,
+    envDescription: "Los datos de los pasos 2, 3 y 4 de la guía", envLink: location.href.split("#")[0] }).toString();
+  const hook = k2 ? `${url}/api/telegram?setup=${k2}` : "";
+  $("hook").textContent = hook || "Llena el paso 3 primero"; $("hook").href = hook || "#";
+}
+$("gh").value = leer("gh"); $("proy").value = leer("proy");
+$("gh").oninput = () => { guardar("gh", $("gh").value); pintar(); };
+$("proy").oninput = () => { guardar("proy", $("proy").value); pintar(); };
+$("gen").onclick = () => { if (leer("k1") && !confirm("¿Generar claves nuevas? Las anteriores dejarán de servir.")) return; guardar("k1", azar(40)); guardar("k2", azar(32)); pintar(); };
+document.querySelectorAll(".copiar").forEach((b) => b.onclick = async () => {
+  const t = $(b.dataset.c).textContent;
+  try { await navigator.clipboard.writeText(t); const o = b.textContent; b.textContent = "✓ Copiado"; setTimeout(() => (b.textContent = o), 1400); } catch (e) {}
+});
+// avance
+const pasos = [...document.querySelectorAll(".paso[data-p]")];
+function avance() {
+  let n = 0;
+  pasos.forEach((p) => { const c = p.querySelector(".listo input"); p.classList.toggle("hecho", c.checked); if (c.checked) n++; });
+  $("av").textContent = `${n} de ${pasos.length}`; $("avb").style.width = (n / pasos.length * 100) + "%";
+}
+pasos.forEach((p) => { const c = p.querySelector(".listo input"); c.checked = leer("p" + p.dataset.p) === "1"; c.onchange = () => { guardar("p" + p.dataset.p, c.checked ? "1" : ""); avance(); }; });
+pintar(); avance();
+</script>
+</body>
+</html>
