@@ -251,6 +251,7 @@ export default async function handler(req, res) {
       }
       case "archivo": {
         // buscador de partidos pasados: marcador, quién ganó, qué dijo el Gurú y Pinnacle
+        const d = b.datos || {};
         const txt = (v, n) => String(v || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9 .&'-]/g, " ").replace(/\s+/g, " ").trim().slice(0, n);
         const f = (v) => (/^\d{4}-\d{2}-\d{2}/.test(String(v || "")) ? String(v).slice(0, 25) : "");
         const filtro = ["todos", "con", "guru", "pinn", "ninguno"].includes(d.filtro) ? d.filtro : "todos";
