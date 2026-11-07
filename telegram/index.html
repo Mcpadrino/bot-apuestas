@@ -2247,8 +2247,12 @@ function pintarPendientes(lista) {
       const ok = el("button", "primary", "Guardar"); ok.type = "button";
       const no = el("button", "", "Cancelar"); no.type = "button"; no.onclick = () => { cobrando = null; render(); };
       const prev = el("span", "meta co-prev", `Si pegaba cobrabas ${fmt(b.monto * b.cuota)}`);
-      inp.oninput = () => { const v = parseFloat(inp.value); prev.textContent = v >= 0 ? `Resultado: ${sign(v - b.monto)} (${v >= b.monto ? "ganancia" : "pérdida"} contra ${fmt(b.monto)} apostados)` : `Si pegaba cobrabas ${fmt(b.monto * b.cuota)}`; };
-      ok.onclick = async () => { const v = parseFloat(inp.value); if (!(v >= 0)) { inp.focus(); return; } ok.disabled = true;
+      const tope = b.monto * b.cuota;
+      inp.oninput = () => { const v = parseFloat(inp.value);
+        prev.classList.toggle("neg", v > tope + 0.01);
+        prev.textContent = v > tope + 0.01 ? `⚠️ No puede ser más de ${fmt(tope)}: es lo máximo que pagaba si ganaba.`
+          : v >= 0 ? `Resultado: ${sign(v - b.monto)} (${v >= b.monto ? "ganancia" : "pérdida"} contra ${fmt(b.monto)} apostados)` : `Si pegaba cobrabas ${fmt(tope)}`; };
+      ok.onclick = async () => { const v = parseFloat(inp.value); if (!(v >= 0) || v > tope + 0.01) { inp.oninput(); inp.focus(); return; } ok.disabled = true;
         cobrando = null; const r = await hacer("cashout", { id: b.id, cobro: v }, "No se pudo guardar el cierre.");
         if (!r) { cobrando = b.id; render(); } };
       const caja = el("div", "co-caja"); caja.append(el("b", "", "💵 Cerraste antes de que terminara"), inp, prev); act.append(caja, ok, no);
