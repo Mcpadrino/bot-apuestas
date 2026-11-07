@@ -397,10 +397,17 @@ def guardar_senales(tabla):
     if not (requests and token and tabla):
         return {}
     lote = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%d%H%M%S")
+    empates = {str(f["evento"]): f["prob"] for f in tabla if f["mk"] == "h2h" and f["seleccion"] in ("Empate", "Draw")}
+
+    def con_pa(f):
+        if f["mk"] != "h2h" or f["seleccion"] in ("Empate", "Draw"):
+            return None
+        ma = anticipado.minima_anticipado(f["deporte"].split("_")[0], f["prob"], f["minima"], empates.get(str(f["evento"])))
+        return round(ma, 3) if ma else None
     filas = [{"evento": str(f["evento"]), "partido": f["partido"], "deporte": f["deporte"],
               "inicio": f["inicio"].isoformat(), "mercado": f["mk"], "seleccion": f["seleccion"],
               "prob": round(f["prob"], 4), "minima": round(f["minima"], 3),
-              "pin": round(f["pin"], 3) if f.get("pin") else None} for f in tabla]
+              "pin": round(f["pin"], 3) if f.get("pin") else None, "minima_pa": con_pa(f)} for f in tabla]
     try:
         r = requests.post(f"{BOT_URL}/api/telegram", params={"senales": "1"}, headers={"x-bot-token": token},
                           json={"lote": lote, "filas": filas}, timeout=20)

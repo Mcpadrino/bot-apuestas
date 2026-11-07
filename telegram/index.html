@@ -615,6 +615,11 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
 .mt-pick small { color: var(--muted); }
 #mt-h-picks { width: 100%; resize: vertical; font: inherit; }
 /* ficha matemática en cada señal */
+.sen-pa { display: block; color: var(--muted); font-size: .76rem; }
+.sen-pa b { color: var(--fg); }
+.chk-pa { display: flex; gap: 8px; align-items: flex-start; font-size: .88rem; }
+.chk-pa input { width: 20px; height: 20px; margin-top: 2px; flex: 0 0 auto; }
+.chk-pa small { display: block; color: var(--muted); font-size: .76rem; }
 .sen-ficha-btn { border: 0; background: transparent; color: var(--muted); font-size: .76rem; padding: 2px 0 0; text-decoration: underline dotted; cursor: pointer; }
 .sen-ficha { grid-column: 1 / -1; font-size: .8rem; line-height: 1.45; background: var(--bg); border: 1px dashed var(--line); border-radius: 12px; padding: 9px 11px; display: grid; gap: 3px; }
 .sen-ficha b { font-family: var(--font-mono, monospace); }
@@ -1204,6 +1209,7 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
           <label>Monto $<input id="f-monto" required inputmode="decimal" placeholder="5" autocomplete="off"></label>
         </div>
         <label id="f-prob-wrap">% del bot (del mensaje de Telegram)<input id="f-prob" inputmode="decimal" placeholder="38.2" autocomplete="off"></label>
+        <label class="chk-pa"><input type="checkbox" id="f-pa"><span>⏩ <b>Tiene pago anticipado</b><small>Ganador del partido en Caliente/Draftea: te pagan si tu equipo llega a ir arriba por 2 goles (20 pts NBA, 17 NFL, 5 carreras MLB).</small></span></label>
         <p class="preview num" id="f-prev" style="white-space:pre-line"></p>
         <button class="primary" type="submit" id="f-btn">Guardar apuesta</button>
       </form>
@@ -2329,8 +2335,15 @@ $("excel").addEventListener("click", async () => {
 async function cerrar(id, resultado) { await hacer("cerrar", { id, resultado }, "No se pudo guardar el resultado."); }
 async function borrar(id) { confirmando = null; await hacer("borrar", { id }, "No se pudo borrar."); }
 
-let limConfirma = null;
+let limConfirma = null, paTocado = false;
+// ¿Apuesta sencilla a ganador? (las que tienen pago anticipado en Caliente/Draftea)
+const esML = (t) => !!t && !/\b(m[aá]s de|menos de|over|under|empate|draw|ambos|btts|h[aá]ndicap|handicap|spread|total|parlay|parley)\b/i.test(t) && !/\s\+\s/.test(t) && !/[+-]\d+(\.\d+)?\s*(pts|puntos|goles|carreras)?\s*$/.test(t);
+function sugerirPA() { if (!paTocado) $("f-pa").checked = esML($("f-sel").value.trim()) && /caliente|draftea/i.test($("f-casa").value); }
+$("f-pa").addEventListener("change", () => (paTocado = true));
+$("f-sel").addEventListener("input", sugerirPA);
+$("f-casa").addEventListener("change", sugerirPA);
 function vistaPrevia() {
+  sugerirPA();
   const c = aDecimal($("f-cuota").value), p = parseFloat($("f-prob").value) / 100, m = parseFloat($("f-monto").value);
   let t = "";
   if (c) t = `Momio ${momioDoble(c)}`;
@@ -2358,8 +2371,8 @@ $("f").addEventListener("submit", async e => {
   limConfirma = null;
   estado(""); $("f-btn").disabled = true;
   const ok = await hacer("registrar", { cartera: vista === "normal" ? "libre" : "bot", partido: $("f-partido").value.trim(),
-    seleccion: $("f-sel").value.trim(), casa: $("f-casa").value, cuota, prob, monto }, "No se pudo guardar la apuesta.");
-  if (ok) { ["f-partido", "f-sel", "f-cuota", "f-prob"].forEach(id => $(id).value = ""); $("f-prev").textContent = ""; }
+    seleccion: $("f-sel").value.trim(), casa: $("f-casa").value, cuota, prob, monto, anticipado: $("f-pa").checked }, "No se pudo guardar la apuesta.");
+  if (ok) { ["f-partido", "f-sel", "f-cuota", "f-prob"].forEach(id => $(id).value = ""); $("f-prev").textContent = ""; paTocado = false; }
   $("f-btn").disabled = false;
 });
 
@@ -3099,13 +3112,16 @@ function pintarSenales() {
         const monto = montoSug(f.prob, f.minima);
         t.append(el("div", "s", `${i === 0 && filas.length > 1 ? "⭐ " : ""}${f.seleccion} · ${(f.prob * 100).toFixed(1)}%${Math.abs(f.mov) >= .02 ? " ⚡" : ""}`));
         const sm = el("small"); sm.append("paga ", el("b", "paga", aAmericano(f.minima)), ` o mejor → $${monto}`); t.append(sm);
+        const hayPA = f.minima_pa && aAmericano(f.minima_pa) !== aAmericano(f.minima);
+        if (hayPA) { const pa = el("small", "sen-pa"); pa.append("⏩ con pago anticipado: ", el("b", "", aAmericano(f.minima_pa))); t.append(pa); }
         const fb = el("button", "sen-ficha-btn", "🧮 ¿Por qué?"); fb.type = "button";
         const fi = el("div", "sen-ficha"); fi.hidden = true;
         const justo = 1 / f.prob, ganMin = 5 * (f.prob * f.minima - 1);
         fi.innerHTML = `<span>📊 Probabilidad real (Pinnacle sin margen): <b>${(f.prob * 100).toFixed(1)}%</b></span>
           <span>⚖️ Momio justo: <b>${aAmericano(justo)}</b> · el bot pide <b>${aAmericano(f.minima)}</b> o más para que haya ventaja</span>
           <span>💲 A ${aAmericano(f.minima)}: en promedio ganas <b>${fmt(ganMin)}</b> por cada $5… y aun así pierdes <b>${Math.round((1 - f.prob) * 100)} de cada 100</b> veces.</span>
-          <span>🚫 Si tu casa paga menos de ${aAmericano(f.minima)}, <b>no conviene</b> aunque sea el favorito.</span>`;
+          <span>🚫 Si tu casa paga menos de ${aAmericano(f.minima)}, <b>no conviene</b> aunque sea el favorito.</span>${hayPA ? `
+          <span>⏩ Con <b>pago anticipado</b> (te pagan si tu equipo llega a ir arriba por la ventaja de la casa) cobras un poco más seguido, así que basta con <b>${aAmericano(f.minima_pa)}</b>.</span>` : ""}`;
         fb.onclick = (ev) => { ev.stopPropagation(); fi.hidden = !fi.hidden; fb.textContent = fi.hidden ? "🧮 ¿Por qué?" : "▲ Ocultar"; };
         t.append(fb, fi);
         const bt = el("button", "", "Lo aposté"); bt.type = "button";

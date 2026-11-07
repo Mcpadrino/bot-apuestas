@@ -101,6 +101,7 @@ export default async function handler(req, res) {
         const a = await rpc("bot", "registrar", {
           usuario, cartera: d.cartera === "libre" ? "libre" : "bot", partido: txt(d.partido),
           seleccion: txt(d.seleccion), casa: txt(d.casa, 40), cuota, monto, prob,
+          ...(typeof d.anticipado === "boolean" ? { anticipado: d.anticipado } : {}),
         });
         try {
           const l = await buscarLogo(`${txt(d.seleccion)} ${txt(d.partido)}`);
