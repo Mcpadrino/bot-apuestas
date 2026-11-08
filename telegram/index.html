@@ -1504,7 +1504,7 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
         <div><span class="label">📌 Pinnacle</span><b class="num" id="g-ap">0</b><small>aciertos</small></div>
       </div>
       <div class="tira" aria-hidden="true"><i id="g-tira-g"></i><i id="g-tira-p"></i></div>
-      <div class="bank"><small id="g-cerca">Más cerca del resultado: —</small><small id="g-ll"></small></div>
+      <div class="bank"><small id="g-cerca">Más cerca del resultado: —</small><small id="g-ll"></small><small id="g-poly"></small></div>
       <p class="verdict" id="g-veredicto">Cuando terminen los primeros partidos aquí verás quién atina más.</p>
       <button type="button" id="g-ver-hist" style="justify-self:start;padding:7px 12px;border-radius:999px;font-size:.82rem">📚 Ver partido por partido ↓</button>
     </section>
@@ -3152,13 +3152,16 @@ function pintarSenales() {
         const sm = el("small"); sm.append("paga ", el("b", "paga", aAmericano(f.minima)), ` o mejor → $${monto}`); t.append(sm);
         const hayPA = f.minima_pa && aAmericano(f.minima_pa) !== aAmericano(f.minima);
         if (hayPA) { const pa = el("small", "sen-pa"); pa.append("⏩ con pago anticipado: ", el("b", "", aAmericano(f.minima_pa))); t.append(pa); }
+        if (f.poly) { const dq = f.poly - f.prob, pq = el("small", "sen-pa");
+          pq.append("🟣 Polymarket: ", el("b", "", Math.round(f.poly * 100) + "%"), Math.abs(dq) < .03 ? " ✅ coincide" : ` ⚠️ ${Math.round(Math.abs(dq) * 100)} pts ${dq > 0 ? "más" : "menos"}`); t.append(pq); }
         const fb = el("button", "sen-ficha-btn", "🧮 ¿Por qué?"); fb.type = "button";
         const fi = el("div", "sen-ficha"); fi.hidden = true;
         const justo = 1 / f.prob, ganMin = 5 * (f.prob * f.minima - 1);
         fi.innerHTML = `<span>📊 Probabilidad real (Pinnacle sin margen): <b>${(f.prob * 100).toFixed(1)}%</b></span>
           <span>⚖️ Momio justo: <b>${aAmericano(justo)}</b> · el bot pide <b>${aAmericano(f.minima)}</b> o más para que haya ventaja</span>
           <span>💲 A ${aAmericano(f.minima)}: en promedio ganas <b>${fmt(ganMin)}</b> por cada $5… y aun así pierdes <b>${Math.round((1 - f.prob) * 100)} de cada 100</b> veces.</span>
-          <span>🚫 Si tu casa paga menos de ${aAmericano(f.minima)}, <b>no conviene</b> aunque sea el favorito.</span>${hayPA ? `
+          <span>🚫 Si tu casa paga menos de ${aAmericano(f.minima)}, <b>no conviene</b> aunque sea el favorito.</span>${f.poly ? `
+          <span>🟣 Polymarket (mercado de predicción, otra fuente independiente) le da <b>${(f.poly * 100).toFixed(0)}%</b>. ${Math.abs(f.poly - f.prob) < .03 ? "Coincide con Pinnacle: la probabilidad es más confiable." : "No coincide con Pinnacle: hay más duda de lo normal; mejor ir con cuidado."}</span>` : ""}${hayPA ? `
           <span>⏩ Con <b>pago anticipado</b> (te pagan si tu equipo llega a ir arriba por la ventaja de la casa) cobras un poco más seguido, así que basta con <b>${aAmericano(f.minima_pa)}</b>.</span>` : ""}`;
         fb.onclick = (ev) => { ev.stopPropagation(); fi.hidden = !fi.hidden; fb.textContent = fi.hidden ? "🧮 ¿Por qué?" : "▲ Ocultar"; };
         t.append(fb, fi);
@@ -3526,6 +3529,16 @@ function pintarDuelo() {
   $("g-tira-p").style.width = tot ? (d.pinnacle_mas_cerca / tot * 100) + "%" : "50%";
   $("g-cerca").textContent = `Más cerca del resultado: 🔮 ${d.guru_mas_cerca || 0} · 📌 ${d.pinnacle_mas_cerca || 0}`;
   $("g-ll").textContent = d.logloss_guru != null ? `Error (log-loss): 🔮 ${Number(d.logloss_guru).toFixed(3)} · 📌 ${Number(d.logloss_pinnacle).toFixed(3)}` : "";
+  // 🟣 Polymarket: tercera opinión, solo en los partidos donde había mercado antes de empezar
+  const hp = ((esXg ? guruDatos.historial_xg : guruDatos.historial) || []).filter(p => p.res && p.datos && p.datos.poly && p.datos.poly.L != null);
+  if (hp.length) {
+    const ll = q => -Math.log(Math.max(.01, Number(q) || 0));
+    const top = o => Object.entries(o).filter(([k, v]) => v != null && "LEV".includes(k)).sort((a, b) => b[1] - a[1])[0][0];
+    let aP = 0, lP = 0, aM = 0, lM = 0, nM = 0;
+    hp.forEach(p => { const q = p.datos.poly; if (top(q) === p.res) aP++; lP += ll(q[p.res]);
+      if (p.mercado && p.mercado.L != null) { nM++; if (top(p.mercado) === p.res) aM++; lM += ll(p.mercado[p.res]); } });
+    $("g-poly").textContent = `🟣 Polymarket: ${aP} de ${hp.length} · log-loss ${(lP / hp.length).toFixed(3)}` + (nM ? ` (📌 en esos mismos: ${aM} de ${nM} · ${(lM / nM).toFixed(3)})` : "");
+  } else $("g-poly").textContent = "🟣 Polymarket se suma como tercera opinión en cuanto se califiquen los primeros partidos con su precio.";
   $("g-veredicto").textContent = n < 30 ? `${n === 1 ? "Va 1 partido comparado" : `Van ${n} partidos comparados`}. Con menos de 30 todavía es suerte; a los 200 ya dice algo.`
     : Number(d.logloss_guru) < Number(d.logloss_pinnacle) ? "🔮 El gurú va ganando: sus probabilidades se acercan más a lo que pasa. Vale la pena tomarlo en cuenta."
     : "📌 Pinnacle va ganando (lo normal). Usa al gurú solo como segunda opinión.";
@@ -3561,6 +3574,11 @@ function pintarProximos() {
     if (p.mercado) {
       const et2 = el("div", "g-et"); et2.append(el("span", "", "📌 Pinnacle"), el("span", "", ""));
       c.append(et2, barra(p.mercado.L, p.mercado.E, p.mercado.V, true));
+    }
+    const pq = (p.datos || {}).poly;
+    if (pq && pq.L != null) {
+      const et3 = el("div", "g-et"); et3.append(el("span", "", "🟣 Polymarket"), el("span", "", pq.vol ? `$${Number(pq.vol).toLocaleString("es-MX")} negociados` : ""));
+      c.append(et3, barra(pq.L, p.p_empate != null ? pq.E : null, pq.V, true));
     }
     const ch = el("div", "g-chips"), x = p.datos || {};
     if (x.xg_local != null) ch.append(el("span", "", `Goles esperados ${x.xg_local} – ${x.xg_visita}`), el("span", "", `Más de 2.5: ${pctx(x.over25)}`),
@@ -3598,7 +3616,9 @@ function pintarHistGuru() {
     const tope = o => Object.entries(o).filter(([, v]) => v != null).sort((a, b) => b[1] - a[1])[0][0];
     const k = p.res, fg = tope(g), fm = m ? tope(m) : null;
     const pg = g[k] || 0, pm = m ? m[k] || 0 : null;
-    return { p, g, m, k, fg, fm, okG: fg === k, okM: m ? fm === k : null, cerca: m ? (pg > pm + .005 ? "g" : pm > pg + .005 ? "m" : "=") : null, pg, pm };
+    const q = p.datos && p.datos.poly && p.datos.poly.L != null ? { L: Number(p.datos.poly.L), E: p.datos.poly.E == null ? null : Number(p.datos.poly.E), V: Number(p.datos.poly.V) } : null;
+    const fq = q ? tope(q) : null;
+    return { p, g, m, k, fg, fm, q, fq, okQ: q ? fq === k : null, okG: fg === k, okM: m ? fm === k : null, cerca: m ? (pg > pm + .005 ? "g" : pm > pg + .005 ? "m" : "=") : null, pg, pm };
   });
   const conM = filas.filter(f => f.m);
   const ex = { m: 0, mo: 0, o: 0, oo: 0, b: 0, bo: 0 };
@@ -3642,7 +3662,9 @@ function pintarHistGuru() {
       ${f.m ? `<div class="gh-q ${f.okM ? "ok" : "no"}"><span>📌 Pinnacle dijo <b>${admEsc(NOM(p, f.fm))}</b> (${pctx(f.m[f.fm])})</span><span class="gh-v">${f.okM ? "✓ acertó" : "✗ falló"}</span>
         <small>Al resultado real le daba ${pctx(f.pm)}</small></div>
         <div class="gh-cerca">${f.cerca === "g" ? "🔮 El Gurú estuvo más cerca" : f.cerca === "m" ? "📌 Pinnacle estuvo más cerca" : "🤝 Empatados"}</div>`
-        : `<div class="gh-q sin"><span>📌 Pinnacle: sin línea</span><small>El bot no escaneó momios de este partido, así que no cuenta para el duelo.</small></div>`}${extras}`;
+        : `<div class="gh-q sin"><span>📌 Pinnacle: sin línea</span><small>El bot no escaneó momios de este partido, así que no cuenta para el duelo.</small></div>`}${f.q ? `
+      <div class="gh-q ${f.okQ ? "ok" : "no"}"><span>🟣 Polymarket dijo <b>${admEsc(NOM(p, f.fq))}</b> (${pctx(f.q[f.fq])})</span><span class="gh-v">${f.okQ ? "✓ acertó" : "✗ falló"}</span>
+        <small>Al resultado real le daba ${pctx(f.q[f.k])}</small></div>` : ""}${extras}`;
     h.append(c);
   });
   const mas = $("g-hist-mas"); mas.hidden = lista.length <= MAX;

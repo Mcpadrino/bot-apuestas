@@ -84,8 +84,10 @@ def juegos(ruta):
         return _juegos[ruta]
     salida = []
     serie = _serie(ruta)
-    eventos = _get("/events", series_id=serie, closed="false", limit=500) if serie else None
     ahora = dt.datetime.now(dt.timezone.utc)
+    desde = (ahora - dt.timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    eventos = _get("/events", series_id=serie, closed="false", limit=500, start_date_min=desde,
+                   order="startDate", ascending="true") if serie else None
     for e in eventos or []:
         ms = [m for m in e.get("markets") or [] if m.get("sportsMarketType") == "moneyline" and not m.get("closed")]
         if not ms:

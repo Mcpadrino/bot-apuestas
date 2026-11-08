@@ -73,7 +73,7 @@ export function agruparSenales(lineas, horas = 36) {
     const p = partidos.get(l.evento) || { evento: l.evento, partido: l.partido, deporte: l.deporte, inicio: l.inicio, mercados: {} };
     const prob = Number(l.serie.slice(-1)[0][1]);
     const s = l.serie.length > 1 ? prob - Number(l.serie[l.serie.length - 2][1]) : 0;
-    (p.mercados[l.mercado] ||= []).push({ id: l.id, seleccion: l.seleccion, prob, minima: Number(l.minima), minima_pa: l.minima_pa ? Number(l.minima_pa) : null, mov: s });
+    (p.mercados[l.mercado] ||= []).push({ id: l.id, seleccion: l.seleccion, prob, minima: Number(l.minima), minima_pa: l.minima_pa ? Number(l.minima_pa) : null, poly: l.poly ? Number(l.poly) : null, mov: s });
     partidos.set(l.evento, p);
   }
   return [...partidos.values()].sort((a, b) => a.inicio.localeCompare(b.inicio));
