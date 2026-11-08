@@ -1077,6 +1077,15 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
 .ocr { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .ocr label.foto { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; padding: 9px 12px; border: 1px dashed var(--accent); border-radius: 10px;
   color: var(--accent); font-weight: 600; cursor: pointer; font-size: .88rem; }
+
+/* V2: detalles visuales compatibles con la personalización y los minijuegos existentes. */
+@media (hover: hover) and (pointer: fine) {
+  .jcard, .juego, .reto, .summary, .menu-item { transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+  .jcard:hover, .juego:hover, .reto:hover { transform: translateY(-2px); box-shadow: 0 10px 26px -18px rgba(0,0,0,.45); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
 </style>
 </head>
 <body>
@@ -5622,6 +5631,8 @@ const PRESETS = {
   clasico: { n: "📰 Clásico", acento: "#0d7a57", modo: "claro", fondo: { tipo: "ninguno" }, bg: "linear-gradient(140deg,#eef2ef,#0d7a57)" },
   retro: { n: "📻 Retro", acento: "#e07a2b", modo: "claro", fondo: { tipo: "degradado" }, fuerza: 30, bg: "linear-gradient(140deg,#f3e3c3,#e07a2b)" },
   equipo: { n: "⭐ Tu equipo", acento: null, modo: "oscuro", fondo: { tipo: "escudo" }, fuerza: 30, bg: "linear-gradient(140deg,var(--h1,#1d7a52),var(--h3,#0a3324))" },
+  arcade: { n: "🕹️ Arcade", acento: "#a990f0", modo: "oscuro", fondo: { tipo: "degradado" }, fuerza: 28, bg: "linear-gradient(140deg,#251342,#6747d8,#11b69f)" },
+  tribuna: { n: "🏆 Tribuna", acento: "#19bfa9", modo: "oscuro", fondo: { tipo: "degradado" }, fuerza: 22, bg: "linear-gradient(140deg,#0d2138,#126d7a,#19bfa9)" },
 };
 let guardarTimer = null;
 function guardarTema() {
