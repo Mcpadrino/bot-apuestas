@@ -9,11 +9,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: pip install requests -q
-      - name: Prueba pago anticipado
+      - name: Explorar Polymarket
         run: |
           python3 - <<'P'
-          import espn
-          for ev in ["soccer_epl:401879242","basketball_nba:401909294","americanfootball_nfl:401873037","baseball_mlb:401908046"]:
-              print(ev, espn.ventajas(ev))
+          import requests, json
+          G="https://gamma-api.polymarket.com"
+          s=requests.get(G+"/sports",timeout=30).json()
+          print("SPORTS", len(s))
+          for x in s:
+              if x.get("sport") in ("nba","nfl","mlb","epl","lal","ucl","mex","lmx","ligamx","bun","sea","fl1","mls","uel","ncaab","cfb"): print(json.dumps(x)[:300])
+          print([x.get("sport") for x in s])
+          r=requests.get(G+"/events",params={"tag_slug":"nba","closed":"false","limit":3,"order":"startDate","ascending":"true"},timeout=30).json()
+          for e in r[:2]:
+              print("EV", json.dumps({k:e.get(k) for k in ("id","slug","title","startDate","endDate","seriesSlug","gameId","tags")})[:600])
+              for m in e.get("markets",[])[:4]:
+                  print("  M", json.dumps({k:m.get(k) for k in ("question","slug","outcomes","outcomePrices","sportsMarketType","gameStartTime","line","bestBid","bestAsk","lastTradePrice","volume")})[:500])
+          for tag in ("nfl","soccer","epl","liga-mx","mls"):
+              r=requests.get(G+"/events",params={"tag_slug":tag,"closed":"false","limit":200},timeout=30).json()
+              games=[e for e in r if " vs" in (e.get("title") or "")]
+              print("TAG",tag,len(r),"games",len(games))
+              for e in games[:3]:
+                  print("  ",e.get("title"),e.get("startDate"),e.get("slug"),[ (m.get("question"),m.get("outcomes"),m.get("outcomePrices"),m.get("sportsMarketType")) for m in e.get("markets",[])[:3]])
           P
-          python3 resultados.py --prueba || true
