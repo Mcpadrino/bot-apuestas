@@ -9,22 +9,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: pip install requests -q
-      - name: Explorar Polymarket 2
+      - name: Probar Polymarket
         run: |
+          python3 polymarket.py
           python3 - <<'P'
-          import requests, json
-          G="https://gamma-api.polymarket.com"
-          for serie in ("10345","12185","10290","10188","10193","13"):
-              r=requests.get(G+"/events",params={"series_id":serie,"closed":"false","limit":500},timeout=30).json()
-              print("SERIE",serie,len(r))
-              n=0
-              for e in sorted(r,key=lambda e:e.get("startDate") or ""):
-                  ms=[m for m in e.get("markets",[]) if m.get("sportsMarketType")=="moneyline"]
-                  if not ms: continue
-                  n+=1
-                  if n>3: continue
-                  print(" EV",e.get("slug"),"|",e.get("title"),"|start",e.get("startDate"),"|end",e.get("endDate"),"| keys",[k for k in e.keys()][:60])
-                  for m in ms[:4]:
-                      print("   M",json.dumps({k:m.get(k) for k in ("question","groupItemTitle","outcomes","outcomePrices","gameStartTime","bestBid","bestAsk","volume","closed","active")}))
-              print(" moneyline events",n)
+          import datetime as dt, polymarket, pronosticos as pr
+          hoy = dt.datetime.now(dt.timezone.utc).date()
+          for ruta in polymarket.CODIGOS:
+              evs = [e for d in range(0, 3) for e in pr._dia_espn(ruta, hoy + dt.timedelta(days=d)) or [] if e["estado"] == "pre"]
+              ok = 0
+              for e in evs:
+                  m = polymarket.para_partido(ruta, [e["local"]["nombre"], e["local"]["completo"]], [e["visita"]["nombre"], e["visita"]["completo"]], e["fecha"])
+                  ok += bool(m)
+                  print("  ", "✅" if m else "❌", ruta, e["local"]["completo"], "vs", e["visita"]["completo"], e["fecha"], m)
+              print("==", ruta, ok, "/", len(evs))
+          print(polymarket.para_seleccion("americanfootball_nfl", "Atlanta Falcons", "Cincinnati Bengals", "2026-11-08T14:30:00+00:00", "Cincinnati Bengals"))
           P

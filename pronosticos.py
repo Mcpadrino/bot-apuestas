@@ -22,6 +22,7 @@ from collections import defaultdict
 import requests
 
 import espn
+import polymarket
 
 BOT_URL = os.getenv("BOT_URL") or "https://bot-apuestas-telegram.vercel.app"
 TOKEN = "".join(os.getenv("TELEGRAM_TOKEN", "").split())
@@ -411,6 +412,13 @@ def elo_deporte(ruta, lineas):
 def fila(e, modelo, pl, pe, pv, datos, lineas):
     m = mercado_pinnacle(lineas, e)
     pl, pe, pv, datos = calibrar_fila(modelo, pl, pe, pv, datos)
+    try:                    # 🟣 Polymarket: tercera opinión (gratis), solo antes de que empiece
+        poly = polymarket.para_partido(e["ruta"], [e["local"]["nombre"], e["local"].get("completo")],
+                                       [e["visita"]["nombre"], e["visita"].get("completo")], e["fecha"])
+        if poly:
+            datos = {**datos, "poly": poly}
+    except Exception as err:          # nunca debe tumbar los pronósticos
+        print("⚠️ polymarket:", type(err).__name__, err)
     return {
         "evento": f"{e['ruta']}:{e['id']}", "ruta": e["ruta"], "liga": NOMBRES.get(e["ruta"], e["ruta"]),
         "deporte": "futbol" if e["ruta"].startswith("soccer") else e["ruta"].split("/")[1],
@@ -588,7 +596,8 @@ def main():
         except Exception as e:                   # un deporte que falle no detiene a los demás
             print(f"⚠️ {paso.__name__} {args[0] if len(args) > 1 else ''}: {type(e).__name__}: {e}")
     con_m = sum(1 for f in filas if f["mercado"])
-    print(f"\n{len(filas)} pronósticos ({con_m} con línea de Pinnacle para comparar)")
+    con_p = sum(1 for f in filas if (f["datos"] or {}).get("poly"))
+    print(f"\n{len(filas)} pronósticos ({con_m} con línea de Pinnacle, {con_p} con Polymarket)")
     for f in filas[:12]:
         pe = f" E {f['p_empate']:.0%}" if f["p_empate"] is not None else ""
         print(f"  {f['liga']:<12} {f['local']} vs {f['visita']}: L {f['p_local']:.0%}{pe} V {f['p_visita']:.0%}"

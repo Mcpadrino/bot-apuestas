@@ -24,6 +24,7 @@ from collections import Counter
 from pathlib import Path
 from zoneinfo import ZoneInfo
 import anticipado
+import polymarket
 
 try:
     import requests
@@ -391,6 +392,21 @@ def usuarios_alertas():
     return [(DUENO, BANCA, "")]
 
 
+def poner_polymarket(tabla):
+    """🟣 Probabilidad de Polymarket (gratis) en las señales de ganador, para comparar con Pinnacle."""
+    for f in tabla:
+        if f["mk"] != "h2h" or not f.get("local"):
+            continue
+        try:
+            p = polymarket.para_seleccion(f["deporte"], f["local"], f["visita"], f["inicio"].isoformat(), f["seleccion"])
+        except Exception as e:                       # nunca debe tumbar las señales
+            print("⚠️ polymarket:", type(e).__name__, e, file=sys.stderr)
+            p = None
+        if p:
+            f["poly"] = p
+    print(f"🟣 Polymarket: {sum(1 for f in tabla if f.get('poly'))} selecciones con precio")
+
+
 def guardar_senales(tabla):
     """Guarda las señales en el bot de Telegram para el botón "Lo aposté". Devuelve {partido: id} o {}."""
     token = "".join(os.getenv("TELEGRAM_TOKEN", "").split())
@@ -407,7 +423,8 @@ def guardar_senales(tabla):
     filas = [{"evento": str(f["evento"]), "partido": f["partido"], "deporte": f["deporte"],
               "inicio": f["inicio"].isoformat(), "mercado": f["mk"], "seleccion": f["seleccion"],
               "prob": round(f["prob"], 4), "minima": round(f["minima"], 3),
-              "pin": round(f["pin"], 3) if f.get("pin") else None, "minima_pa": con_pa(f)} for f in tabla]
+              "pin": round(f["pin"], 3) if f.get("pin") else None, "minima_pa": con_pa(f),
+              "poly": round(f["poly"], 4) if f.get("poly") else None} for f in tabla]
     try:
         r = requests.post(f"{BOT_URL}/api/telegram", params={"senales": "1"}, headers={"x-bot-token": token},
                           json={"lote": lote, "filas": filas}, timeout=20)
@@ -532,6 +549,11 @@ UNIDAD = {"soccer": "goles", "americanfootball": "pts", "basketball": "pts", "ba
 TITULO_MERCADO = {"h2h": "🏆 Ganador", "totals": "📊 Total", "spreads": "↔️ Hándicap"}
 
 
+def coincide(p_pin, p_poly):
+    d = p_poly - p_pin
+    return " ✅ coincide" if abs(d) < 0.03 else f" (⚠️ {abs(d):.0%} {'más' if d > 0 else 'menos'})"
+
+
 def mensaje_telegram(tabla):
     """Un bloque por partido, agrupado por mercado. ⭐ = lo más probable del mercado."""
     msg = [f"🎯 SEÑALES · banca ${BANCA:,.0f}",
@@ -567,6 +589,8 @@ def mensaje_telegram(tabla):
                     ma = anticipado.minima_anticipado(tipo, f["prob"], f["minima"], p_emp)
                     if ma and momio_usuario(ma) != momio_usuario(f["minima"]):
                         msg.append(f"      ⏩ con pago anticipado: {momio_usuario(ma)}")
+                if f.get("poly"):
+                    msg.append(f"      🟣 Polymarket: {f['poly']:.0%}{coincide(f['prob'], f['poly'])}")
     return msg
 
 
@@ -707,6 +731,7 @@ def escanear(args):
         global BANCA
         banca_original = BANCA
         imagen = cartelera(tabla)
+        poner_polymarket(tabla)
         ids = guardar_senales(tabla)
         enviados = 0
         for chat, banca, _nombre in usuarios_alertas():
