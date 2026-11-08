@@ -2,3 +2,5 @@ apuestas.csv
 estado_lineas.json
 __pycache__/
 .env
+node_modules/
+test-results/

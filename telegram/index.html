@@ -1078,6 +1078,51 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
 .ocr label.foto { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; padding: 9px 12px; border: 1px dashed var(--accent); border-radius: 10px;
   color: var(--accent); font-weight: 600; cursor: pointer; font-size: .88rem; }
 
+/* V2: primera capa visual. Conserva los tokens de Mi diseño, fondos y selectores. */
+.wrap > header { padding: 12px 14px; border: 1px solid var(--line); border-radius: 18px;
+  background: var(--surface); box-shadow: 0 8px 24px -20px var(--fg); }
+.wrap > header .quien { flex-shrink: 0; }
+.seccion-actual { min-width: 0; }
+#sec-nombre { overflow-wrap: anywhere; }
+.inicio { gap: 18px; }
+.tarjeta { padding: 20px; gap: 12px; box-shadow: 0 8px 24px -22px var(--fg); }
+.tarjeta h3 { font-size: 1.15rem; line-height: 1.35; gap: 12px; flex-wrap: wrap; }
+.tarjeta h3 button, .tarjeta h3 a { min-height: 44px; display: inline-flex; align-items: center; }
+.tarjeta.hero-ini { padding: 24px 20px; }
+.ini-banca { gap: 12px; }
+.ini-banca div { padding: 16px 12px; gap: 4px; }
+.ini-banca b { font-size: 2rem; line-height: 1.15; }
+.ini-fila { padding-block: 10px; }
+.summary { border-radius: 18px; padding: 20px; gap: 18px; }
+.summary.hero .big { font-size: clamp(2.6rem, 10vw, 3.4rem); }
+.summary.hero .stats > div { padding: 12px; }
+.menu-item { min-height: 60px; padding: 12px; }
+.menu-item .txt { line-height: 1.35; }
+.menu-item small { margin-top: 4px; }
+.menu-item[aria-current="page"] { box-shadow: 0 6px 18px -12px var(--accent); }
+.juegos-grid { gap: 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.jcard { min-width: 0; min-height: 156px; padding: 18px; gap: 8px; align-content: start;
+  border-color: var(--line); box-shadow: 0 8px 24px -22px var(--fg); }
+.jcard > span { width: 48px; height: 48px; display: grid; place-items: center;
+  border-radius: 14px; background: var(--bg); font-size: 1.7rem; }
+.jcard b { line-height: 1.3; overflow-wrap: anywhere; }
+.jcard small { font-size: .8rem; line-height: 1.5; }
+#v-diseno > h2 { margin-top: 12px; padding-top: 16px; border-top: 1px solid var(--line); }
+.presets { gap: 12px; }
+.preset { height: 96px; padding: 12px; }
+.estadio { height: 112px; }
+.estadio span { padding: 16px 8px 8px; font-size: .8rem; }
+.chips-ligas button, .filters button, .chico { min-height: 44px; }
+:where(button, a, input, select, textarea, summary):focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+@media (max-width: 360px) {
+  .tarjeta, .summary { padding: 16px; }
+  .juegos-grid { gap: 10px; }
+  .jcard { padding: 12px; }
+  .wrap > header { padding: 10px; gap: 8px; }
+}
+/* La preferencia de esquinas también se aplica a las tarjetas renovadas. */
+body.cuadradas .jcard, body.cuadradas .wrap > header { border-radius: 4px; }
+
 /* V2: detalles visuales compatibles con la personalización y los minijuegos existentes. */
 @media (hover: hover) and (pointer: fine) {
   .jcard, .juego, .reto, .summary, .menu-item { transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
