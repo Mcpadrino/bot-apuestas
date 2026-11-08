@@ -82,6 +82,10 @@ create table if not exists public.apuestas (
   prob_cierre numeric,
   clv numeric,
   clv_revisado boolean not null default false,
+  anticipado boolean,
+  cobro numeric,
+  cuota_original numeric,
+  monto_original numeric,
   constraint apuestas_cartera_check CHECK ((cartera = ANY (ARRAY['bot'::text, 'libre'::text]))),
   constraint apuestas_cuota_check CHECK ((cuota > (1)::numeric)),
   constraint apuestas_monto_check CHECK ((monto > (0)::numeric)),
@@ -357,6 +361,8 @@ create table if not exists public.senales (
   minima numeric,
   creada timestamp with time zone not null default now(),
   pin numeric,
+  minima_pa numeric,
+  poly numeric,
   constraint senales_pkey PRIMARY KEY (id)
 );
 alter table public.senales enable row level security;
@@ -631,14 +637,36 @@ begin
   end if;
 
   if p_accion = 'registrar' then
-    insert into public.apuestas (usuario, cartera, partido, seleccion, casa, cuota, prob, monto)
+    insert into public.apuestas (usuario, cartera, partido, seleccion, casa, cuota, prob, monto, anticipado)
     values (v_u, coalesce(nullif(p_datos->>'cartera', ''), 'bot'), coalesce(p_datos->>'partido', ''),
             p_datos->>'seleccion', coalesce(p_datos->>'casa', ''), (p_datos->>'cuota')::numeric,
-            nullif(p_datos->>'prob', '')::numeric, (p_datos->>'monto')::numeric)
+            nullif(p_datos->>'prob', '')::numeric, (p_datos->>'monto')::numeric,
+            case when p_datos ? 'anticipado' then (p_datos->>'anticipado')::boolean end)
     returning * into v_row;
     return to_jsonb(v_row);
 
+  elsif p_accion = 'cashout' then
+    -- Cerrada antes de tiempo: lo cobrado define la ganancia (se guardan monto y momio originales)
+    update public.apuestas a
+       set monto_original = coalesce(a.monto_original, a.monto), cuota_original = coalesce(a.cuota_original, a.cuota),
+           cobro = round((p_datos->>'cobro')::numeric, 2), cerrada = now(),
+           resultado = case when (p_datos->>'cobro')::numeric > coalesce(a.monto_original, a.monto) + 0.004 then 'gana'
+                            when (p_datos->>'cobro')::numeric < coalesce(a.monto_original, a.monto) - 0.004 then 'pierde' else 'nula' end,
+           cuota = case when (p_datos->>'cobro')::numeric > coalesce(a.monto_original, a.monto) + 0.004
+                        then (p_datos->>'cobro')::numeric / coalesce(a.monto_original, a.monto) else coalesce(a.cuota_original, a.cuota) end,
+           monto = case when (p_datos->>'cobro')::numeric < coalesce(a.monto_original, a.monto) - 0.004
+                        then coalesce(a.monto_original, a.monto) - (p_datos->>'cobro')::numeric else coalesce(a.monto_original, a.monto) end
+     where a.id = (p_datos->>'id')::bigint and a.usuario = v_u and (p_datos->>'cobro')::numeric >= 0
+       and (p_datos->>'cobro')::numeric <= coalesce(a.monto_original, a.monto) * coalesce(a.cuota_original, a.cuota) + 0.01
+    returning * into v_row;
+    if v_row.id is null then raise exception 'Lo cobrado no puede ser más de lo que pagaba si ganaba.'; end if;
+    return to_jsonb(v_row);
+
   elsif p_accion = 'cerrar' then
+    update public.apuestas
+       set monto = coalesce(monto_original, monto), cuota = coalesce(cuota_original, cuota),
+           cobro = null, monto_original = null, cuota_original = null
+     where id = (p_datos->>'id')::bigint and usuario = v_u and cobro is not null;
     update public.apuestas
        set resultado = p_datos->>'resultado',
            cerrada = case when p_datos->>'resultado' = 'pendiente' then null else now() end
@@ -954,7 +982,7 @@ begin
               (x->>'p_visita')::numeric, coalesce(x->'datos', '{}'::jsonb), x->'mercado')
       on conflict (evento) do update set
         inicio = excluded.inicio, p_local = excluded.p_local, p_empate = excluded.p_empate, p_visita = excluded.p_visita,
-        datos = excluded.datos, mercado = coalesce(excluded.mercado, public.pronosticos.mercado), modelo = excluded.modelo,
+        datos = case when excluded.datos ? 'poly' or public.pronosticos.datos->'poly' is null then excluded.datos else excluded.datos || jsonb_build_object('poly', public.pronosticos.datos->'poly') end, mercado = coalesce(excluded.mercado, public.pronosticos.mercado), modelo = excluded.modelo,
         logo_local = excluded.logo_local, logo_visita = excluded.logo_visita, actualizada = now()
       where public.pronosticos.inicio > now();          -- ya no se cambia un pronóstico cuando el partido empezó
       v_n := v_n + 1;
@@ -1588,6 +1616,7 @@ AS $function$
              'mercado', mercado, 'seleccion', seleccion,
              'id', (array_agg(id order by creada desc))[1], 'minima', (array_agg(minima order by creada desc))[1],
              'pin', (array_agg(pin order by creada desc) filter (where pin is not null))[1],
+             'minima_pa', (array_agg(minima_pa order by creada desc))[1], 'poly', (array_agg(poly order by creada desc))[1],
              'serie', jsonb_agg(jsonb_build_array(creada, prob) order by creada)) x
       from public.senales
      where inicio > now() - interval '3 hours' and creada > now() - interval '4 days' and prob is not null
@@ -1697,7 +1726,7 @@ begin
   if p_accion = 'pendientes' then
     select coalesce(jsonb_agg(jsonb_build_object(
              'id', a.id, 'usuario', a.usuario, 'cartera', a.cartera, 'partido', a.partido, 'seleccion', a.seleccion,
-             'cuota', a.cuota, 'monto', a.monto, 'creada', a.creada, 'evento', a.evento, 'descartados', a.descartados)), '[]'::jsonb)
+             'cuota', a.cuota, 'monto', a.monto, 'creada', a.creada, 'evento', a.evento, 'descartados', a.descartados, 'anticipado', a.anticipado)), '[]'::jsonb)
       into v_res
       from public.apuestas a join public.usuarios u on u.chat_id = a.usuario and u.activo
      where a.resultado = 'pendiente' and a.creada > now() - interval '5 days';
@@ -1759,10 +1788,10 @@ begin
 
   if p_accion = 'guardar' then
     with nuevas as (
-      insert into public.senales (lote, evento, partido, deporte, inicio, mercado, seleccion, prob, minima, pin)
+      insert into public.senales (lote, evento, partido, deporte, inicio, mercado, seleccion, prob, minima, pin, minima_pa, poly)
       select p_datos->>'lote', f->>'evento', left(f->>'partido', 120), coalesce(f->>'deporte', ''),
              nullif(f->>'inicio', '')::timestamptz, f->>'mercado', left(f->>'seleccion', 120),
-             nullif(f->>'prob', '')::numeric, nullif(f->>'minima', '')::numeric, nullif(f->>'pin', '')::numeric
+             nullif(f->>'prob', '')::numeric, nullif(f->>'minima', '')::numeric, nullif(f->>'pin', '')::numeric, nullif(f->>'minima_pa', '')::numeric, nullif(f->>'poly', '')::numeric
         from jsonb_array_elements(p_datos->'filas') f
       returning id, evento, mercado, seleccion)
     select coalesce(jsonb_agg(to_jsonb(nuevas)), '[]'::jsonb) into v_res from nuevas;
