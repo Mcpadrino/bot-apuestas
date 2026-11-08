@@ -39,5 +39,29 @@ el funcionamiento de los servicios externos ni corrige defectos anteriores.
 Quedan pendientes acceso con Telegram real, sincronización entre dos dispositivos,
 partidas completas con premios/progreso y recorridos reales de ESPN, Gurú,
 quinielas y retos en un entorno de pruebas con datos separados.
-El Preview sin credenciales permite revisar la entrada; no permite iniciar una
-sesión funcional contra producción. No fusionar ni promover a producción.
+No fusionar ni promover a producción.
+
+## Preview sin cuenta
+
+Por solicitud del usuario, `node scripts/build-preview.mjs` genera un Preview
+que abre Inicio automáticamente. Usa el mismo `index.html`, los mismos motores
+de juegos y controles; el archivo fuente y el acceso de producción no cambian.
+Solo se permite compilar con `VERCEL_ENV=preview` o `--local` fuera de Vercel.
+
+La salida `.vercel/output` contiene archivos estáticos, sin funciones de servidor.
+El adaptador `preview/local.js` responde en el navegador con datos ilustrativos:
+equipo favorito, una fotografía de estadio ilustrativa, mascota, seis juegos y
+preferencias. Los cambios y premios de ejemplo se guardan en almacenamiento local.
+No son datos en vivo de ESPN ni progreso de una cuenta real. Las acciones no
+simuladas muestran un aviso; nunca se reenvían a las APIs.
+
+Se bloquean conexiones mediante CSP (`connect-src 'none'`), service workers,
+formularios externos y las rutas `/api/*` del despliegue. El aviso de Preview
+permanece visible. Las pruebas verifican entrada sin credenciales, apertura de
+los seis juegos, inicio del quiz, persistencia de tema/progreso local, cero
+peticiones de API y rechazo del build invitado en producción.
+
+Prueba local: `node scripts/build-preview.mjs --local`, servir
+`.vercel/output/static/` con un servidor estático; `npm test` automatiza ese flujo.
+Configurar únicamente el despliegue Preview con root `telegram`, build command
+`node scripts/build-preview.mjs`, sin modificar la configuración de producción.
