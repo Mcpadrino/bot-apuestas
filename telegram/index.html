@@ -6891,9 +6891,61 @@ function boletoLeer(txt) {
   r.parlay = r.piernas.length >= 2 || /parlay|combinada|m[uú]ltiple/i.test(T);
   // ¿el boleto ya terminó? (Draftea/Caliente marcan ganada, perdida, cancelada…)
   r.resultado = /\b(perdid[ao]s?|perdiste|no\s+gan[oó])\b/i.test(T) ? "pierde"
-    : /\b(ganad[ao]s?|ganaste|pagad[ao]|cobrad[ao]|premiad[ao])\b/i.test(T) ? "gana"
+    : /\b(ganad[ao]s?|ganador|ganaste|pagad[ao]|cobrad[ao]|premiad[ao])\b/i.test(T) ? "gana"
     : /\b(anulad[ao]|cancelad[ao]|reembolsad[ao]|void)\b/i.test(T) ? "nula" : null;
   return r;
+}
+// ===== Boletos de Draftea ("MI ENTRADA"): el encabezado Entrada / Momio / pago se lee aparte (más nítido)
+// y las selecciones salen de los bloques que empiezan con "Final" / "En vivo" / la hora.
+function draftCabeza(txt) {
+  const t = String(txt || "").replace(/\n+/g, " ");
+  const i = t.search(/entrada/i), z = i >= 0 ? t.slice(i) : t;
+  const mo = z.match(/([+-])\s?(\d{1,2}[,.]\d{3}|\d{3,5})(?![\d.,])/);
+  if (!mo || mo.index > 90) return {};            // el momio total va junto a "Entrada"; si está lejos no es el encabezado
+  const antes = z.slice(0, mo.index), despues = z.slice(mo.index + mo[0].length);
+  const n = s => Number(String(s).replace(/,(?=\d{3}\b)/g, "").replace(",", "."));
+  const m1 = [...antes.matchAll(/[$#S]?\s?(\d{1,6}(?:[.,]\d{1,2})?)(?![\d])/g)].pop(), m2 = despues.match(/[$#S]?\s?(\d{1,3}(?:,\d{3})*(?:\.\d{2})|\d{1,7}(?:\.\d{2})?)/);
+  return { momioTxt: mo[1] + mo[2].replace(/[,.]/g, ""), monto: m1 ? n(m1[1]) : null, pago: m2 ? n(m2[1]) : null };
+}
+function draftPiernas(txt) {
+  const lin = String(txt || "").split(/\n+/).map(x => x.trim()).filter(Boolean), pier = [];
+  const inicio = l => /^(final|en\s*vivo|pendiente|\d{1,2}:\d{2}|\d+h\s*:?\s*\d+m)\b/i.test(l);
+  let i = 0;
+  while (i < lin.length) {
+    if (!inicio(lin[i])) { i++; continue; }
+    const bloque = [lin[i]]; i++;
+    while (i < lin.length && !inicio(lin[i]) && !/^creado/i.test(lin[i])) bloque.push(lin[i++]);
+    const t = bloque.join("\n"), cab = bloque[0].match(/\b([A-Z]{2,4})\s*\(\d+\)\s*vs\s*\(\d+\)\s*([A-Z]{2,4})\b/);
+    if (/goles\s*totales|totales|puntos|carreras/i.test(t) || (cab && !/gana\b/i.test(t))) {
+      const ln = t.match(/(?:^|\s)(\d?\d[.,]5)(?!\d)|(?:^|\s)\D?4?(\d)(5)(?=\s|$)/m);
+      let linea = null;
+      if (ln && ln[1]) { linea = ln[1].replace(",", "."); if (linea.length === 4 && Number(linea) > 9) linea = linea.slice(1); }
+      else if (ln) linea = ln[2] + ".5";
+      const bajo = /↓|menos|under/i.test(t), que = /puntos/i.test(t) ? "puntos" : /carreras/i.test(t) ? "carreras" : "goles";
+      pier.push({ seleccion: linea ? `${bajo ? "Menos" : "Más"} de ${linea} ${que}` : `${bajo ? "Menos" : "Más"} ${que}`, partido: cab ? `${cab[1]} vs ${cab[2]}` : "" });
+    } else {
+      const g = t.match(/gana\b[^\n]*?(?:9[0o]['’°!]?|pa\W*\d?\W*)*\s*([\p{L}][\p{L} .'-]{2,}?)\s*(?:\.{2,}|…)?\s*[+-]\d/iu);
+      const eq = bloque.slice(1).map(x => x.replace(/^[^\p{L}]*(?:\p{L}{1,2}\W+)?/u, "").replace(/\s+\d+\s*\|?\s*$/, "").replace(/\s+[O0]\s*$/, "").trim())
+        .filter(x => /^\p{Lu}[\p{L}.' -]{2,}$/u.test(x) && !/^gana\b/i.test(x));
+      let sel = g ? g[1].replace(/\b(pa|gana)\b/gi, "").replace(/\s+/g, " ").trim() : "";
+      const completo = eq.find(e => sel && e.toLowerCase().startsWith(sel.toLowerCase().slice(0, 6)));
+      if (completo) sel = completo;
+      pier.push({ seleccion: sel ? `${sel} gana` : "Ganador", partido: eq.length >= 2 ? `${eq[0]} vs ${eq[1]}` : "" });
+    }
+  }
+  return pier;
+}
+async function prepCabeza(file) {         // solo la parte de arriba del boleto, en blanco y negro bien marcado
+  const img = await new Promise((ok, mal) => { const i = new Image(); i.onload = () => ok(i); i.onerror = mal; i.src = URL.createObjectURL(file); });
+  const W = 1200, esc = W / img.width, H = Math.round(Math.min(img.height * esc, W * .42));
+  const c = document.createElement("canvas"); c.width = W; c.height = H;
+  const g = c.getContext("2d"); g.drawImage(img, 0, 0, W, img.height * esc);
+  const d = g.getImageData(0, 0, W, H), px = d.data; let suma = 0;
+  for (let i = 0; i < px.length; i += 4) suma += px[i] * .3 + px[i + 1] * .59 + px[i + 2] * .11;
+  const oscuro = suma / (px.length / 4) < 128; let mn = 255, mx = 0; const gr = new Float32Array(px.length / 4);
+  for (let i = 0, k = 0; i < px.length; i += 4, k++) { let v = px[i] * .3 + px[i + 1] * .59 + px[i + 2] * .11; if (oscuro) v = 255 - v; gr[k] = v; mn = Math.min(mn, v); mx = Math.max(mx, v); }
+  for (let i = 0, k = 0; i < px.length; i += 4, k++) { const v = (gr[k] - mn) * 255 / Math.max(1, mx - mn) > 170 ? 255 : 0; px[i] = px[i + 1] = px[i + 2] = v; }
+  g.putImageData(d, 0, 0); return c;
 }
 $("f-foto").addEventListener("change", async () => {
   const file = $("f-foto").files[0]; if (!file) return;
@@ -6905,6 +6957,22 @@ $("f-foto").addEventListener("change", async () => {
     const imagen = await capPreparar(file).catch(() => file);
     const { data } = await tesseract.recognize(imagen, "spa+eng", { logger: m => { if (m.status === "recognizing text") tx.textContent = `🔎 Leyendo… ${Math.round(m.progress * 100)}%`; } });
     const b = boletoLeer(data.text || "");
+    if (/mi\s*entrada|draftea|entrada\s+mo/i.test(data.text || "")) {          // 🟣 formato Draftea
+      tx.textContent = "🔎 Leyendo el encabezado del boleto…";
+      let cab = {}, t2 = "";
+      try { t2 = (await tesseract.recognize(await prepCabeza(file), "spa+eng")).data.text || ""; cab = draftCabeza(t2); } catch (e) {}
+      if (!cab.momioTxt) cab = draftCabeza(data.text);
+      const aD = m => { const n = Number(m); return n > 0 ? 1 + n / 100 : 1 + 100 / -n; };
+      if (cab.monto) b.monto = cab.monto;
+      if (cab.momioTxt) { b.momioTxt = cab.momioTxt; b.momio = aD(cab.momioTxt); }
+      if (cab.pago) b.ganancia = cab.pago;
+      if (!b.momio && b.ganancia && b.monto) { b.momio = b.ganancia / b.monto; b.momioTxt = aAmericano(b.momio); }
+      const pier = draftPiernas(data.text);
+      if (pier.length) { b.piernas = pier; b.parlay = pier.length >= 2; }
+      b.casa = "Draftea";
+      const todo = data.text + "\n" + t2;
+      if (/[gs]anador|ganaste/i.test(todo)) b.resultado = "gana"; else if (/perdedor|perdid[ao]|perdiste/i.test(todo)) b.resultado = "pierde";
+    }
     // si la selección salió cortada ("Bayer Leverkus..."), usa el nombre completo del partido
     b.piernas.forEach(q => { const eq = (q.partido || "").split(" vs ").find(e => capNorm(e).startsWith(capNorm(q.seleccion)) && q.seleccion.length >= 4); if (eq) q.seleccion = eq; });
     const momioTxt = b.momioTxt || (b.momio ? aAmericano(b.momio) : b.piernas.length === 1 ? b.piernas[0].momioTxt : null);
