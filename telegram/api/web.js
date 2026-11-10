@@ -136,9 +136,10 @@ export default async function handler(req, res) {
       case "publicar": {
         const d = b.datos || {};
         const r = await rpc("comunidad", "publicar", { usuario, texto: txt(d.texto, 1000), link: txt(d.link, 500),
-          imagen: typeof d.imagen === "string" ? d.imagen : null, horas: num(d.horas) || 48 });
+          imagen: typeof d.imagen === "string" ? d.imagen : null, horas: num(d.horas) || 48,
+          apuesta_id: num(d.apuesta_id) || null, mostrar_monto: d.mostrar_monto === true });
         if (r && r.error) return res.status(400).json(r);
-        await avisarComunidad(usuario, r.autor, txt(d.texto, 1000));
+        await avisarComunidad(usuario, r.autor, txt(d.texto, 1000) || (num(d.apuesta_id) ? "🎯 compartió una apuesta" : ""));
         return res.status(200).json(r);
       }
       case "reaccionar": {
@@ -146,8 +147,11 @@ export default async function handler(req, res) {
         if (!["🔥", "👍", "😂"].includes(d.emoji)) return res.status(400).json({ error: "Reacción inválida" });
         return res.status(200).json(await rpc("comunidad", "reaccionar", { usuario, id: num(d.id), emoji: d.emoji }));
       }
-      case "bajar":
-        return res.status(200).json(await rpc("comunidad", "bajar", { usuario, id: num((b.datos || {}).id) }));
+      case "bajar": {
+        const r = await rpc("comunidad", "bajar", { usuario, id: num((b.datos || {}).id) });
+        if (r && r.error) return res.status(400).json(r);
+        return res.status(200).json(r);
+      }
       // ---------- perfil / equipo favorito
       case "perfil":
         return res.status(200).json(await mas("perfil", { usuario }));

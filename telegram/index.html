@@ -258,6 +258,22 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
 
 /* ---------- Avatares de la comunidad ---------- */
 .msg .cabeza { display: flex; gap: 8px; align-items: center; }
+/* 🎯 apuestas compartidas */
+.ap-card { display: grid; gap: 4px; padding: 10px 12px; border-radius: 12px; background: var(--bg); border: 1px solid var(--line); border-left: 5px solid var(--pend); }
+.ap-card.gana { border-left-color: var(--win); } .ap-card.pierde { border-left-color: var(--loss); } .ap-card.nula { border-left-color: var(--muted); }
+.ap-card .ap-sel { font-weight: 700; font-size: 1rem; }
+.ap-card .ap-par { font-size: .8rem; color: var(--muted); }
+.ap-card .ap-fila { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: .8rem; }
+.ap-card .ap-mo { font: 700 1.05rem var(--font-mono); }
+.ap-tag { padding: 2px 8px; border-radius: 999px; font-size: .74rem; font-weight: 700; background: var(--surface); border: 1px solid var(--line); }
+.ap-tag.ok { color: var(--win); border-color: var(--win); } .ap-tag.no { color: var(--loss); border-color: var(--loss); }
+.ap-record { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px; }
+.ap-record b { display: block; font: 700 1.25rem var(--font-mono); } .ap-record small { color: var(--muted); font-size: .74rem; }
+.ap-record p { grid-column: 1 / -1; margin: 0; font-size: .8rem; color: var(--muted); }
+.ap-adjunta { display: grid; gap: 6px; }
+.ap-adjunta .ap-quitar { justify-self: end; padding: 4px 9px; font-size: .78rem; }
+.ap-adjunta label { display: flex; gap: 8px; align-items: center; font-size: .85rem; }
+.ap-adjunta input[type=checkbox] { width: 18px; height: 18px; }
 .avatar { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; flex: 0 0 30px;
   font: 700 .85rem var(--font-body); color: #fff; }
 
@@ -1325,9 +1341,15 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
 
   <!-- ===================== COMUNIDAD ===================== -->
   <div id="v-comunidad" class="vista section" hidden>
-    <p class="hint">Comparte tus apuestas, el link para copiarlas, noticias del día o por qué te gusta una jugada. Todo se borra solo a las 48 horas para no ocupar espacio.</p>
+    <div class="seg" id="feed-tab" role="tablist" aria-label="Qué ver">
+      <button type="button" data-ft="todo" aria-selected="true">💬 Todo</button>
+      <button type="button" data-ft="apuestas" aria-selected="false">🎯 Qué estamos apostando</button>
+    </div>
+    <p class="hint" id="feed-hint">Comparte tus apuestas, el link para copiarlas, noticias del día o por qué te gusta una jugada. Lo que publicas se borra solo en el tiempo que elijas.</p>
+    <div class="ap-record" id="ap-record" hidden></div>
     <div class="feed" id="feed"></div>
     <form class="composer" id="pub">
+      <div class="ap-adjunta" id="p-ap" hidden></div>
       <textarea id="p-texto" maxlength="1000" placeholder="¿Qué vas a jugar y por qué?"></textarea>
       <div class="fila">
         <input id="p-link" type="url" inputmode="url" placeholder="Link de la apuesta (https://…)" autocomplete="off">
@@ -2353,6 +2375,8 @@ function pintarPendientes(lista) {
       });
       const co = el("button", "", "💵 La cerré"); co.type = "button"; co.title = "La cerraste (cash out) antes de que terminara el partido";
       co.onclick = () => { cobrando = b.id; confirmando = null; render(); }; act.append(co);
+      const sh = el("button", "", "📢 Compartir"); sh.type = "button"; sh.title = "Publicarla en Comunidad → Qué estamos apostando";
+      sh.onclick = () => compartirApuesta(b); act.append(sh);
       const del = el("button", "", "Borrar"); del.type = "button"; del.onclick = () => { confirmando = b.id; render(); };
       act.append(del);
     }
@@ -2411,7 +2435,9 @@ function pintarResultados(lista) {
     } else der.append(el("div", clase(g), b.resultado === "nula" ? "Nula" : sign(g)), el("div", "meta", "apostó " + fmt(b.monto)));
     const re = el("button", "", "Reabrir"); re.type = "button"; re.style.cssText = "padding:4px 8px;font-size:.75rem;margin-top:4px";
     re.onclick = () => cerrar(b.id, "pendiente");
-    der.append(re);
+    const sh = el("button", "", "📢"); sh.type = "button"; sh.title = "Compartir en Comunidad"; sh.setAttribute("aria-label", "Compartir en Comunidad");
+    sh.style.cssText = "padding:4px 8px;font-size:.75rem;margin-top:4px;margin-left:4px"; sh.onclick = () => compartirApuesta(b);
+    der.append(re, sh);
     row.append(mid, der); cont.append(row);
   });
 }
@@ -2466,6 +2492,7 @@ function sugerirPA() { if (!paTocado) $("f-pa").checked = esML($("f-sel").value.
 $("f-pa").addEventListener("change", () => (paTocado = true));
 $("f-sel").addEventListener("input", sugerirPA);
 $("f-casa").addEventListener("change", sugerirPA);
+let minConfirma = null;
 function vistaPrevia() {
   sugerirPA();
   const c = aDecimal($("f-cuota").value), p = parseFloat($("f-prob").value) / 100, m = parseFloat($("f-monto").value);
@@ -2474,7 +2501,7 @@ function vistaPrevia() {
   if (c && m > 0) t += ` · si gana cobras ${fmt(m * c)} (${sign(m * (c - 1))})`;
   if (vista === "bot" && c && p > 0 && p < 1) {
     const ev = p * c - 1;
-    t += ` · valor ${ev >= 0 ? "+" : ""}${(ev * 100).toFixed(1)}%` + (ev < 0.03 ? " ⚠️ por debajo del mínimo del bot" : "");
+    t += ` · valor ${ev >= 0 ? "+" : ""}${(ev * 100).toFixed(1)}%` + (ev < 0.03 ? `\n⚠️ Abajo del mínimo: el bot pedía ${aAmericano(1.03 / p)} o más. A la larga esta apuesta pierde dinero.` : " ✅ con valor");
   }
   const lim = m > 0 ? avisoLimites(m) : "";
   if (lim) t += (t ? "\n" : "") + lim;
@@ -2490,6 +2517,11 @@ $("f").addEventListener("submit", async e => {
   if (!cuota) { estado("El momio no es válido. Escríbelo como +175, -150 o 2.75."); return; }
   if (!(monto > 0)) { estado("Escribe un monto mayor a cero."); return; }
   if (prob !== null && !(prob > 0 && prob < 1)) { estado("El % del bot debe estar entre 0 y 100."); return; }
+  if (prob && cuota * prob < 1.03 && minConfirma !== prob + "|" + cuota) {
+    minConfirma = prob + "|" + cuota;
+    estado(`⚠️ Te pagan ${aAmericano(cuota)} y el mínimo era ${aAmericano(1.03 / prob)}: a la larga pierde dinero. Si aun así la jugaste, toca Guardar otra vez.`); return;
+  }
+  minConfirma = null;
   const lim = avisoLimites(monto);
   if (lim && limConfirma !== monto + "|" + cuota) { limConfirma = monto + "|" + cuota; estado(lim + ". Si aun así quieres guardarla, toca Guardar otra vez."); return; }
   limConfirma = null;
@@ -2656,14 +2688,75 @@ async function cargarFeed() {
   clearTimeout(feedTimer);
   if (vista === "comunidad" && !document.hidden) feedTimer = setTimeout(cargarFeed, 30000);
 }
-let firmaFeed = "";
+let firmaFeed = "", feedTab = "todo", feedUltimo = [], apCompartir = null;
+// tarjeta de una apuesta compartida (sale igual en el feed y al adjuntarla)
+function tarjetaApuesta(a) {
+  const r = a.resultado || "pend", c = el("div", "ap-card " + r);
+  if (a.partido) c.append(el("div", "ap-par", (a.liga ? a.liga + " · " : "") + a.partido));
+  c.append(el("div", "ap-sel", a.seleccion || "Apuesta"));
+  const f = el("div", "ap-fila");
+  f.append(el("span", "ap-mo", aAmericano(Number(a.cuota))));
+  if (a.casa) f.append(el("span", "", "en " + a.casa));
+  if (a.monto != null) f.append(el("span", "", "· " + fmt(Number(a.monto))));
+  c.append(f);
+  const t = el("div", "ap-fila");
+  t.append(el("span", "ap-tag " + (r === "gana" ? "ok" : r === "pierde" ? "no" : ""),
+    a.cobro != null ? "💵 La cerró antes" : r === "gana" ? "✅ Pegó" : r === "pierde" ? "❌ Falló" : r === "nula" ? "➖ Nula" : "⏳ En juego"));
+  if (a.valor === true) t.append(el("span", "ap-tag ok", "✅ Con valor"));
+  else if (a.valor === false) t.append(el("span", "ap-tag no", "⚠️ Abajo del mínimo"));
+  else if (a.cartera !== "bot") t.append(el("span", "ap-tag", "🎲 Por su cuenta"));
+  if (a.marcador) t.append(el("span", "", "🏁 " + a.marcador));
+  c.append(t);
+  return c;
+}
+function pintarRecord(lista) {
+  const box = $("ap-record"), semana = Date.now() - 7 * 864e5;
+  const ap = lista.filter(p => p.apuesta && Date.parse(p.creada) > semana);
+  box.hidden = feedTab !== "apuestas" || !ap.length;
+  if (box.hidden) return;
+  const ok = ap.filter(p => p.apuesta.resultado === "gana").length, no = ap.filter(p => p.apuesta.resultado === "pierde").length;
+  const conV = ap.filter(p => p.apuesta.valor != null), val = conV.filter(p => p.apuesta.valor).length;
+  box.innerHTML = "";
+  [[ap.length, "compartidas"], [`${ok} / ${no}`, "✅ pegaron / ❌ fallaron"], [conV.length ? Math.round(val / conV.length * 100) + "%" : "—", "con valor"]]
+    .forEach(([v, t]) => { const d = el("div"); d.append(el("b", "", String(v)), el("small", "", t)); box.append(d); });
+  box.append(el("p", "", "Últimos 7 días. Las que ya se calificaron no se pueden bajar: aquí se ven también los fallos."));
+}
+document.querySelectorAll("#feed-tab [data-ft]").forEach(b => b.addEventListener("click", () => {
+  feedTab = b.dataset.ft;
+  document.querySelectorAll("#feed-tab [data-ft]").forEach(x => x.setAttribute("aria-selected", String(x === b)));
+  $("feed-hint").textContent = feedTab === "apuestas"
+    ? "Las apuestas que el grupo comparte desde su Bitácora. Se califican solas cuando termina el partido."
+    : "Comparte tus apuestas, el link para copiarlas, noticias del día o por qué te gusta una jugada. Lo que publicas se borra solo en el tiempo que elijas.";
+  firmaFeed = ""; pintarFeed(feedUltimo);
+}));
+function adjuntarApuesta(b) {
+  apCompartir = b;
+  const caja = $("p-ap"); caja.innerHTML = ""; caja.hidden = false;
+  caja.append(tarjetaApuesta({ partido: b.partido, seleccion: b.seleccion, cuota: b.cuotaOrig || b.cuota, casa: b.casa, liga: b.liga, cartera: b.cartera,
+    resultado: b.resultado, marcador: b.marcador, cobro: b.cobro, valor: b.prob ? (b.cuotaOrig || b.cuota) * b.prob >= 1.03 : null }));
+  const lab = el("label"), chk = el("input"); chk.type = "checkbox"; chk.id = "p-ap-monto";
+  lab.append(chk, document.createTextNode(`Mostrar cuánto aposté (${fmt(b.montoOrig || b.monto)})`));
+  const q = el("button", "ap-quitar", "Quitar apuesta"); q.type = "button"; q.onclick = () => { apCompartir = null; caja.hidden = true; caja.innerHTML = ""; $("p-horas").hidden = false; };
+  caja.append(lab, q);
+  $("p-horas").hidden = true;          // las apuestas compartidas duran 7 días para que se vea el resultado
+  $("p-texto").placeholder = "¿Por qué la jugaste? (opcional)";
+}
+function compartirApuesta(b) {
+  irA("comunidad"); adjuntarApuesta(b);
+  setTimeout(() => { $("pub").scrollIntoView({ behavior: "smooth", block: "end" }); $("p-texto").focus(); }, 300);
+}
 function pintarFeed(lista) {
-  const firma = JSON.stringify(lista.map(p => [p.id, p.texto, p.link, p.foto, p.reacciones, p.mias]));
+  feedUltimo = lista;
+  pintarRecord(lista);
+  if (feedTab === "apuestas") lista = lista.filter(p => p.apuesta);
+  const firma = feedTab + JSON.stringify(lista.map(p => [p.id, p.texto, p.link, p.foto, p.reacciones, p.mias, p.apuesta && p.apuesta.resultado]));
   if (firma === firmaFeed && $("feed").childElementCount) return;      // nada nuevo: no redibujar
   firmaFeed = firma;
   const cont = $("feed"), abajo = window.innerHeight + window.scrollY >= document.body.scrollHeight - 80;
   cont.innerHTML = "";
-  if (!lista.length) { cont.append(el("p", "empty", "Todavía nadie publica. Sé el primero: sube la foto de tu apuesta con el link para que otros la copien.")); return; }
+  if (!lista.length) { cont.append(el("p", "empty", feedTab === "apuestas"
+    ? "Nadie ha compartido apuestas esta semana. En tu Bitácora toca 📢 Compartir en cualquier apuesta."
+    : "Todavía nadie publica. Sé el primero: sube la foto de tu apuesta con el link para que otros la copien.")); return; }
   lista.forEach(p => {
     const m = el("div", "msg" + (p.mio ? " mio" : ""));
     const cab = el("div", "cabeza");
@@ -2673,6 +2766,7 @@ function pintarFeed(lista) {
     const q = el("div", "quien-pub"); const b = el("b", "", p.mio ? "Tú" : p.autor);
     q.append(b, document.createTextNode(" · " + hace(Date.parse(p.creada))));
     cab.append(av, q); m.append(cab);
+    if (p.apuesta) m.append(tarjetaApuesta(p.apuesta));
     if (p.foto) {
       const src = `/api/img?id=${encodeURIComponent(p.id)}&t=${encodeURIComponent(token)}`;
       const img = el("img"); img.src = src; img.alt = "Foto de la apuesta de " + (p.mio ? "ti" : p.autor); img.loading = "lazy";
@@ -2705,7 +2799,7 @@ function pintarFeed(lista) {
         bajar.disabled = true;
         try { await api("bajar", { id: p.id }); cargarFeed(); } catch (e) { estado(e.message || "No se pudo bajar."); bajar.disabled = false; }
       };
-      pie.append(bajar);
+      if (!(p.apuesta && p.apuesta.resultado)) pie.append(bajar);
     }
     m.append(pie); cont.append(m);
   });
@@ -2748,12 +2842,14 @@ $("p-quitar").addEventListener("click", () => { fotoData = null; $("p-foto").val
 $("pub").addEventListener("submit", async e => {
   e.preventDefault();
   const texto = $("p-texto").value.trim(), link = $("p-link").value.trim();
-  if (!texto && !link && !fotoData) { estado("Escribe algo, agrega una foto o un link."); return; }
+  if (!texto && !link && !fotoData && !apCompartir) { estado("Escribe algo, agrega una foto o un link."); return; }
   if (link && !/^https:\/\/\S+$/.test(link)) { estado("El link debe empezar con https://"); return; }
   $("p-btn").disabled = true; estado("Publicando…");
   try {
-    await api("publicar", { texto, link, imagen: fotoData, horas: Number($("p-horas").value) });
+    await api("publicar", { texto, link, imagen: fotoData, horas: Number($("p-horas").value),
+      apuesta_id: apCompartir ? apCompartir.id : null, mostrar_monto: !!(apCompartir && $("p-ap-monto") && $("p-ap-monto").checked) });
     $("p-texto").value = ""; $("p-link").value = ""; fotoData = null; $("p-foto").value = ""; $("p-mini").hidden = true;
+    if (apCompartir) { apCompartir = null; $("p-ap").hidden = true; $("p-ap").innerHTML = ""; $("p-horas").hidden = false; $("p-texto").placeholder = "¿Qué vas a jugar y por qué?"; }
     estado(""); await cargarFeed(); window.scrollTo(0, document.body.scrollHeight);
   } catch (err) { estado(err.message || "No se pudo publicar."); }
   $("p-btn").disabled = false;
@@ -3188,7 +3284,7 @@ function montoSug(p, c) {
   return Math.max(Math.round(Math.min((p * c - 1) / (c - 1) * 0.25, 0.025) * bancaBotActual()), 5);
 }
 let senFiltro = "todas", senTodas = false;
-const SEN_FILTROS = [["todas", "Todas"], ["hoy", "Hoy"], ["manana", "Mañana"], ["futbol", "⚽ Futbol"], ["nfl", "🏈 NFL"], ["nba", "🏀 NBA"], ["mlb", "⚾ MLB"], ["top", "⭐ Solo la más probable"]];
+const SEN_FILTROS = [["todas", "Todas"], ["hoy", "Hoy"], ["manana", "Mañana"], ["futbol", "⚽ Futbol"], ["nfl", "🏈 NFL"], ["nba", "🏀 NBA"], ["mlb", "⚾ MLB"]];
 function pasaFiltroSen(p) {
   const d = new Date(p.inicio), hoy = new Date(), man = new Date(Date.now() + 864e5);
   const mismo = (a, b) => a.toDateString() === b.toDateString();
@@ -3231,7 +3327,7 @@ function pintarSenales() {
       const caja = el("div", "list"); caja.style.gap = "4px";
       filas.forEach((f, i) => {
         const fila = el("div", "op-sen" + (i === 0 && filas.length > 1 ? " top" : ""));
-        if (i >= 3 || (senFiltro === "top" && i > 0)) fila.hidden = true;
+        if (i > 0) fila.hidden = true;            // por defecto solo la ⭐ (la más probable); las demás con "Ver …"
         const t = el("div");
         const monto = montoSug(f.prob, f.minima);
         t.append(el("div", "s", `${i === 0 && filas.length > 1 ? "⭐ " : ""}${f.seleccion} · ${(f.prob * 100).toFixed(1)}%${Math.abs(f.mov) >= .02 ? " ⚡" : ""}`));
@@ -3261,8 +3357,8 @@ function pintarSenales() {
         fila.append(t, bt); caja.append(fila);
       });
       c.append(caja);
-      if (filas.length > 3 && senFiltro !== "top") {
-        const mas = el("button", "mas-ops", `Ver ${filas.length - 3} más`); mas.type = "button";
+      if (filas.length > 1) {
+        const mas = el("button", "mas-ops", filas.length === 2 ? "Ver la otra opción" : `Ver las otras ${filas.length - 1}`); mas.type = "button";
         mas.onclick = () => { caja.querySelectorAll(".op-sen").forEach(x => x.hidden = false); mas.remove(); };
         c.append(mas);
       }
@@ -3815,6 +3911,19 @@ document.querySelectorAll("#v-mate [data-ir]").forEach((b) => (b.onclick = () =>
 }));
 
 // ---- 📒 Mi cuenta real
+// 🎯 ¿respetas el mínimo del bot? (solo apuestas que guardaron la probabilidad del bot)
+function mtDisciplina(c) {
+  const conP = c.filter(b => b.prob && b.resultado !== "nula");
+  if (conP.length < 3) return "";
+  const arr = conP.filter(b => (b.cuotaOrig || b.cuota) * b.prob >= 1.03), aba = conP.filter(b => (b.cuotaOrig || b.cuota) * b.prob < 1.03);
+  const linea = (l, t) => { if (!l.length) return `${t}: ninguna.`;
+    const n = l.reduce((s, b) => s + ganancia(b), 0), ap = l.reduce((s, b) => s + b.monto, 0), w = l.filter(b => b.resultado === "gana").length;
+    return `${t}: <b>${l.length}</b> (${w} ganadas) → <span class="mt-num ${mtCls(n)}">${mtSign(n)}</span> (${ap ? (n / ap * 100 > 0 ? "+" : "") + (n / ap * 100).toFixed(1) : 0}%)`; };
+  const pct = Math.round(arr.length / conP.length * 100);
+  return `<div class="mt-veredicto ${pct >= 70 ? "verde" : pct < 40 ? "rojo" : ""}"><b class="t">🎯 Tu disciplina con el mínimo del bot</b>
+    ${pct}% de tus apuestas del bot las hiciste con valor (pagaban el mínimo o más).<br>${linea(arr, "✅ Con valor")}<br>${linea(aba, "⚠️ Abajo del mínimo")}
+    <br><small>Con pocas apuestas manda la suerte; con cientos, las de "con valor" son las que aguantan.</small></div>`;
+}
 function mtCuenta() {
   const c = mtCerradas(), ahora = new Date();
   const neto = c.reduce((s, b) => s + ganancia(b), 0), apostado = c.reduce((s, b) => s + (b.resultado === "nula" ? 0 : b.monto), 0);
@@ -3853,6 +3962,7 @@ function mtCuenta() {
     <div class="mt-veredicto verde"><b class="t">🎉 Lo que presumes</b>${gan.length} boletos ganadores · cobraste <span class="mt-num">${fmt(premios)}</span>${mayor ? `<br>El más grande: ${admEsc(mayor.seleccion)} (${aAmericano(mayor.cuota)}) → ${fmt(mayor.monto * mayor.cuota)}` : ""}</div>
     <div class="mt-veredicto rojo"><b class="t">🙈 Lo que no se ve</b>${per.length} boletos perdidos · se fueron <span class="mt-num">${fmt(perdido)}</span></div>
     <div class="mt-veredicto ${neto >= 0 ? "verde" : "rojo"}"><b class="t">🧮 La cuenta completa</b>Cobrado ${fmt(premios)} − apostado ${fmt(apostado)} = <span class="mt-num ${mtCls(neto)}">${mtSign(neto)}</span></div>
+    ${mtDisciplina(c)}
     ${dep && (dep.depositado || dep.retirado) ? `<div class="mt-veredicto"><b class="t">🏦 Depósitos y retiros (apuestas normales)</b>Metiste ${fmt(dep.depositado)} y sacaste ${fmt(dep.retirado)}: ${dep.retirado - dep.depositado >= 0 ? "vas arriba" : "la casa se ha quedado con"} <span class="mt-num">${fmt(Math.abs(dep.retirado - dep.depositado))}</span>.</div>` : ""}`;
   // tipos
   const grupos = { "Sencillas del bot": c.filter((b) => b.cartera === "bot" && !mtEsParlay(b)), "Sencillas por tu cuenta": c.filter((b) => b.cartera !== "bot" && !mtEsParlay(b)), "Parlays": c.filter(mtEsParlay) };
