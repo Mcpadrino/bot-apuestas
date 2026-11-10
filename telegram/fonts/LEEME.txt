@@ -1,0 +1,5 @@
+Fuentes libres (SIL Open Font License 1.1), copiadas de Fontsource / Google Fonts:
+- Caveat (The Caveat Project Authors)
+- DotGothic16 (Fontworks Inc.)
+- Bricolage Grotesque (Mathieu Triay)
+Se usan en los estilos Libreta, Estadio y Estampas.

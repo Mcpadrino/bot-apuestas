@@ -1077,6 +1077,84 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
 .ocr { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .ocr label.foto { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; padding: 9px 12px; border: 1px dashed var(--accent); border-radius: 10px;
   color: var(--accent); font-weight: 600; cursor: pointer; font-size: .88rem; }
+
+/* ================= Estilos de la app (los elige cada usuario en 🎨 Mi diseño) =================
+   clásico = lo de siempre · libreta = cuaderno cuadriculado · estadio = tablero LED · estampas = álbum */
+@font-face { font-family: "Caveat"; font-weight: 500; font-display: swap; src: url(/fonts/caveat-latin-500-normal.woff2) format("woff2"); }
+@font-face { font-family: "Caveat"; font-weight: 700; font-display: swap; src: url(/fonts/caveat-latin-700-normal.woff2) format("woff2"); }
+@font-face { font-family: "DotGothic16"; font-weight: 400; font-display: swap; src: url(/fonts/dotgothic16-latin-400-normal.woff2) format("woff2"); }
+@font-face { font-family: "Bricolage Grotesque"; font-weight: 500; font-display: swap; src: url(/fonts/bricolage-grotesque-latin-500-normal.woff2) format("woff2"); }
+@font-face { font-family: "Bricolage Grotesque"; font-weight: 800; font-display: swap; src: url(/fonts/bricolage-grotesque-latin-800-normal.woff2) format("woff2"); }
+
+/* ---- 📒 Libreta ---- */
+:root[data-estilo="libreta"] {
+  --bg: #F6F8FB; --surface: rgba(255,255,255,.82); --line: #C9D7EA; --fg: #1a2233; --muted: #4A5568;
+  --accent: #1B3A8C; --accent-ink: #ffffff; --win: #1F8A4C; --win-bg: #E3F4EA; --loss: #D23C3C; --loss-bg: #FBE6E6;
+  --pend: #9a6a00; --normal: #6a4fb3; --marca: #FFE45C; --hl: #1B3A8C;
+  --font-display: "Caveat", "Comic Sans MS", cursive; color-scheme: light; }
+[data-estilo="libreta"] body { background:
+  linear-gradient(#D9E4F2 1px, transparent 1px) 0 0/18px 18px, linear-gradient(90deg, #D9E4F2 1px, transparent 1px) 0 0/18px 18px, #F6F8FB; background-attachment: fixed; }
+[data-estilo="libreta"] body::before { content: ""; position: fixed; top: 0; bottom: 0; left: max(8px, calc(50% - 334px)); width: 2px; background: #F2A0A0; pointer-events: none; z-index: 0; }
+[data-estilo="libreta"] h1 { text-transform: none; font-size: 2.5rem; color: var(--accent); }
+[data-estilo="libreta"] h2 { text-transform: none; letter-spacing: 0; font-size: 1.6rem; color: var(--accent); }
+[data-estilo="libreta"] .senal, [data-estilo="libreta"] .cv-partido { border: 0; border-bottom: 2px dashed #C9D7EA; border-radius: 0; background: transparent; padding-inline: 2px; }
+[data-estilo="libreta"] .op-sen { background: transparent; border-left: 3px solid #C9D7EA; border-radius: 0; }
+[data-estilo="libreta"] .op-sen.top { background: transparent; border-left-color: var(--loss); }
+[data-estilo="libreta"] .op-sen .s { font: 700 1.2rem/1.15 var(--font-display); color: var(--accent); }
+[data-estilo="libreta"] .op-sen .paga { background: var(--marca); padding: 0 4px; color: #1a2233; font-weight: 700; }
+[data-estilo="libreta"] .g-barra span { background-image: repeating-linear-gradient(-55deg, rgba(255,255,255,.35) 0 2px, transparent 2px 6px); }
+[data-estilo="libreta"] .summary.hero, [data-estilo="libreta"] .mt-hero { transform: rotate(-.6deg); }
+
+/* ---- 🏟️ Estadio ---- */
+:root[data-estilo="estadio"] {
+  --bg: #081B33; --surface: #0E2747; --line: #1E3C66; --fg: #EAF1FB; --muted: #8DA2C0;
+  --accent: #FFB000; --accent-ink: #081B33; --win: #36D27C; --win-bg: #10372F; --loss: #FF6B6B; --loss-bg: #3A1C28;
+  --pend: #FFB000; --normal: #A990F0; --led: #FFB000; --hl: #FFB000;
+  --font-mono: "DotGothic16", ui-monospace, monospace; color-scheme: dark; }
+[data-estilo="estadio"] body { background: radial-gradient(120% 50% at 50% -10%, #1C4C8A 0%, transparent 60%) fixed, #081B33; }
+[data-estilo="estadio"] .op-sen .paga, [data-estilo="estadio"] .num, [data-estilo="estadio"] .mt-big > b, [data-estilo="estadio"] .mt-kpis b,
+[data-estilo="estadio"] .an-kpis b, [data-estilo="estadio"] .clv-kpis b, [data-estilo="estadio"] .doku-top b, [data-estilo="estadio"] .tabla-q .pts,
+[data-estilo="estadio"] .linea .lin-mov, [data-estilo="estadio"] .boleto .premio { color: var(--led); text-shadow: 0 0 8px rgba(255,176,0,.55); font-weight: 400; }
+[data-estilo="estadio"] .op-sen .paga { font-size: 1.15rem; }
+[data-estilo="estadio"] .senal { border-color: #1E3C66; background: linear-gradient(180deg, #102C50, #0C2341); }
+[data-estilo="estadio"] .op-sen.top { background: #12305A; box-shadow: inset 0 0 0 1px var(--led); }
+[data-estilo="estadio"] .g-barra { background-image: radial-gradient(circle, rgba(0,0,0,.35) 1.5px, transparent 2px); background-size: 6px 6px; }
+[data-estilo="estadio"] h1 { letter-spacing: .02em; }
+
+/* ---- 🃏 Estampas ---- */
+:root[data-estilo="estampas"] {
+  --bg: #EEF2FF; --surface: #ffffff; --line: #CBD6F5; --fg: #14183A; --muted: #4E5680;
+  --accent: #2D5BD3; --accent-ink: #ffffff; --win: #11845B; --win-bg: #DDF7EA; --loss: #D6336C; --loss-bg: #FDE4EE;
+  --pend: #B07800; --normal: #6a4fb3; --sol: #FFD23F; --hl: #FFD23F;
+  --font-display: "Bricolage Grotesque", system-ui, sans-serif; --font-body: "Bricolage Grotesque", system-ui, sans-serif; color-scheme: light; }
+[data-estilo="estampas"] body { background: repeating-linear-gradient(45deg, #DCE5FF 0 22px, #D2DDFB 22px 44px) fixed; }
+[data-estilo="estampas"] h1 { text-transform: none; font-weight: 800; letter-spacing: -.02em; }
+[data-estilo="estampas"] h2 { text-transform: none; letter-spacing: -.01em; font-weight: 800; color: var(--fg); }
+[data-estilo="estampas"] .senal, [data-estilo="estampas"] .cv-partido, [data-estilo="estampas"] .summary:not(.hero) {
+  border: 6px solid #fff; box-shadow: 0 5px 0 rgba(20,24,58,.14); border-radius: 14px; }
+[data-estilo="estampas"] .senal:nth-child(odd) { transform: rotate(-.7deg); } [data-estilo="estampas"] .senal:nth-child(even) { transform: rotate(.6deg); }
+[data-estilo="estampas"] .op-sen.top { position: relative; overflow: hidden; background: #FFF6CF; box-shadow: 0 0 0 2px var(--sol); }
+[data-estilo="estampas"] .op-sen.top::after { content: ""; position: absolute; inset: 0; pointer-events: none; mix-blend-mode: soft-light;
+  background: linear-gradient(115deg, transparent 20%, rgba(255,255,255,.9) 35%, rgba(255,120,220,.5) 45%, rgba(120,220,255,.5) 55%, transparent 70%); }
+[data-estilo="estampas"] .op-sen .paga { font: 800 1.05rem var(--font-display); }
+[data-estilo="estampas"] button { font-family: var(--font-display); }
+@media (prefers-reduced-motion: no-preference) { [data-estilo="estampas"] .op-sen.top::after { animation: brillo 3.5s ease-in-out infinite; } }
+@keyframes brillo { 0%, 100% { transform: translateX(-60%); } 50% { transform: translateX(60%); } }
+
+[data-estilo] .mt-hero :is(h1, h2, h3), [data-estilo] .summary.hero :is(h1, h2, h3) { color: inherit; }
+
+/* tarjetas para elegir estilo */
+.estilos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.estilos button { display: grid; gap: 4px; text-align: left; padding: 10px; border-radius: 14px; min-height: 96px; align-content: end; position: relative; overflow: hidden; }
+.estilos button b { font-size: 1rem; } .estilos button small { font: 500 .74rem var(--font-body); opacity: .8; }
+.estilos button[aria-pressed="true"] { outline: 3px solid var(--accent); outline-offset: 2px; }
+.estilos .e-clasico { background: linear-gradient(140deg,#1d7a52,#0a3324); color: #fff; border: 0; }
+.estilos .e-libreta { background: linear-gradient(#D9E4F2 1px, transparent 1px) 0 0/12px 12px, linear-gradient(90deg, #D9E4F2 1px, transparent 1px) 0 0/12px 12px, #F6F8FB; color: #1B3A8C; border: 0; }
+.estilos .e-libreta b { font: 700 1.4rem/1 "Caveat", cursive; } 
+.estilos .e-estadio { background: radial-gradient(120% 80% at 50% -20%, #1C4C8A, #081B33 70%); color: #EAF1FB; border: 0; }
+.estilos .e-estadio b { font: 400 1.05rem "DotGothic16", monospace; color: #FFB000; text-shadow: 0 0 8px rgba(255,176,0,.6); }
+.estilos .e-estampas { background: repeating-linear-gradient(45deg, #2D5BD3 0 12px, #2550C0 12px 24px); color: #fff; border: 0; }
+.estilos .e-estampas b { font: 800 1.05rem "Bricolage Grotesque", sans-serif; background: #FFD23F; color: #14183A; justify-self: start; padding: 1px 8px; border-radius: 99px; }
 </style>
 </head>
 <body>
@@ -1626,6 +1704,14 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
       <button type="button" data-momio="decimal" aria-pressed="false">Decimal · 2.50 / 1.50</button>
     </div>
     <p class="hint" style="margin:0">Todo se te muestra así, aunque otros lo hayan escrito en el otro formato. Puedes escribir momios en cualquiera de los dos.</p>
+    <h2>🖼️ Estilo de la app</h2>
+    <div class="estilos" id="ds-estilos" role="group" aria-label="Estilo de la app">
+      <button type="button" class="e-clasico" data-estilo="clasico"><b>Clásico</b><small>El de siempre, con tus colores</small></button>
+      <button type="button" class="e-libreta" data-estilo="libreta"><b>Libreta</b><small>Tu cuaderno de cuentas</small></button>
+      <button type="button" class="e-estadio" data-estilo="estadio"><b>ESTADIO</b><small>Tablero LED de noche</small></button>
+      <button type="button" class="e-estampas" data-estilo="estampas"><b>Estampas</b><small>Álbum de colección</small></button>
+    </div>
+    <p class="hint" style="margin:0">Libreta y Estampas siempre se ven en claro; Estadio, en oscuro. Los colores de abajo solo cambian el estilo Clásico.</p>
     <h2>✨ Estilos listos</h2>
     <div class="presets" id="ds-presets"></div>
     <h2>🎨 Color principal</h2>
@@ -5610,7 +5696,7 @@ $("tarjeta-btn").addEventListener("click", async () => {
 });
 
 // ---------------------------------------------------------------- 🎨 Mi diseño (se guarda en tu cuenta)
-const TEMA_BASE = { preset: "original", acento: null, modo: "auto", fondo: { tipo: "ninguno" }, fuerza: 35, letra: "normal", esquinas: "redondas",
+const TEMA_BASE = { estilo: "clasico", preset: "original", acento: null, modo: "auto", fondo: { tipo: "ninguno" }, fuerza: 35, letra: "normal", esquinas: "redondas",
   favs: [], ocultos: [], inicio: null, inicioOcultas: [] };
 let tema = { ...TEMA_BASE };
 try { tema = { ...TEMA_BASE, ...(JSON.parse(localStorage.getItem("mi-tema")) || {}) }; } catch (e) {}
@@ -5623,6 +5709,7 @@ const PRESETS = {
   retro: { n: "📻 Retro", acento: "#e07a2b", modo: "claro", fondo: { tipo: "degradado" }, fuerza: 30, bg: "linear-gradient(140deg,#f3e3c3,#e07a2b)" },
   equipo: { n: "⭐ Tu equipo", acento: null, modo: "oscuro", fondo: { tipo: "escudo" }, fuerza: 30, bg: "linear-gradient(140deg,var(--h1,#1d7a52),var(--h3,#0a3324))" },
 };
+const ESTILOS = { clasico: { barra: null }, libreta: { barra: "#F6F8FB" }, estadio: { barra: "#081B33" }, estampas: { barra: "#2D5BD3" } };
 let guardarTimer = null;
 function guardarTema() {
   try { localStorage.setItem("mi-tema", JSON.stringify(tema)); } catch (e) {}
@@ -5636,9 +5723,16 @@ function aplicarDiseno() {
   const raiz = document.documentElement, b = document.body;
   // modo claro / oscuro
   if (tema.modo === "claro") raiz.dataset.theme = "light"; else if (tema.modo === "oscuro") raiz.dataset.theme = "dark"; else delete raiz.dataset.theme;
+  // estilo de la app: libreta / estadio / estampas traen sus propios colores, letras y fondo
+  const estilo = ESTILOS[tema.estilo] ? tema.estilo : "clasico";
+  if (estilo === "clasico") delete raiz.dataset.estilo; else { raiz.dataset.estilo = estilo; raiz.dataset.theme = estilo === "estadio" ? "dark" : "light"; }
   // color principal (si eligió uno, gana sobre el del equipo favorito)
   aplicarTema();
-  if (tema.acento && /^#[0-9a-f]{6}$/i.test(tema.acento)) {
+  if (estilo !== "clasico") {
+    ["--accent", "--accent-ink", "--win"].forEach(v => raiz.style.removeProperty(v));
+    document.querySelector('meta[name="theme-color"]').content = ESTILOS[estilo].barra;
+  }
+  if (estilo === "clasico" && tema.acento && /^#[0-9a-f]{6}$/i.test(tema.acento)) {
     let a = tema.acento;
     if (oscuro() && luz(a) < .12) a = mezclar(a, "#ffffff", .35);
     if (!oscuro() && luz(a) > .45) a = mezclar(a, "#000000", .3);
@@ -5697,6 +5791,11 @@ async function elegirFondo(tipo) {
   aplicarDiseno(); guardarTema(); pintarDiseno();
 }
 async function pintarDiseno() {
+  // estilo de la app
+  document.querySelectorAll("#ds-estilos [data-estilo]").forEach(b => {
+    b.setAttribute("aria-pressed", String((tema.estilo || "clasico") === b.dataset.estilo));
+    b.onclick = () => { tema.estilo = b.dataset.estilo; aplicarDiseno(); guardarTema(); pintarDiseno(); };
+  });
   // estilos listos
   const pr = $("ds-presets"); pr.innerHTML = "";
   Object.entries(PRESETS).forEach(([k, p]) => {
