@@ -120,7 +120,7 @@ async function equipo(ruta, id) {
 }
 
 // ---------------------------------------------------------------- estadios (foto real)
-const GALERIA = ["Estadio Azteca", "Estadio BBVA", "Estadio Akron", "Estadio Universitario (UANL)", "Santiago Bernabéu Stadium", "Camp Nou",
+const GALERIA = ["Estadio Azteca", "Estadio BBVA", "Estadio Akron", "Estadio Universitario (UANL)", "Estadio Morelos", "Santiago Bernabéu Stadium", "Camp Nou",
   "Old Trafford", "Anfield", "Wembley Stadium", "Maracanã Stadium", "La Bombonera", "Allianz Arena", "San Siro", "Signal Iduna Park",
   "Parc des Princes", "SoFi Stadium", "Lambeau Field", "Arrowhead Stadium", "Madison Square Garden", "Yankee Stadium", "Wrigley Field"];
 async function wiki(titulos, lang = "en") {
