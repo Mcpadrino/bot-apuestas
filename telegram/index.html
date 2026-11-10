@@ -267,9 +267,89 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
 .ap-card .ap-mo { font: 700 1.05rem var(--font-mono); }
 .ap-tag { padding: 2px 8px; border-radius: 999px; font-size: .74rem; font-weight: 700; background: var(--surface); border: 1px solid var(--line); }
 .ap-tag.ok { color: var(--win); border-color: var(--win); } .ap-tag.no { color: var(--loss); border-color: var(--loss); }
-.ap-record { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px; }
-.ap-record b { display: block; font: 700 1.25rem var(--font-mono); } .ap-record small { color: var(--muted); font-size: .74rem; }
-.ap-record p { grid-column: 1 / -1; margin: 0; font-size: .8rem; color: var(--muted); }
+/* 👤 perfiles */
+.pf { position: fixed; inset: 0; z-index: 110; background: var(--bg); overflow-y: auto; overscroll-behavior: contain; }
+.pf-portada { height: 150px; position: relative; background: linear-gradient(160deg,#0f5132,#1d7a52 60%,#0a3324); }
+.pf-x { position: absolute; right: 12px; top: max(12px, env(safe-area-inset-top)); background: rgba(0,0,0,.35); color: #fff; border: 0; border-radius: 50%; width: 38px; height: 38px; padding: 0; font-size: 1.1rem; }
+.pf-cuerpo { max-width: 640px; margin: -46px auto 0; padding: 0 16px 40px; display: grid; gap: 14px; position: relative; }
+.pf-cab { display: flex; gap: 12px; align-items: flex-end; }
+.pf-cab b { display: block; font: 700 1.5rem/1.1 var(--font-display); }
+.avatar.pf-av { width: 92px; height: 92px; flex: 0 0 92px; font-size: 2.6rem; border: 4px solid var(--bg); background-size: cover; background-position: center; }
+.pf-frase { display: block; color: var(--accent); font-weight: 600; font-size: .9rem; }
+.pf-bio { margin: 0; white-space: pre-wrap; }
+.pf-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.pf-chips span { display: inline-flex; gap: 6px; align-items: center; padding: 5px 10px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-size: .82rem; }
+.pf-chips img { width: 18px; height: 18px; object-fit: contain; }
+.pf-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.pf-stats div { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 6px; text-align: center; }
+.pf-stats b { display: block; font: 700 1.3rem var(--font-mono); } .pf-stats small { color: var(--muted); font-size: .72rem; }
+.pf-mejor { background: linear-gradient(135deg, #f2c200, #e07a2b); color: #1b1300; border-radius: 16px; padding: 12px 14px; }
+.pf-mejor small { font-weight: 700; } .pf-mejor b { display: block; font-size: 1.1rem; }
+.pf-h { margin: 0 0 6px; }
+.pf-insignias { display: flex; flex-wrap: wrap; gap: 6px; }
+.pf-insignias span { padding: 6px 10px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); font-size: .82rem; }
+.pf-acciones { display: grid; gap: 8px; }
+.pf-editor { display: grid; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px; }
+.pf-editor label { font-size: .82rem; color: var(--muted); }
+.pf-editor textarea { font: 500 1rem var(--font-body); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 9px; min-height: 64px; }
+.pf-foto-fila { display: flex; gap: 10px; align-items: center; } .pf-foto-fila .pf-av { width: 64px; height: 64px; flex-basis: 64px; font-size: 1.8rem; border: 0; }
+.pf-foto-fila label.foto { display: inline-flex; padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; color: var(--fg); cursor: pointer; }
+.pf-emojis { display: flex; flex-wrap: wrap; gap: 6px; }
+.pf-emojis button { font-size: 1.4rem; padding: 4px 8px; border-radius: 10px; }
+.pf-emojis button[aria-pressed="true"], .pf-portadas button[aria-pressed="true"] { outline: 3px solid var(--accent); outline-offset: 1px; }
+.pf-portadas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.pf-portadas button { height: 44px; border: 0; color: #fff; font-size: .78rem; font-weight: 700; }
+.avatar.clic { cursor: pointer; }
+.avatar { background-size: cover; background-position: center; }
+/* 📸 historias de 24 h */
+.historias { display: flex; gap: 12px; overflow-x: auto; padding: 4px 2px 8px; scrollbar-width: none; }
+.historias::-webkit-scrollbar { display: none; }
+.hz-burb { flex: 0 0 auto; width: 70px; display: grid; justify-items: center; gap: 4px; padding: 0; border: 0; background: none; color: var(--fg); font: 500 .74rem var(--font-body); }
+.hz-aro { width: 64px; height: 64px; border-radius: 50%; padding: 3px; background: conic-gradient(from 210deg, #ffb000, #e0567a, #8e44ad, #2d5bd3, #ffb000); display: grid; place-items: center; }
+.hz-burb.vista .hz-aro { background: var(--line); }
+.hz-aro > span { width: 100%; height: 100%; border-radius: 50%; border: 3px solid var(--bg); display: grid; place-items: center; font: 700 1.35rem var(--font-body); color: #fff; overflow: hidden; position: relative; }
+.hz-aro .hz-res { position: absolute; right: -2px; bottom: -2px; font-size: .9rem; }
+.hz-burb .hz-n { max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hz-burb.mas .hz-aro { background: var(--surface); border: 2px dashed var(--line); padding: 0; }
+.hz-burb.mas .hz-aro > span { border: 0; color: var(--accent); font-size: 1.8rem; background: transparent; }
+.hz-visor { position: fixed; inset: 0; z-index: 120; background: #05080b; color: #fff; display: grid; grid-template-rows: auto auto 1fr auto; padding: max(10px, env(safe-area-inset-top)) 12px max(14px, env(safe-area-inset-bottom)); }
+.hz-barras { display: flex; gap: 4px; } .hz-barras i { flex: 1; height: 3px; border-radius: 3px; background: rgba(255,255,255,.3); overflow: hidden; }
+.hz-barras i b { display: block; height: 100%; width: 0; background: #fff; }
+.hz-barras i.ya b { width: 100%; } .hz-barras i.ahora b { animation: hzbarra var(--hz-dur, 6s) linear forwards; }
+@keyframes hzbarra { to { width: 100%; } }
+.hz-visor.pausa .hz-barras i.ahora b { animation-play-state: paused; }
+.hz-cab { display: flex; gap: 8px; align-items: center; padding: 10px 0; font-size: .85rem; position: relative; z-index: 3; }
+.hz-cab .avatar { width: 32px; height: 32px; } .hz-cab span:not(.avatar) { opacity: .7; }
+.hz-cab button { margin-left: auto; background: none; border: 0; color: #fff; font-size: 1.3rem; padding: 4px 8px; }
+.hz-cuerpo { display: grid; align-content: center; justify-items: center; gap: 14px; min-height: 0; overflow: hidden; }
+.hz-cuerpo img { max-width: 100%; max-height: 62vh; border-radius: 14px; object-fit: contain; }
+.hz-cuerpo .hz-txt { font: 600 1.15rem/1.35 var(--font-body); text-align: center; max-width: 30ch; text-shadow: 0 1px 6px rgba(0,0,0,.6); }
+.hz-boleto { width: min(100%, 360px); background: #fff; color: #14183a; border-radius: 18px; padding: 18px 18px 14px; display: grid; gap: 8px; position: relative;
+  box-shadow: 0 20px 50px rgba(0,0,0,.5); -webkit-mask: radial-gradient(circle 10px at 0 62%, transparent 98%, #000) left / 51% 100% no-repeat, radial-gradient(circle 10px at 100% 62%, transparent 98%, #000) right / 51% 100% no-repeat; }
+.hz-boleto .par { font-size: .8rem; color: #5a6080; } .hz-boleto .sel { font: 800 1.5rem/1.1 var(--font-body); }
+.hz-boleto .mo { font: 800 2.6rem/1 var(--font-mono); letter-spacing: -.02em; }
+.hz-boleto .casa { font-size: .85rem; color: #5a6080; }
+.hz-boleto hr { border: 0; border-top: 2px dashed #d6dbea; margin: 6px 0; width: 100%; }
+.hz-boleto .est { display: flex; flex-wrap: wrap; gap: 6px; }
+.hz-boleto .ap-tag { background: #f1f3fa; border-color: #d6dbea; color: #14183a; }
+.hz-boleto .ap-tag.ok { color: #11845b; border-color: #11845b; } .hz-boleto .ap-tag.no { color: #c0392b; border-color: #c0392b; }
+.hz-boleto .sello { position: absolute; right: 14px; top: 12px; transform: rotate(10deg); font: 800 1rem var(--font-body); padding: 4px 10px; border: 3px solid currentColor; border-radius: 8px; }
+.hz-boleto .sello.gana { color: #11845b; } .hz-boleto .sello.pierde { color: #c0392b; }
+.hz-zona { position: absolute; top: 90px; bottom: 90px; width: 35%; background: none; border: 0; z-index: 2; }
+.hz-zona.izq { left: 0; } .hz-zona.der { right: 0; width: 65%; }
+.hz-link { display: inline-flex; gap: 6px; padding: 9px 16px; border-radius: 999px; background: #fff; color: #05080b; font-weight: 700; text-decoration: none; position: relative; z-index: 3; }
+.hz-cab .avatar, .hz-cab b { cursor: pointer; }
+.hz-pie { display: flex; gap: 8px; justify-content: center; align-items: center; position: relative; z-index: 3; }
+.hz-pie button { background: rgba(255,255,255,.12); color: #fff; border: 1px solid rgba(255,255,255,.25); border-radius: 999px; padding: 8px 14px; font-size: 1rem; }
+.hz-pie button[aria-pressed="true"] { background: #fff; color: #05080b; }
+.hz-nueva-caja { justify-items: stretch; text-align: left; gap: 10px; }
+.hz-nueva-caja > b, .hz-nueva-caja > p { text-align: center; } .hz-nueva-caja > button { width: 100%; }
+.hz-nueva-caja textarea { font: 500 1rem var(--font-body); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 10px; min-height: 60px; resize: vertical; }
+.hz-prev img { width: 100%; max-height: 220px; object-fit: contain; border-radius: 12px; }
+.hz-foto { display: inline-flex; justify-content: center; gap: 6px; padding: 10px; border: 1px dashed var(--line); border-radius: 12px; cursor: pointer; }
+.hz-foto input { display: none; }
+.hz-chk { display: flex; gap: 8px; align-items: center; font-size: .88rem; } .hz-chk input { width: 18px; height: 18px; }
+.hz-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .ap-adjunta { display: grid; gap: 6px; }
 .ap-adjunta .ap-quitar { justify-self: end; padding: 4px 9px; font-size: .78rem; }
 .ap-adjunta label { display: flex; gap: 8px; align-items: center; font-size: .85rem; }
@@ -1341,15 +1421,10 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
 
   <!-- ===================== COMUNIDAD ===================== -->
   <div id="v-comunidad" class="vista section" hidden>
-    <div class="seg" id="feed-tab" role="tablist" aria-label="Qué ver">
-      <button type="button" data-ft="todo" aria-selected="true">💬 Todo</button>
-      <button type="button" data-ft="apuestas" aria-selected="false">🎯 Qué estamos apostando</button>
-    </div>
-    <p class="hint" id="feed-hint">Comparte tus apuestas, el link para copiarlas, noticias del día o por qué te gusta una jugada. Lo que publicas se borra solo en el tiempo que elijas.</p>
-    <div class="ap-record" id="ap-record" hidden></div>
+    <div class="historias" data-hz aria-label="Historias de 24 horas: qué estamos apostando"></div>
+    <p class="hint">Arriba, las <b>historias</b>: lo que el grupo está apostando hoy (duran 24 h). Abajo, el chat del grupo.</p>
     <div class="feed" id="feed"></div>
     <form class="composer" id="pub">
-      <div class="ap-adjunta" id="p-ap" hidden></div>
       <textarea id="p-texto" maxlength="1000" placeholder="¿Qué vas a jugar y por qué?"></textarea>
       <div class="fila">
         <input id="p-link" type="url" inputmode="url" placeholder="Link de la apuesta (https://…)" autocomplete="off">
@@ -1364,6 +1439,59 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
         </select>
         <button class="primary" type="submit" id="p-btn">Publicar</button>
       </div>
+    </form>
+  </div>
+  <div class="hz-visor" id="hz-visor" hidden role="dialog" aria-modal="true" aria-label="Historia">
+    <div class="hz-barras" id="hz-barras"></div>
+    <div class="hz-cab"><span class="avatar" id="hz-av"></span><b id="hz-autor"></b><span id="hz-hace"></span><button type="button" id="hz-cerrar" aria-label="Cerrar">✕</button></div>
+    <div class="hz-cuerpo" id="hz-cuerpo"></div>
+    <button type="button" class="hz-zona izq" id="hz-ant" aria-label="Anterior"></button><button type="button" class="hz-zona der" id="hz-sig" aria-label="Siguiente"></button>
+    <div class="hz-pie" id="hz-pie"></div>
+  </div>
+  <div class="pf" id="pf" hidden role="dialog" aria-modal="true" aria-labelledby="pf-nombre">
+    <div class="pf-portada" id="pf-portada"><button type="button" class="pf-x" id="pf-cerrar" aria-label="Cerrar">✕</button></div>
+    <div class="pf-cuerpo">
+      <div class="pf-cab"><span class="avatar pf-av" id="pf-av"></span>
+        <div><b id="pf-nombre"></b><span id="pf-frase" class="pf-frase"></span></div></div>
+      <p id="pf-bio" class="pf-bio"></p>
+      <div class="pf-chips" id="pf-chips"></div>
+      <div class="pf-stats" id="pf-stats"></div>
+      <div id="pf-mejor"></div>
+      <div><h2 class="pf-h">🏅 Insignias</h2><div class="pf-insignias" id="pf-insignias"></div></div>
+      <div class="pf-acciones"><button type="button" id="pf-historias" class="primary" hidden></button><button type="button" id="pf-editar" hidden>✏️ Editar mi perfil</button></div>
+      <form class="pf-editor" id="pf-editor" hidden>
+        <h2 class="pf-h">✏️ Tu perfil</h2>
+        <div class="pf-foto-fila"><span class="avatar pf-av" id="pf-e-av"></span>
+          <label class="foto">📷 Foto<input id="pf-e-foto" type="file" accept="image/*" hidden></label><button type="button" id="pf-e-sinfoto">Quitar foto</button></div>
+        <label>Tu carita (si no subes foto)</label><div class="pf-emojis" id="pf-e-emojis"></div>
+        <label>Tu color</label><div class="swatches" id="pf-e-colores"></div>
+        <label>Portada</label><div class="pf-portadas" id="pf-e-portadas"></div>
+        <label for="pf-e-frase">Tu frase (sale junto a tu nombre)</label><input id="pf-e-frase" maxlength="40" placeholder="Ej. El rey de los unders">
+        <label for="pf-e-bio">Sobre ti</label><textarea id="pf-e-bio" maxlength="140" placeholder="Qué ligas sigues, tu equipo, tu estilo…"></textarea>
+        <label class="hz-chk"><input type="checkbox" id="pf-e-dinero"> Mostrar mis ganancias en dinero (si no, solo porcentajes)</label>
+        <div class="hz-botones"><button type="button" id="pf-e-cancelar">Cancelar</button><button type="submit" class="primary" id="pf-e-guardar">Guardar</button></div>
+      </form>
+    </div>
+  </div>
+  <div class="festejo" id="cmp" hidden role="dialog" aria-modal="true" aria-labelledby="cmp-tit">
+    <div class="festejo-caja hz-nueva-caja">
+      <b id="cmp-tit">📤 ¿Qué hacemos con esta apuesta?</b>
+      <div id="cmp-prev" class="hz-prev"></div>
+      <button type="button" class="primary" id="cmp-historia">📸 Subirla a mi historia</button>
+      <button type="button" id="cmp-registrar">📝 Registrarla en mi Bitácora (leo el boleto)</button>
+      <button type="button" id="cmp-chat">💬 Mandarla al chat del grupo</button>
+      <button type="button" id="cmp-cancelar">Cancelar</button>
+    </div>
+  </div>
+  <div class="festejo" id="hz-nueva" hidden role="dialog" aria-modal="true" aria-labelledby="hz-n-tit">
+    <form class="festejo-caja hz-nueva-caja" id="hz-form">
+      <b id="hz-n-tit">📸 Subir a mi historia</b>
+      <p>Dura 24 horas. Si es una apuesta registrada, se califica sola cuando termine el partido.</p>
+      <div id="hz-prev" class="hz-prev"></div>
+      <label class="foto hz-foto" id="hz-foto-l">📷 Agregar captura del boleto<input id="hz-foto" type="file" accept="image/*"></label>
+      <textarea id="hz-texto" maxlength="300" placeholder="¿Por qué la jugaste? (opcional)"></textarea>
+      <label class="hz-chk" id="hz-monto-l" hidden><input type="checkbox" id="hz-monto"> <span id="hz-monto-t">Mostrar cuánto aposté</span></label>
+      <div class="hz-botones"><button type="button" id="hz-cancelar">Cancelar</button><button type="submit" class="primary" id="hz-subir">Subir historia</button></div>
     </form>
   </div>
   <div class="festejo" id="terminos" hidden role="dialog" aria-modal="true" aria-labelledby="tm-tit" style="z-index:96">
@@ -1708,6 +1836,7 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
 
   <!-- ===================== INICIO ===================== -->
   <div id="v-inicio" class="vista section" hidden>
+    <div class="historias" data-hz aria-label="Historias de 24 horas: qué estamos apostando"></div>
     <div class="head"><span class="hint" id="ini-fecha"></span><button type="button" id="ini-editar" class="chico">✏️ Editar inicio</button></div>
     <div class="inicio" id="inicio"></div>
   </div>
@@ -1984,6 +2113,7 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
     <button class="menu-item" data-v="lol"><span class="mi">🐉</span><span class="txt">LoL Worlds<small>Mundial de League of Legends en vivo</small></span><span class="punto" id="lol-punto" hidden>EN VIVO</span><span class="flecha">›</span></button>
     <button class="menu-item" data-v="lineas"><span class="mi">📈</span><span class="txt">Movimiento de líneas<small>Hacia dónde va Pinnacle</small></span><span class="flecha">›</span></button>
     <div class="menu-grupo">Con amigos</div>
+    <button class="menu-item" id="menu-perfil" type="button"><span class="mi">👤</span><span class="txt">Mi perfil<small>Tu tarjeta para farolear con el grupo</small></span><span class="flecha">›</span></button>
     <button class="menu-item" data-v="comunidad"><span class="mi">💬</span><span class="txt">Comunidad<small>Fotos, links y opiniones</small></span><span class="flecha">›</span></button>
     <button class="menu-item" data-v="quiniela"><span class="mi">🏆</span><span class="txt">Quiniela<small>Pronostica la jornada, sin dinero</small></span><span class="flecha">›</span></button>
     <button class="menu-item" data-v="retos"><span class="mi">⚔️</span><span class="txt">Retos 1 vs 1<small>Por el orgullo</small></span><span class="punto" id="retos-punto" hidden></span><span class="flecha">›</span></button>
@@ -2082,6 +2212,7 @@ async function cargar() {
       cobro: x.cobro != null ? Number(x.cobro) : null, montoOrig: x.monto_original != null ? Number(x.monto_original) : null,
       cuotaOrig: x.cuota_original != null ? Number(x.cuota_original) : null }));
     listo = true; estado("");
+    setTimeout(revisarCompartido, 300);
     $("v-login").hidden = true; $("quien").hidden = false; $("abrir-menu").hidden = false;
     $("marca").hidden = true; $("sec-actual").hidden = false;
     $("menu-nombre").textContent = r.nombre || "—";
@@ -2116,6 +2247,7 @@ function irA(v) {
   if (vista === "hoy") cargarHoy();
   if (vista === "bot") { cargarSenales(); pintarSuerte(); avisoRacha(); }
   if (vista === "comunidad") cargarFeed();
+  if (vista === "inicio") cargarHistorias();
   if (vista === "lineas") cargarLineas();
   if (vista === "conviene") cargarConviene();
   if (vista === "guru" || vista === "duelo") cargarGuru();
@@ -2375,7 +2507,7 @@ function pintarPendientes(lista) {
       });
       const co = el("button", "", "💵 La cerré"); co.type = "button"; co.title = "La cerraste (cash out) antes de que terminara el partido";
       co.onclick = () => { cobrando = b.id; confirmando = null; render(); }; act.append(co);
-      const sh = el("button", "", "📢 Compartir"); sh.type = "button"; sh.title = "Publicarla en Comunidad → Qué estamos apostando";
+      const sh = el("button", "", "📸 A mi historia"); sh.type = "button"; sh.title = "Subirla a tu historia de 24 h para que el grupo vea qué estás apostando";
       sh.onclick = () => compartirApuesta(b); act.append(sh);
       const del = el("button", "", "Borrar"); del.type = "button"; del.onclick = () => { confirmando = b.id; render(); };
       act.append(del);
@@ -2435,7 +2567,7 @@ function pintarResultados(lista) {
     } else der.append(el("div", clase(g), b.resultado === "nula" ? "Nula" : sign(g)), el("div", "meta", "apostó " + fmt(b.monto)));
     const re = el("button", "", "Reabrir"); re.type = "button"; re.style.cssText = "padding:4px 8px;font-size:.75rem;margin-top:4px";
     re.onclick = () => cerrar(b.id, "pendiente");
-    const sh = el("button", "", "📢"); sh.type = "button"; sh.title = "Compartir en Comunidad"; sh.setAttribute("aria-label", "Compartir en Comunidad");
+    const sh = el("button", "", "📸"); sh.type = "button"; sh.title = "Subirla a tu historia"; sh.setAttribute("aria-label", "Subirla a tu historia");
     sh.style.cssText = "padding:4px 8px;font-size:.75rem;margin-top:4px;margin-left:4px"; sh.onclick = () => compartirApuesta(b);
     der.append(re, sh);
     row.append(mid, der); cont.append(row);
@@ -2683,13 +2815,120 @@ const quedan = t => { const h = Math.max(0, Math.round((t - Date.now()) / 360000
 
 async function cargarFeed() {
   if (!token) return;
+  await cargarAvatares();
   try { pintarFeed(await api("feed")); }
   catch (e) { if (e.auth) mostrarLogin(e.message); else estado(e.message || "No se pudo cargar la comunidad."); }
   clearTimeout(feedTimer);
   if (vista === "comunidad" && !document.hidden) feedTimer = setTimeout(cargarFeed, 30000);
 }
-let firmaFeed = "", feedTab = "todo", feedUltimo = [], apCompartir = null;
-// tarjeta de una apuesta compartida (sale igual en el feed y al adjuntarla)
+// ---- 👤 caritas y perfiles
+let avatares = {}, avataresT = 0;
+async function cargarAvatares(forzar) {
+  if (!forzar && Date.now() - avataresT < 60000) return avatares;
+  try { avatares = await api("avatares") || {}; avataresT = Date.now(); } catch (e) {}
+  return avatares;
+}
+const PORTADAS = { cancha: ["Cancha", "linear-gradient(160deg,#0f5132,#1d7a52 60%,#0a3324)"], noche: ["Estadio", "radial-gradient(120% 90% at 50% 0,#1C4C8A,#081B33 70%)"],
+  fuego: ["Fuego", "linear-gradient(140deg,#ff7a00,#e0567a 60%,#5a1846)"], oro: ["Oro", "linear-gradient(140deg,#f2c200,#b8860b 60%,#3d2a00)"],
+  neon: ["Neón", "linear-gradient(140deg,#0f0c29,#5b2bd3 60%,#39ff14)"], equipo: ["Mi equipo", null] };
+const CARITAS = ["😎", "🦁", "🐐", "🔥", "🎯", "🧠", "👑", "🐺", "🦅", "⚡", "🍀", "🤑", "🥶", "🦈", "🐉", "🎩"];
+function ponerCara(span, a, nombre) {      // foto > emoji > inicial, con su color
+  span.textContent = ""; span.style.backgroundImage = "";
+  a = a || {}; nombre = nombre || a.nombre || "?";
+  span.style.backgroundColor = a.color || colorDe(nombre);
+  if (a.foto && /^data:image\//.test(a.foto)) span.style.backgroundImage = `url("${a.foto}")`;
+  else span.textContent = a.emoji || nombre.trim()[0].toUpperCase();
+}
+let pfDatos = null, pfEdit = null;
+async function abrirPerfil(uid) {
+  if (!uid) return;
+  const v = $("pf"); v.hidden = false; v.scrollTop = 0; document.body.style.overflow = "hidden";
+  $("pf-editor").hidden = true; $("pf-nombre").textContent = "Cargando…"; ["pf-frase", "pf-bio"].forEach(i => $(i).textContent = "");
+  ["pf-chips", "pf-stats", "pf-mejor", "pf-insignias"].forEach(i => $(i).innerHTML = "");
+  try { pfDatos = await api("perfil_ver", { uid }); } catch (e) { pfDatos = null; }
+  if (!pfDatos) { $("pf-nombre").textContent = "No encontré ese perfil."; return; }
+  pintarPerfil();
+}
+function pintarPerfil() {
+  const d = pfDatos, pr = d.perfil || {}, st = d.stats || {}, eq = d.equipo;
+  const port = pr.portada === "equipo" && eq && eq.color ? `linear-gradient(140deg, ${eq.color}, ${eq.color2 || "#000"})` : (PORTADAS[pr.portada] || PORTADAS.cancha)[1];
+  $("pf-portada").style.background = port;
+  ponerCara($("pf-av"), { ...pr, foto: d.foto }, d.nombre);
+  $("pf-nombre").textContent = d.nombre; $("pf-frase").textContent = pr.frase || ""; $("pf-bio").textContent = pr.bio || "";
+  const ch = $("pf-chips"); ch.innerHTML = "";
+  if (eq && eq.nombre) { const c = el("span"); if (okUrl(eq.logo)) { const im = el("img"); im.src = eq.logo; im.alt = ""; c.append(im); } c.append("Le va a " + eq.nombre); ch.append(c); }
+  if (d.mascota) ch.append(el("span", "", `${(ESPECIES[d.mascota.especie] || "🐾").split(" ")[0]} ${d.mascota.nombre || "Su mascota"}`));
+  ch.append(el("span", "", "📅 Desde " + new Date(d.desde).toLocaleDateString("es-MX", { month: "short", year: "numeric" })));
+  const sg = $("pf-stats"); sg.innerHTML = "";
+  const pct = st.ganadas + st.perdidas ? Math.round(st.ganadas / (st.ganadas + st.perdidas) * 100) + "%" : "—";
+  [[st.cerradas || 0, "apuestas"], [pct, "pegaron"], [st.roi != null ? (st.roi > 0 ? "+" : "") + st.roi + "%" : "—", "rendimiento"],
+   [st.racha ? "🔥 " + st.racha : "0", "racha actual"], [st.disciplina != null ? st.disciplina + "%" : "—", "con valor 🎯"],
+   [st.neto != null ? sign(Number(st.neto)) : st.clv != null ? (st.clv > 0 ? "+" : "") + st.clv + "%" : "—", st.neto != null ? "ganancia" : "CLV"]]
+    .forEach(([v, t]) => { const x = el("div"); x.append(el("b", "", String(v)), el("small", "", t)); sg.append(x); });
+  const mj = $("pf-mejor"); mj.innerHTML = "";
+  if (st.mejor) { const c = el("div", "pf-mejor"); c.append(el("small", "", "💥 Su mejor golpe"), el("b", "", `${st.mejor.seleccion} ${aAmericano(Number(st.mejor.cuota))}`));
+    if (st.mejor.partido) c.append(el("span", "", st.mejor.partido)); mj.append(c); }
+  const ins = $("pf-insignias"); ins.innerHTML = "";
+  (d.logros || []).forEach(k => { const l = LOGROS[k]; if (l) { const s = el("span", "", `${l[0]} ${l[1]}`); s.title = l[2]; ins.append(s); } });
+  if (!ins.childElementCount) ins.append(el("span", "", "Todavía ninguna"));
+  const hb = $("pf-historias"); hb.hidden = !d.historias; hb.textContent = `📸 Ver sus historias (${d.historias})`;
+  hb.onclick = () => { const gi = hzGrupos.findIndex(g => g.l[0] && g.l[0].uid === d.uid); cerrarPerfil(); if (gi >= 0) verHistoria(gi); };
+  $("pf-editar").hidden = !d.mio;
+}
+function cerrarPerfil() { $("pf").hidden = true; document.body.style.overflow = ""; }
+$("pf-cerrar").addEventListener("click", cerrarPerfil);
+$("menu-perfil").addEventListener("click", async () => { cerrarMenu && cerrarMenu(); const a = await cargarAvatares(); const yo = Object.entries(a).find(([, v]) => v.yo); if (yo) abrirPerfil(yo[0]); });
+$("pf-editar").addEventListener("click", () => {
+  const pr = pfDatos.perfil || {};
+  pfEdit = { emoji: pr.emoji || "", color: pr.color || "", portada: pr.portada || "cancha", foto: pfDatos.foto || null };
+  $("pf-e-frase").value = pr.frase || ""; $("pf-e-bio").value = pr.bio || ""; $("pf-e-dinero").checked = !!pr.mostrar_dinero;
+  pintarEditor(); $("pf-editor").hidden = false; setTimeout(() => $("pf-editor").scrollIntoView({ behavior: "smooth" }), 50);
+});
+function pintarEditor() {
+  ponerCara($("pf-e-av"), pfEdit, pfDatos.nombre);
+  const em = $("pf-e-emojis"); em.innerHTML = "";
+  CARITAS.forEach(c => { const b = el("button", "", c); b.type = "button"; b.setAttribute("aria-pressed", String(pfEdit.emoji === c)); b.onclick = () => { pfEdit.emoji = c; pintarEditor(); }; em.append(b); });
+  const co = $("pf-e-colores"); co.innerHTML = "";
+  COLORES.forEach(c => { const b = el("button"); b.type = "button"; b.style.background = c; b.setAttribute("aria-label", "Color " + c);
+    b.setAttribute("aria-pressed", String(pfEdit.color === c)); b.onclick = () => { pfEdit.color = c; pintarEditor(); }; co.append(b); });
+  const po = $("pf-e-portadas"); po.innerHTML = "";
+  Object.entries(PORTADAS).forEach(([k, [n, bg]]) => { const b = el("button", "", n); b.type = "button";
+    const eq = pfDatos.equipo; b.style.background = bg || (eq && eq.color ? `linear-gradient(140deg, ${eq.color}, ${eq.color2 || "#000"})` : "var(--accent)");
+    b.setAttribute("aria-pressed", String(pfEdit.portada === k)); b.onclick = () => { pfEdit.portada = k; pintarEditor(); }; po.append(b); });
+}
+$("pf-e-foto").addEventListener("change", async () => {
+  const f = $("pf-e-foto").files[0]; if (!f) return;
+  try { pfEdit.foto = await fotoPerfil(f); pintarEditor(); } catch (e) { estado(e.message || "No se pudo usar esa foto."); }
+});
+$("pf-e-sinfoto").addEventListener("click", () => { pfEdit.foto = null; $("pf-e-foto").value = ""; pintarEditor(); });
+$("pf-e-cancelar").addEventListener("click", () => { $("pf-editor").hidden = true; });
+$("pf-editor").addEventListener("submit", async e => {
+  e.preventDefault(); $("pf-e-guardar").disabled = true;
+  try {
+    await api("perfil_editar", { perfil: { ...pfEdit, frase: $("pf-e-frase").value, bio: $("pf-e-bio").value, mostrar_dinero: $("pf-e-dinero").checked } });
+    await cargarAvatares(true); await abrirPerfil(pfDatos.uid); estado("✓ Perfil guardado"); setTimeout(() => estado(""), 2500);
+    pintarHistorias(hzDatos); firmaFeed = "";
+  } catch (err) { estado(err.message || "No se pudo guardar tu perfil."); }
+  $("pf-e-guardar").disabled = false;
+});
+// foto de perfil: cuadrada, 240 px, liviana
+function fotoPerfil(file) {
+  return new Promise((ok, mal) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onerror = () => mal(new Error("Ese archivo no es una imagen."));
+    img.onload = () => {
+      const lado = Math.min(img.width, img.height), c = document.createElement("canvas"); c.width = c.height = 240;
+      c.getContext("2d").drawImage(img, (img.width - lado) / 2, (img.height - lado) / 2, lado, lado, 0, 0, 240, 240);
+      URL.revokeObjectURL(url);
+      let q = .8, d = c.toDataURL("image/jpeg", q); while (d.length > 85000 && q > .3) { q -= .1; d = c.toDataURL("image/jpeg", q); }
+      d.length > 88000 ? mal(new Error("La foto quedó muy pesada, prueba otra.")) : ok(d);
+    };
+    img.src = url;
+  });
+}
+
+let firmaFeed = "";
+// tarjeta de una apuesta compartida
 function tarjetaApuesta(a) {
   const r = a.resultado || "pend", c = el("div", "ap-card " + r);
   if (a.partido) c.append(el("div", "ap-par", (a.liga ? a.liga + " · " : "") + a.partido));
@@ -2698,71 +2937,194 @@ function tarjetaApuesta(a) {
   f.append(el("span", "ap-mo", aAmericano(Number(a.cuota))));
   if (a.casa) f.append(el("span", "", "en " + a.casa));
   if (a.monto != null) f.append(el("span", "", "· " + fmt(Number(a.monto))));
-  c.append(f);
-  const t = el("div", "ap-fila");
+  c.append(f, etiquetasApuesta(a));
+  return c;
+}
+function etiquetasApuesta(a) {
+  const r = a.resultado || "pend", t = el("div", "ap-fila est");
   t.append(el("span", "ap-tag " + (r === "gana" ? "ok" : r === "pierde" ? "no" : ""),
     a.cobro != null ? "💵 La cerró antes" : r === "gana" ? "✅ Pegó" : r === "pierde" ? "❌ Falló" : r === "nula" ? "➖ Nula" : "⏳ En juego"));
   if (a.valor === true) t.append(el("span", "ap-tag ok", "✅ Con valor"));
   else if (a.valor === false) t.append(el("span", "ap-tag no", "⚠️ Abajo del mínimo"));
-  else if (a.cartera !== "bot") t.append(el("span", "ap-tag", "🎲 Por su cuenta"));
+  else if (a.cartera && a.cartera !== "bot") t.append(el("span", "ap-tag", "🎲 Por su cuenta"));
   if (a.marcador) t.append(el("span", "", "🏁 " + a.marcador));
-  c.append(t);
+  return t;
+}
+function boletoApuesta(a) {          // la apuesta en grande, como boleto, para la historia
+  const c = el("div", "hz-boleto"), r = a.resultado;
+  if (r === "gana" || r === "pierde") c.append(el("span", "sello " + r, r === "gana" ? "PEGÓ" : "FALLÓ"));
+  if (a.partido) c.append(el("div", "par", (a.liga ? a.liga + " · " : "") + a.partido));
+  c.append(el("div", "sel", a.seleccion || "Apuesta"), el("div", "mo", aAmericano(Number(a.cuota))));
+  c.append(el("div", "casa", [a.casa ? "en " + a.casa : "", a.monto != null ? "apostó " + fmt(Number(a.monto)) : ""].filter(Boolean).join(" · ")));
+  c.append(el("hr"), etiquetasApuesta(a));
   return c;
 }
-function pintarRecord(lista) {
-  const box = $("ap-record"), semana = Date.now() - 7 * 864e5;
-  const ap = lista.filter(p => p.apuesta && Date.parse(p.creada) > semana);
-  box.hidden = feedTab !== "apuestas" || !ap.length;
-  if (box.hidden) return;
-  const ok = ap.filter(p => p.apuesta.resultado === "gana").length, no = ap.filter(p => p.apuesta.resultado === "pierde").length;
-  const conV = ap.filter(p => p.apuesta.valor != null), val = conV.filter(p => p.apuesta.valor).length;
-  box.innerHTML = "";
-  [[ap.length, "compartidas"], [`${ok} / ${no}`, "✅ pegaron / ❌ fallaron"], [conV.length ? Math.round(val / conV.length * 100) + "%" : "—", "con valor"]]
-    .forEach(([v, t]) => { const d = el("div"); d.append(el("b", "", String(v)), el("small", "", t)); box.append(d); });
-  box.append(el("p", "", "Últimos 7 días. Las que ya se calificaron no se pueden bajar: aquí se ven también los fallos."));
+const colorDe = n => { let h = 0; for (const ch of n || "") h = (h * 31 + ch.charCodeAt(0)) % 360; return `hsl(${h} 55% 42%)`; };
+
+// ---- 📸 historias de 24 h ("qué estamos apostando")
+let hzDatos = [], hzGrupos = [], hzG = 0, hzI = 0, hzTimer = null, hzNueva = null, hzFoto = null;
+const hzVistas = () => { try { return JSON.parse(localStorage.getItem("hz-vistas")) || []; } catch (e) { return []; } };
+function hzMarcar(id) { try { const v = hzVistas(); if (!v.includes(id)) { v.push(id); localStorage.setItem("hz-vistas", JSON.stringify(v.slice(-300))); } } catch (e) {} }
+async function cargarHistorias() {
+  if (!token) return;
+  await cargarAvatares();
+  try { pintarHistorias((await api("feed")).filter(p => p.historia)); } catch (e) {}
 }
-document.querySelectorAll("#feed-tab [data-ft]").forEach(b => b.addEventListener("click", () => {
-  feedTab = b.dataset.ft;
-  document.querySelectorAll("#feed-tab [data-ft]").forEach(x => x.setAttribute("aria-selected", String(x === b)));
-  $("feed-hint").textContent = feedTab === "apuestas"
-    ? "Las apuestas que el grupo comparte desde su Bitácora. Se califican solas cuando termina el partido."
-    : "Comparte tus apuestas, el link para copiarlas, noticias del día o por qué te gusta una jugada. Lo que publicas se borra solo en el tiempo que elijas.";
-  firmaFeed = ""; pintarFeed(feedUltimo);
-}));
-function adjuntarApuesta(b) {
-  apCompartir = b;
-  const caja = $("p-ap"); caja.innerHTML = ""; caja.hidden = false;
-  caja.append(tarjetaApuesta({ partido: b.partido, seleccion: b.seleccion, cuota: b.cuotaOrig || b.cuota, casa: b.casa, liga: b.liga, cartera: b.cartera,
-    resultado: b.resultado, marcador: b.marcador, cobro: b.cobro, valor: b.prob ? (b.cuotaOrig || b.cuota) * b.prob >= 1.03 : null }));
-  const lab = el("label"), chk = el("input"); chk.type = "checkbox"; chk.id = "p-ap-monto";
-  lab.append(chk, document.createTextNode(`Mostrar cuánto aposté (${fmt(b.montoOrig || b.monto)})`));
-  const q = el("button", "ap-quitar", "Quitar apuesta"); q.type = "button"; q.onclick = () => { apCompartir = null; caja.hidden = true; caja.innerHTML = ""; $("p-horas").hidden = false; };
-  caja.append(lab, q);
-  $("p-horas").hidden = true;          // las apuestas compartidas duran 7 días para que se vea el resultado
-  $("p-texto").placeholder = "¿Por qué la jugaste? (opcional)";
+function pintarHistorias(lista) {
+  hzDatos = lista;
+  const porAutor = new Map();
+  lista.slice().sort((a, b) => Date.parse(a.creada) - Date.parse(b.creada)).forEach(p => {
+    const k = p.mio ? "__yo" : p.autor; if (!porAutor.has(k)) porAutor.set(k, []); porAutor.get(k).push(p); });
+  const vistas = hzVistas();
+  hzGrupos = [...porAutor.entries()].map(([k, l]) => ({ k, autor: l[0].mio ? "Tú" : l[0].autor, l, nueva: l.some(p => !vistas.includes(p.id)) }))
+    .sort((a, b) => (a.k === "__yo" ? -1 : b.k === "__yo" ? 1 : (b.nueva - a.nueva) || (Date.parse(b.l.at(-1).creada) - Date.parse(a.l.at(-1).creada))));
+  document.querySelectorAll("[data-hz]").forEach(cont => {
+    cont.innerHTML = "";
+    const mas = el("button", "hz-burb mas"); mas.type = "button"; mas.setAttribute("aria-label", "Subir una historia");
+    const am = el("span", "hz-aro"); am.append(el("span", "", "+")); mas.append(am, el("span", "hz-n", "Tu historia")); mas.onclick = () => abrirNuevaHistoria(null);
+    cont.append(mas);
+    hzGrupos.forEach((g, gi) => {
+      const b = el("button", "hz-burb" + (g.nueva ? "" : " vista")); b.type = "button"; b.setAttribute("aria-label", `Ver historias de ${g.autor}`);
+      const aro = el("span", "hz-aro"), cara = el("span"); ponerCara(cara, avatares[g.l[0].uid], g.autor);
+      const ult = g.l.at(-1).apuesta;
+      if (ult && ult.resultado) cara.append(el("span", "hz-res", ult.resultado === "gana" ? "✅" : ult.resultado === "pierde" ? "❌" : "➖"));
+      aro.append(cara); b.append(aro, el("span", "hz-n", g.autor)); b.onclick = () => verHistoria(gi);
+      cont.append(b);
+    });
+    cont.hidden = false;
+  });
 }
-function compartirApuesta(b) {
-  irA("comunidad"); adjuntarApuesta(b);
-  setTimeout(() => { $("pub").scrollIntoView({ behavior: "smooth", block: "end" }); $("p-texto").focus(); }, 300);
+function verHistoria(gi, i = null) {
+  hzG = gi; const g = hzGrupos[gi]; if (!g) return cerrarHistoria();
+  if (i == null) { const v = hzVistas(); i = Math.max(0, g.l.findIndex(p => !v.includes(p.id))); }
+  hzI = i; const p = g.l[i]; if (!p) return verHistoria(gi + 1, 0);
+  hzMarcar(p.id);
+  const vis = $("hz-visor"); vis.hidden = false; vis.classList.remove("pausa"); document.body.style.overflow = "hidden";
+  const bar = $("hz-barras"); bar.innerHTML = "";
+  g.l.forEach((_, k) => { const t = el("i", k < i ? "ya" : k === i ? "ahora" : ""); t.append(el("b")); bar.append(t); });
+  ponerCara($("hz-av"), avatares[p.uid], g.autor);
+  $("hz-autor").textContent = g.autor; $("hz-hace").textContent = hace(Date.parse(p.creada));
+  $("hz-av").onclick = $("hz-autor").onclick = () => { cerrarHistoria(); abrirPerfil(p.uid); };
+  const cu = $("hz-cuerpo"); cu.innerHTML = "";
+  if (p.apuesta) cu.append(boletoApuesta(p.apuesta));
+  if (p.foto) { const im = el("img"); im.alt = "Captura de la apuesta"; im.src = `/api/img?id=${encodeURIComponent(p.id)}&t=${encodeURIComponent(token)}`; cu.append(im); }
+  if (p.texto) cu.append(el("p", "hz-txt", p.texto));
+  if (p.link && /^https:\/\//.test(p.link)) { const a = el("a", "hz-link", "🔁 Replicar apuesta ↗"); a.href = p.link; a.target = "_blank"; a.rel = "noopener noreferrer";
+    a.onclick = ev => { ev.stopPropagation(); clearTimeout(hzTimer); }; cu.append(a); }
+  const pie = $("hz-pie"); pie.innerHTML = "";
+  ["🔥", "👍", "😂"].forEach(e => {
+    const n = (p.reacciones || {})[e] || 0, b = el("button", "", n ? `${e} ${n}` : e); b.type = "button";
+    b.setAttribute("aria-pressed", String((p.mias || []).includes(e)));
+    b.onclick = async ev => { ev.stopPropagation(); b.disabled = true;
+      try { await api("reaccionar", { id: p.id, emoji: e }); const on = b.getAttribute("aria-pressed") !== "true"; b.setAttribute("aria-pressed", String(on));
+        p.reacciones = { ...(p.reacciones || {}), [e]: Math.max(0, n + (on ? 1 : -1)) }; p.mias = on ? [...(p.mias || []), e] : (p.mias || []).filter(x => x !== e);
+        b.textContent = p.reacciones[e] ? `${e} ${p.reacciones[e]}` : e; } catch (er) {} b.disabled = false; };
+    pie.append(b);
+  });
+  if (p.mio && !(p.apuesta && p.apuesta.resultado)) {
+    const del = el("button", "", "🗑️"); del.type = "button"; del.setAttribute("aria-label", "Borrar mi historia");
+    del.onclick = async ev => { ev.stopPropagation(); if (del.dataset.ok !== "1") { del.dataset.ok = "1"; del.textContent = "¿Borrar?"; $("hz-visor").classList.add("pausa"); clearTimeout(hzTimer); return; }
+      try { await api("bajar", { id: p.id }); } catch (er) {} cerrarHistoria(); cargarHistorias(); };
+    pie.append(del);
+  }
+  const dur = p.apuesta || p.foto ? 7000 : 5000;
+  vis.style.setProperty("--hz-dur", dur + "ms");
+  clearTimeout(hzTimer); hzTimer = setTimeout(sigHistoria, dur);
 }
-function pintarFeed(lista) {
-  feedUltimo = lista;
-  pintarRecord(lista);
-  if (feedTab === "apuestas") lista = lista.filter(p => p.apuesta);
-  const firma = feedTab + JSON.stringify(lista.map(p => [p.id, p.texto, p.link, p.foto, p.reacciones, p.mias, p.apuesta && p.apuesta.resultado]));
+function sigHistoria() { const g = hzGrupos[hzG]; if (g && hzI + 1 < g.l.length) verHistoria(hzG, hzI + 1); else if (hzG + 1 < hzGrupos.length) verHistoria(hzG + 1); else cerrarHistoria(); }
+function antHistoria() { if (hzI > 0) verHistoria(hzG, hzI - 1); else if (hzG > 0) verHistoria(hzG - 1, 0); else verHistoria(hzG, 0); }
+function cerrarHistoria() { clearTimeout(hzTimer); $("hz-visor").hidden = true; document.body.style.overflow = ""; pintarHistorias(hzDatos); }
+$("hz-sig").addEventListener("click", sigHistoria); $("hz-ant").addEventListener("click", antHistoria); $("hz-cerrar").addEventListener("click", cerrarHistoria);
+// mantener presionado = pausa
+["hz-sig", "hz-ant"].forEach(id => {
+  let t0 = 0;
+  $(id).addEventListener("pointerdown", () => { t0 = Date.now(); $("hz-visor").classList.add("pausa"); clearTimeout(hzTimer); });
+  $(id).addEventListener("pointerup", ev => { if (Date.now() - t0 > 350) { ev.preventDefault(); $("hz-visor").classList.remove("pausa"); hzTimer = setTimeout(sigHistoria, 2500); } });
+});
+document.addEventListener("keydown", e => { if ($("hz-visor").hidden) return;
+  if (e.key === "Escape") cerrarHistoria(); else if (e.key === "ArrowRight") sigHistoria(); else if (e.key === "ArrowLeft") antHistoria(); });
+// nueva historia: desde 📢 en la Bitácora (apuesta registrada) o desde "+" (captura o texto)
+let hzLink = null;
+function abrirNuevaHistoria(b, extra = {}) {
+  hzNueva = b; hzFoto = extra.foto || null; hzLink = extra.link || null; $("hz-foto").value = ""; $("hz-texto").value = extra.texto || "";
+  const pv = $("hz-prev"); pv.innerHTML = "";
+  if (hzFoto) { const im = el("img"); im.src = hzFoto; im.alt = "Vista previa"; pv.append(im); }
+  if (hzLink) pv.append(el("p", "hint", "🔗 Con link para que la repliquen"));
+  if (b) pv.append(tarjetaApuesta({ partido: b.partido, seleccion: b.seleccion, cuota: b.cuotaOrig || b.cuota, casa: b.casa, liga: b.liga, cartera: b.cartera,
+    resultado: b.resultado === "pendiente" ? null : b.resultado, marcador: b.marcador, cobro: b.cobro, valor: b.prob ? (b.cuotaOrig || b.cuota) * b.prob >= 1.03 : null }));
+  $("hz-monto-l").hidden = !b; $("hz-monto").checked = false;
+  if (b) $("hz-monto-t").textContent = `Mostrar cuánto aposté (${fmt(b.montoOrig || b.monto)})`;
+  $("hz-foto-l").firstChild.textContent = b ? "📷 Agregar captura del boleto (opcional)" : "📷 Subir captura del boleto";
+  $("hz-texto").placeholder = b ? "¿Por qué la jugaste? (opcional)" : "Escribe qué estás jugando…";
+  $("hz-nueva").hidden = false;
+}
+$("hz-cancelar").addEventListener("click", () => { $("hz-nueva").hidden = true; hzNueva = null; hzFoto = null; });
+$("hz-foto").addEventListener("change", async () => {
+  const f = $("hz-foto").files[0]; if (!f) return;
+  try { hzFoto = await comprimir(f); const pv = $("hz-prev"); pv.querySelectorAll("img").forEach(x => x.remove()); const im = el("img"); im.src = hzFoto; im.alt = "Vista previa"; pv.append(im); }
+  catch (e) { estado(e.message); hzFoto = null; }
+});
+$("hz-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const texto = $("hz-texto").value.trim();
+  if (!hzNueva && !hzFoto && !texto) { estado("Sube una captura o escribe algo para tu historia."); return; }
+  $("hz-subir").disabled = true;
+  try {
+    await api("publicar", { texto, imagen: hzFoto, link: hzLink, historia: true, apuesta_id: hzNueva ? hzNueva.id : null, mostrar_monto: !!(hzNueva && $("hz-monto").checked) });
+    $("hz-nueva").hidden = true; hzNueva = null; hzFoto = null;
+    estado("📸 Listo, ya está en tu historia por 24 horas."); setTimeout(() => estado(""), 3500);
+    await cargarHistorias();
+  } catch (err) { estado(err.message || "No se pudo subir la historia."); }
+  $("hz-subir").disabled = false;
+});
+function compartirApuesta(b) { abrirNuevaHistoria(b); }
+
+// ---- 📤 llegó algo desde "Compartir" de otra app (Draftea, Caliente, galería…)
+let cmpDatos = null;
+async function revisarCompartido() {
+  if (!/compartido=1/.test(location.search) || !("caches" in window)) return;
+  history.replaceState(null, "", location.pathname + location.hash);
+  try {
+    const c = await caches.open("compartido"), m = await c.match("/compartido/meta"); if (!m) return;
+    const meta = await m.json(); let foto = null, archivo = null;
+    if (meta.img) { const r = await c.match("/compartido/img"); if (r) { const bl = await r.blob(); archivo = new File([bl], "boleto.jpg", { type: bl.type || "image/jpeg" }); foto = await comprimir(archivo); } }
+    await c.delete("/compartido/meta"); await c.delete("/compartido/img");
+    const link = ((meta.texto || "").match(/https:\/\/\S+/) || [null])[0];
+    const texto = (meta.texto || "").replace(/https:\/\/\S+/g, "").replace(/¡Mira esta apuesta! Replícala aquí:?/i, "").trim();
+    cmpDatos = { foto, archivo, link, texto };
+    const pv = $("cmp-prev"); pv.innerHTML = "";
+    if (foto) { const im = el("img"); im.src = foto; im.alt = "Tu boleto"; pv.append(im); }
+    if (link) pv.append(el("p", "hint", "🔗 " + link.slice(0, 60) + (link.length > 60 ? "…" : "")));
+    $("cmp-registrar").hidden = !archivo;
+    $("cmp").hidden = false;
+  } catch (e) { estado("No pude leer lo que compartiste. Intenta de nuevo."); }
+}
+$("cmp-cancelar").addEventListener("click", () => { $("cmp").hidden = true; cmpDatos = null; });
+$("cmp-historia").addEventListener("click", () => { $("cmp").hidden = true; abrirNuevaHistoria(null, { foto: cmpDatos.foto, link: cmpDatos.link, texto: cmpDatos.texto }); });
+$("cmp-chat").addEventListener("click", () => {
+  $("cmp").hidden = true; irA("comunidad");
+  if (cmpDatos.foto) { fotoData = cmpDatos.foto; $("p-mini-img").src = fotoData; $("p-mini-txt").textContent = Math.round(fotoData.length * .75 / 1024) + " KB"; $("p-mini").hidden = false; }
+  if (cmpDatos.link) $("p-link").value = cmpDatos.link; if (cmpDatos.texto) $("p-texto").value = cmpDatos.texto;
+  setTimeout(() => $("pub").scrollIntoView({ behavior: "smooth", block: "end" }), 300);
+});
+$("cmp-registrar").addEventListener("click", () => {
+  $("cmp").hidden = true; irA("normal");
+  setTimeout(() => { try { const dt = new DataTransfer(); dt.items.add(cmpDatos.archivo); $("f-foto").files = dt.files; $("f-foto").dispatchEvent(new Event("change", { bubbles: true })); }
+    catch (e) { estado("Toca 📷 Llenar con foto del boleto y elige la captura."); } }, 400);
+});
+function pintarFeed(todo) {
+  pintarHistorias(todo.filter(p => p.historia));
+  const lista = todo.filter(p => !p.historia);
+  const firma = JSON.stringify(lista.map(p => [p.id, p.texto, p.link, p.foto, p.reacciones, p.mias, p.apuesta && p.apuesta.resultado]));
   if (firma === firmaFeed && $("feed").childElementCount) return;      // nada nuevo: no redibujar
   firmaFeed = firma;
   const cont = $("feed"), abajo = window.innerHeight + window.scrollY >= document.body.scrollHeight - 80;
   cont.innerHTML = "";
-  if (!lista.length) { cont.append(el("p", "empty", feedTab === "apuestas"
-    ? "Nadie ha compartido apuestas esta semana. En tu Bitácora toca 📢 Compartir en cualquier apuesta."
-    : "Todavía nadie publica. Sé el primero: sube la foto de tu apuesta con el link para que otros la copien.")); return; }
+  if (!lista.length) { cont.append(el("p", "empty", "Todavía nadie publica. Sé el primero: sube la foto de tu apuesta con el link para que otros la copien.")); return; }
   lista.forEach(p => {
     const m = el("div", "msg" + (p.mio ? " mio" : ""));
     const cab = el("div", "cabeza");
-    const av = el("span", "avatar", (p.autor || "?").trim()[0].toUpperCase());
-    let h = 0; for (const ch of p.autor || "") h = (h * 31 + ch.charCodeAt(0)) % 360;
-    av.style.background = `hsl(${h} 55% 42%)`;
+    const av = el("span", "avatar clic"); ponerCara(av, avatares[p.uid], p.autor); av.onclick = () => abrirPerfil(p.uid);
     const q = el("div", "quien-pub"); const b = el("b", "", p.mio ? "Tú" : p.autor);
     q.append(b, document.createTextNode(" · " + hace(Date.parse(p.creada))));
     cab.append(av, q); m.append(cab);
@@ -2842,14 +3204,12 @@ $("p-quitar").addEventListener("click", () => { fotoData = null; $("p-foto").val
 $("pub").addEventListener("submit", async e => {
   e.preventDefault();
   const texto = $("p-texto").value.trim(), link = $("p-link").value.trim();
-  if (!texto && !link && !fotoData && !apCompartir) { estado("Escribe algo, agrega una foto o un link."); return; }
+  if (!texto && !link && !fotoData) { estado("Escribe algo, agrega una foto o un link."); return; }
   if (link && !/^https:\/\/\S+$/.test(link)) { estado("El link debe empezar con https://"); return; }
   $("p-btn").disabled = true; estado("Publicando…");
   try {
-    await api("publicar", { texto, link, imagen: fotoData, horas: Number($("p-horas").value),
-      apuesta_id: apCompartir ? apCompartir.id : null, mostrar_monto: !!(apCompartir && $("p-ap-monto") && $("p-ap-monto").checked) });
+    await api("publicar", { texto, link, imagen: fotoData, horas: Number($("p-horas").value) });
     $("p-texto").value = ""; $("p-link").value = ""; fotoData = null; $("p-foto").value = ""; $("p-mini").hidden = true;
-    if (apCompartir) { apCompartir = null; $("p-ap").hidden = true; $("p-ap").innerHTML = ""; $("p-horas").hidden = false; $("p-texto").placeholder = "¿Qué vas a jugar y por qué?"; }
     estado(""); await cargarFeed(); window.scrollTo(0, document.body.scrollHeight);
   } catch (err) { estado(err.message || "No se pudo publicar."); }
   $("p-btn").disabled = false;

@@ -137,9 +137,9 @@ export default async function handler(req, res) {
         const d = b.datos || {};
         const r = await rpc("comunidad", "publicar", { usuario, texto: txt(d.texto, 1000), link: txt(d.link, 500),
           imagen: typeof d.imagen === "string" ? d.imagen : null, horas: num(d.horas) || 48,
-          apuesta_id: num(d.apuesta_id) || null, mostrar_monto: d.mostrar_monto === true });
+          apuesta_id: num(d.apuesta_id) || null, mostrar_monto: d.mostrar_monto === true, historia: d.historia === true });
         if (r && r.error) return res.status(400).json(r);
-        await avisarComunidad(usuario, r.autor, txt(d.texto, 1000) || (num(d.apuesta_id) ? "🎯 compartió una apuesta" : ""));
+        await avisarComunidad(usuario, r.autor, txt(d.texto, 1000) || (num(d.apuesta_id) ? "🎯 subió una apuesta a su historia" : ""));
         return res.status(200).json(r);
       }
       case "reaccionar": {
@@ -155,6 +155,19 @@ export default async function handler(req, res) {
       // ---------- perfil / equipo favorito
       case "perfil":
         return res.status(200).json(await mas("perfil", { usuario }));
+      // ---------- 👤 perfiles públicos (para farolear) y caritas de historias
+      case "avatares":
+        return res.status(200).json(await rpc("perfiles", "avatares", { usuario }));
+      case "perfil_ver":
+        return res.status(200).json(await rpc("perfiles", "ver", { usuario, uid: txt((b.datos || {}).uid, 20) }));
+      case "perfil_editar": {
+        const d = (b.datos || {}).perfil || {};
+        const r = await rpc("perfiles", "editar", { usuario, perfil: {
+          bio: txt(d.bio, 140), frase: txt(d.frase, 40), emoji: txt(d.emoji, 8) || null, color: txt(d.color, 7) || null, portada: txt(d.portada, 20) || null,
+          foto: typeof d.foto === "string" ? d.foto : null, mostrar_dinero: d.mostrar_dinero === true } });
+        if (r && r.error) return res.status(400).json(r);
+        return res.status(200).json(r);
+      }
       case "fav": {
         const k = txt((b.datos || {}).k, 40);
         if (!k) return res.status(200).json(await mas("fav", { usuario, equipo: null }));
