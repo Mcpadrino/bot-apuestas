@@ -330,6 +330,10 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
 .hz-global { margin-block: -6px -4px; }
 @media (prefers-reduced-motion: no-preference) { .hz-global:not([hidden]) { animation: hzbaja .35s cubic-bezier(.2,.9,.25,1); } }
 @keyframes hzbaja { from { opacity: 0; transform: translateY(-14px); } }
+.hz-mini { justify-self: start; display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px 4px 6px; margin-block: -8px -6px; border-radius: 999px; font: 600 .8rem var(--font-body); background: var(--surface); border: 1px solid var(--line); color: var(--fg); }
+.hz-mini .caritas { display: inline-flex; } .hz-mini .avatar { width: 24px; height: 24px; flex-basis: 24px; font-size: .7rem; border: 2px solid var(--surface); margin-left: -8px; }
+.hz-mini .caritas .avatar:first-child { margin-left: 0; }
+.hz-mini small { color: var(--muted); font-weight: 500; }
 .hz-jala { position: fixed; left: 50%; top: 0; z-index: 60; width: 40px; height: 40px; margin-left: -20px; border-radius: 50%; background: var(--surface); border: 1px solid var(--line);
   display: grid; place-items: center; box-shadow: 0 6px 18px rgba(0,0,0,.25); transform: translateY(-60px); opacity: 0; pointer-events: none; }
 .hz-burb { flex: 0 0 auto; width: 70px; display: grid; justify-items: center; gap: 4px; padding: 0; border: 0; background: none; color: var(--fg); font: 500 .74rem var(--font-body); }
@@ -1295,6 +1299,7 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
     <div class="quien" id="quien" hidden><span id="q-nombre"></span><button type="button" id="refrescar" aria-label="Actualizar">↻</button></div>
   </header>
   <div class="historias hz-global" data-hz id="hz-global" hidden aria-label="Historias de 24 horas: qué estamos apostando"></div>
+  <button type="button" class="hz-mini" id="hz-mini" hidden aria-label="Ver historias"></button>
   <div class="hz-jala" id="hz-jala" aria-hidden="true"><span>📸</span></div>
   <div class="instalar" id="instalar" hidden>
     <span id="inst-txt">📲 Instala la bitácora como app en tu celular.</span>
@@ -3183,7 +3188,18 @@ function hzActualizarGlobal() {
   const nuevas = hzGrupos.some(g => g.nueva && g.k !== "__yo");
   const g = $("hz-global"), ver = !!(listo && token && (nuevas || hzAbierto));
   if (g.hidden === ver) g.hidden = !ver;
+  // escondida: queda una pastillita para volver a abrirlas con un toque
+  const m = $("hz-mini"); m.hidden = !(listo && token) || ver;
+  if (!m.hidden) {
+    m.innerHTML = "";
+    if (hzGrupos.length) {
+      const c = el("span", "caritas");
+      hzGrupos.slice(0, 4).forEach(gr => { const a = el("span", "avatar"); ponerCara(a, avatares[gr.l[0].uid], gr.autor); c.append(a); });
+      m.append(c, `📸 Historias (${hzGrupos.reduce((n, gr) => n + gr.l.length, 0)})`, el("small", "", "· ya las viste ▾"));
+    } else m.append("📸 Sube tu historia", el("small", "", "▾"));
+  }
 }
+$("hz-mini").addEventListener("click", () => { hzAbierto = true; hzActualizarGlobal(); hzRefrescar(true); });
 function hzRefrescar(forzar) { if (!listo) return; if (forzar || Date.now() - hzCargadas > 60000) { hzCargadas = Date.now(); cargarHistorias(); } }
 (() => {
   let y0 = null, jalado = 0;
