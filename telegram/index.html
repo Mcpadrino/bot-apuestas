@@ -303,6 +303,11 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
 .pf-insignias span { padding: 6px 10px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); font-size: .82rem; }
 .pf-acciones { display: grid; gap: 8px; }
 #hz-nueva, #cmp { z-index: 140; }
+.f-estado-w { display: grid; gap: 4px; } .f-estado-w > span { font-size: .85rem; color: var(--muted); }
+.seg.seg4 { grid-template-columns: repeat(4, 1fr); }
+#f-estado button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+#f-estado button[data-r="gana"][aria-pressed="true"] { background: var(--win); color: #fff; }
+#f-estado button[data-r="pierde"][aria-pressed="true"] { background: var(--loss); color: #fff; }
 .pf-grupo { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
 .pf-grupo button { flex: 0 0 auto; display: grid; justify-items: center; gap: 4px; padding: 0; border: 0; background: none; color: var(--fg); font-size: .74rem; width: 64px; }
 .pf-grupo .avatar { width: 54px; height: 54px; flex-basis: 54px; font-size: 1.4rem; }
@@ -1440,7 +1445,12 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
         </div>
         <label id="f-prob-wrap">% del bot (del mensaje de Telegram)<input id="f-prob" inputmode="decimal" placeholder="38.2" autocomplete="off"></label>
         <label class="chk-pa"><input type="checkbox" id="f-pa"><span>⏩ <b>Tiene pago anticipado</b><small>Ganador del partido en Caliente/Draftea: te pagan si tu equipo llega a ir arriba por 2 goles (20 pts NBA, 17 NFL, 5 carreras MLB).</small></span></label>
+        <div class="f-estado-w"><span>¿Ya terminó?</span>
+          <div class="seg seg4" id="f-estado" role="group" aria-label="Estado de la apuesta">
+            <button type="button" data-r="" aria-pressed="true">⏳ En juego</button><button type="button" data-r="gana" aria-pressed="false">✓ Ganó</button>
+            <button type="button" data-r="pierde" aria-pressed="false">✗ Perdió</button><button type="button" data-r="nula" aria-pressed="false">Nula</button></div></div>
         <p class="preview num" id="f-prev" style="white-space:pre-line"></p>
+        <p class="hint" id="f-cola" hidden style="margin:0"></p>
         <button class="primary" type="submit" id="f-btn">Guardar apuesta</button>
       </form>
     </section>
@@ -2678,7 +2688,13 @@ function sugerirPA() { if (!paTocado) $("f-pa").checked = esML($("f-sel").value.
 $("f-pa").addEventListener("change", () => (paTocado = true));
 $("f-sel").addEventListener("input", sugerirPA);
 $("f-casa").addEventListener("change", sugerirPA);
-let minConfirma = null;
+let minConfirma = null, fEstado = "";
+function ponerEstado(r) {
+  fEstado = r || "";
+  document.querySelectorAll("#f-estado [data-r]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.r === fEstado)));
+  $("f-btn").textContent = fEstado ? "Guardar apuesta ya terminada" : "Guardar apuesta";
+}
+document.querySelectorAll("#f-estado [data-r]").forEach(b => b.addEventListener("click", () => ponerEstado(b.dataset.r)));
 function vistaPrevia() {
   sugerirPA();
   const c = aDecimal($("f-cuota").value), p = parseFloat($("f-prob").value) / 100, m = parseFloat($("f-monto").value);
@@ -2703,18 +2719,28 @@ $("f").addEventListener("submit", async e => {
   if (!cuota) { estado("El momio no es válido. Escríbelo como +175, -150 o 2.75."); return; }
   if (!(monto > 0)) { estado("Escribe un monto mayor a cero."); return; }
   if (prob !== null && !(prob > 0 && prob < 1)) { estado("El % del bot debe estar entre 0 y 100."); return; }
-  if (prob && cuota * prob < 1.03 && minConfirma !== prob + "|" + cuota) {
+  if (!fEstado && prob && cuota * prob < 1.03 && minConfirma !== prob + "|" + cuota) {
     minConfirma = prob + "|" + cuota;
     estado(`⚠️ Te pagan ${aAmericano(cuota)} y el mínimo era ${aAmericano(1.03 / prob)}: a la larga pierde dinero. Si aun así la jugaste, toca Guardar otra vez.`); return;
   }
   minConfirma = null;
-  const lim = avisoLimites(monto);
+  const lim = fEstado ? "" : avisoLimites(monto);           // una apuesta que ya terminó no cuenta contra tu límite de hoy
   if (lim && limConfirma !== monto + "|" + cuota) { limConfirma = monto + "|" + cuota; estado(lim + ". Si aun así quieres guardarla, toca Guardar otra vez."); return; }
   limConfirma = null;
   estado(""); $("f-btn").disabled = true;
-  const ok = await hacer("registrar", { cartera: vista === "normal" ? "libre" : "bot", partido: $("f-partido").value.trim(),
-    seleccion: $("f-sel").value.trim(), casa: $("f-casa").value, cuota, prob, monto, anticipado: $("f-pa").checked }, "No se pudo guardar la apuesta.");
-  if (ok) { ["f-partido", "f-sel", "f-cuota", "f-prob"].forEach(id => $(id).value = ""); $("f-prev").textContent = ""; paTocado = false; }
+  const datosAp = { cartera: vista === "normal" ? "libre" : "bot", partido: $("f-partido").value.trim(),
+    seleccion: $("f-sel").value.trim(), casa: $("f-casa").value, cuota, prob, monto, anticipado: $("f-pa").checked };
+  let ok;
+  if (fEstado) {          // apuesta que ya terminó: se guarda y se califica de una vez (así cuadra tu banca)
+    try { const a = await api("registrar", datosAp); if (a && a.id) await api("cerrar", { id: a.id, resultado: fEstado }); await cargar(); ok = true; }
+    catch (err) { err.auth ? mostrarLogin(err.message) : estado(err.message || "No se pudo guardar la apuesta."); ok = false; }
+  } else ok = await hacer("registrar", datosAp, "No se pudo guardar la apuesta.");
+  if (ok) {
+    const res = fEstado;
+    ["f-partido", "f-sel", "f-cuota", "f-prob"].forEach(id => $(id).value = ""); $("f-prev").textContent = ""; paTocado = false; ponerEstado("");
+    if (res) { estado(res === "gana" ? "✅ Guardada como ganada: ya cuenta en tu banca." : res === "pierde" ? "❌ Guardada como perdida: ya cuenta en tu banca." : "Guardada como nula."); setTimeout(() => estado(""), 3500); }
+    siguienteDeCola();
+  }
   $("f-btn").disabled = false;
 });
 
@@ -3190,7 +3216,7 @@ function pintarHistorias(lista) {
       const ult = g.l.at(-1).apuesta;
       if (ult && ult.resultado) cara.append(el("span", "hz-res", ult.resultado === "gana" ? "✅" : ult.resultado === "pierde" ? "❌" : "➖"));
       aro.append(cara); b.append(aro, el("span", "hz-n", g.autor));
-      b.onclick = () => g.k === "__yo" ? abrirPerfil(g.l[0].uid) : verHistoria(gi);
+      b.onclick = () => verHistoria(gi);
       cont.append(b);
     });
     if (cont.id !== "hz-global") cont.hidden = false;
@@ -3255,6 +3281,8 @@ function verHistoria(gi, i = null) {
   if (p.link && /^https:\/\//.test(p.link)) { const a = el("a", "hz-link", "🔁 Replicar apuesta ↗"); a.href = p.link; a.target = "_blank"; a.rel = "noopener noreferrer";
     a.onclick = ev => { ev.stopPropagation(); clearTimeout(hzTimer); }; cu.append(a); }
   const pie = $("hz-pie"); pie.innerHTML = "";
+  const vp = el("button", "", p.mio ? "👤 Mi perfil" : "👤 Perfil"); vp.type = "button";
+  vp.onclick = ev => { ev.stopPropagation(); cerrarHistoria(); abrirPerfil(p.uid); }; pie.append(vp);
   ["🔥", "👍", "😂"].forEach(e => {
     const n = (p.reacciones || {})[e] || 0, b = el("button", "", n ? `${e} ${n}` : e); b.type = "button";
     b.setAttribute("aria-pressed", String((p.mias || []).includes(e)));
@@ -3338,16 +3366,23 @@ async function revisarCompartido() {
   history.replaceState(null, "", location.pathname + location.hash);
   try {
     const c = await caches.open("compartido"), m = await c.match("/compartido/meta"); if (!m) return;
-    const meta = await m.json(); let foto = null, archivo = null;
-    if (meta.img) { const r = await c.match("/compartido/img"); if (r) { const bl = await r.blob(); archivo = new File([bl], "boleto.jpg", { type: bl.type || "image/jpeg" }); foto = await comprimir(archivo); } }
+    const meta = await m.json(), archivos = [];
+    for (let i = 0; i < (meta.n || (meta.img ? 1 : 0)); i++) {
+      const r = await c.match("/compartido/img/" + i) || (i === 0 ? await c.match("/compartido/img") : null);
+      if (r) { const bl = await r.blob(); archivos.push(new File([bl], `boleto-${i + 1}.jpg`, { type: bl.type || "image/jpeg" })); }
+      await c.delete("/compartido/img/" + i);
+    }
     await c.delete("/compartido/meta"); await c.delete("/compartido/img");
+    const archivo = archivos[0] || null, foto = archivo ? await comprimir(archivo) : null;
     const link = ((meta.texto || "").match(/https:\/\/\S+/) || [null])[0];
     const texto = (meta.texto || "").replace(/https:\/\/\S+/g, "").replace(/¡Mira esta apuesta! Replícala aquí:?/i, "").trim();
-    cmpDatos = { foto, archivo, link, texto };
+    cmpDatos = { foto, archivo, archivos, link, texto };
     const pv = $("cmp-prev"); pv.innerHTML = "";
     if (foto) { const im = el("img"); im.src = foto; im.alt = "Tu boleto"; pv.append(im); }
     if (link) pv.append(el("p", "hint", "🔗 " + link.slice(0, 60) + (link.length > 60 ? "…" : "")));
     $("cmp-registrar").hidden = !archivo;
+    $("cmp-registrar").textContent = archivos.length > 1 ? `📝 Registrar los ${archivos.length} boletos en mi Bitácora` : "📝 Registrarla en mi Bitácora (en juego o ya terminada)";
+    if (archivos.length > 1) pv.append(el("p", "hint", `📚 ${archivos.length} capturas. Para registrarlas te las voy pasando una por una.`));
     $("cmp").hidden = false;
   } catch (e) { estado("No pude leer lo que compartiste. Intenta de nuevo."); }
 }
@@ -3360,10 +3395,24 @@ $("cmp-chat").addEventListener("click", () => {
   if (cmpDatos.link) $("p-link").value = cmpDatos.link; if (cmpDatos.texto) $("p-texto").value = cmpDatos.texto;
   setTimeout(() => $("pub").scrollIntoView({ behavior: "smooth", block: "end" }), 300);
 });
+// cola de boletos para registrar (cuando compartes varias capturas de una vez)
+let colaBoletos = [], colaTotal = 0;
+function leerBoletoArchivo(f) {
+  try { const dt = new DataTransfer(); dt.items.add(f); $("f-foto").files = dt.files; $("f-foto").dispatchEvent(new Event("change", { bubbles: true })); }
+  catch (e) { estado("Toca 📷 Llenar con foto del boleto y elige la captura."); }
+}
+function siguienteDeCola() {
+  const n = $("f-cola");
+  if (!colaBoletos.length) { if (colaTotal > 1 && !n.hidden) { n.textContent = `🎉 Listo, registraste los ${colaTotal} boletos.`; setTimeout(() => { n.hidden = true; }, 5000); } colaTotal = 0; return; }
+  const f = colaBoletos.shift();
+  n.hidden = false; n.textContent = `📚 Boleto ${colaTotal - colaBoletos.length} de ${colaTotal}. Revisa, marca si ganó o perdió y guarda. (${colaBoletos.length ? "Luego sigue el siguiente." : "Es el último."})`;
+  $("f").scrollIntoView({ behavior: "smooth", block: "start" });
+  setTimeout(() => leerBoletoArchivo(f), 300);
+}
 $("cmp-registrar").addEventListener("click", () => {
   $("cmp").hidden = true; irA("normal");
-  setTimeout(() => { try { const dt = new DataTransfer(); dt.items.add(cmpDatos.archivo); $("f-foto").files = dt.files; $("f-foto").dispatchEvent(new Event("change", { bubbles: true })); }
-    catch (e) { estado("Toca 📷 Llenar con foto del boleto y elige la captura."); } }, 400);
+  colaBoletos = [...(cmpDatos.archivos || [cmpDatos.archivo])].filter(Boolean); colaTotal = colaBoletos.length;
+  setTimeout(siguienteDeCola, 400);
 });
 function pintarFeed(todo) {
   pintarHistorias(todo.filter(p => p.historia));
@@ -6840,6 +6889,10 @@ function boletoLeer(txt) {
     r.piernas.push({ seleccion: sel, momioTxt: k[2], momio: aDec(k[2]), partido: equipos.length === 2 ? `${equipos[0]} vs ${equipos[1]}` : equipos[0] || "" });
   });
   r.parlay = r.piernas.length >= 2 || /parlay|combinada|m[uú]ltiple/i.test(T);
+  // ¿el boleto ya terminó? (Draftea/Caliente marcan ganada, perdida, cancelada…)
+  r.resultado = /\b(perdid[ao]s?|perdiste|no\s+gan[oó])\b/i.test(T) ? "pierde"
+    : /\b(ganad[ao]s?|ganaste|pagad[ao]|cobrad[ao]|premiad[ao])\b/i.test(T) ? "gana"
+    : /\b(anulad[ao]|cancelad[ao]|reembolsad[ao]|void)\b/i.test(T) ? "nula" : null;
   return r;
 }
 $("f-foto").addEventListener("change", async () => {
@@ -6866,12 +6919,14 @@ $("f-foto").addEventListener("change", async () => {
     if (momioTxt) $("f-cuota").value = momioTxt;
     if (b.monto) $("f-monto").value = b.monto;
     if (b.casa) $("f-casa").value = b.casa;
+    if (b.resultado) ponerEstado(b.resultado);
     vistaPrevia();
     const leido = [b.piernas.length && (b.parlay ? `parlay de ${b.piernas.length}` : "selección"), momioTxt && "momio", b.monto && "monto", b.casa && "casa"].filter(Boolean);
     if (!leido.length) { tx.textContent = "😕 No pude leer bien el boleto. Llénalo a mano o prueba con una captura más clara."; }
     else {
       const cuadra = b.ganancia && b.monto && b.momio ? Math.abs(b.monto * b.momio - b.ganancia) < Math.max(0.6, b.ganancia * 0.02) : null;
       let h = `✅ Leí: ${leido.join(", ")}. Revisa antes de guardar.`;
+      if (b.resultado) h += `<br><b>${b.resultado === "gana" ? "🏆 El boleto dice que ya la ganaste" : b.resultado === "pierde" ? "❌ El boleto dice que ya la perdiste" : "➖ El boleto dice que se anuló"}</b>: la guardo ya calificada (cámbialo arriba si no es así).`;
       if (b.parlay && b.piernas.length) h += `<div class="bol-lista">${b.piernas.map(q => `<div><span>${admEsc(q.seleccion)}<small>${admEsc(q.partido || "")}</small></span><b class="num">${q.momio ? aAmericano(q.momio) : admEsc(q.momioTxt)}</b></div>`).join("")}</div>`;
       if (b.monto || b.ganancia) h += `<div class="bol-res">${b.monto ? `Apuesta <b>$${b.monto.toFixed(2)}</b>` : ""}${momioTxt ? ` · momio <b>${admEsc(momioTxt)}</b>` : ""}${b.ganancia ? ` · paga <b>$${b.ganancia.toFixed(2)}</b>` : ""}${cuadra === true ? " ✓" : cuadra === false ? " ⚠️ no cuadra, revisa" : ""}</div>`;
       if (b.parlay) { const prod = b.piernas.reduce((x, q) => x * (q.momio || 1), 1); if (b.momio && prod > 1 && Math.abs(prod - b.momio) / b.momio > 0.05) h += `<small class="hint" style="display:block;margin:0">Se ven ${b.piernas.length} selecciones; si tu parlay tiene más (o un "boost"), se guarda con el momio total del boleto.</small>`; }

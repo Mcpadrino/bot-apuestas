@@ -1,6 +1,6 @@
 // Service worker mínimo: permite instalar la app. Guarda solo la página e íconos para que abra
 // rápido; los datos (/api) siempre van a internet para que nunca veas apuestas viejas.
-const CACHE = "bitacora-v51";
+const CACHE = "bitacora-v52";
 const BASICOS = ["/", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (e) => {
@@ -16,11 +16,12 @@ self.addEventListener("fetch", (e) => {
   if (e.request.method === "POST" && url.pathname === "/compartir") {
     e.respondWith((async () => {
       try {
-        const fd = await e.request.formData(), img = fd.get("imagen");
+        const fd = await e.request.formData(), imgs = fd.getAll("imagen").filter((f) => f && f.size).slice(0, 20);
         const texto = ["title", "text", "url"].map((k) => fd.get(k)).filter(Boolean).join(" ").slice(0, 2000);
         const c = await caches.open("compartido");
-        await c.put("/compartido/meta", new Response(JSON.stringify({ texto, img: !!(img && img.size), t: Date.now() })));
-        if (img && img.size) await c.put("/compartido/img", new Response(img, { headers: { "content-type": img.type || "image/jpeg" } }));
+        await c.put("/compartido/meta", new Response(JSON.stringify({ texto, img: imgs.length > 0, n: imgs.length, t: Date.now() })));
+        for (let i = 0; i < imgs.length; i++)
+          await c.put("/compartido/img/" + i, new Response(imgs[i], { headers: { "content-type": imgs[i].type || "image/jpeg" } }));
       } catch (err) {}
       return Response.redirect("/?compartido=1#comunidad", 303);
     })());
