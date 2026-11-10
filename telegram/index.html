@@ -269,7 +269,11 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
 .ap-tag.ok { color: var(--win); border-color: var(--win); } .ap-tag.no { color: var(--loss); border-color: var(--loss); }
 /* 👤 perfiles */
 .pf { position: fixed; inset: 0; z-index: 110; background: var(--bg); overflow-y: auto; overscroll-behavior: contain; }
-.pf-portada { height: 150px; position: relative; background: linear-gradient(160deg,#0f5132,#1d7a52 60%,#0a3324); }
+.pf-portada { height: min(46vw, 230px); position: relative; background: linear-gradient(160deg,#0f5132,#1d7a52 60%,#0a3324); background-size: cover; background-position: center; }
+.pf-cam { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; background: rgba(0,0,0,.55); color: #fff; border-radius: 999px; font: 600 .8rem var(--font-body); backdrop-filter: blur(4px); }
+.pf-cam-portada { position: absolute; left: 12px; top: max(12px, env(safe-area-inset-top)); padding: 8px 12px; }
+.pf-av-caja { position: relative; flex: 0 0 auto; }
+.pf-cam-av { position: absolute; right: 0; bottom: 4px; width: 32px; height: 32px; justify-content: center; border: 2px solid var(--bg); }
 .pf-x { position: absolute; right: 12px; top: max(12px, env(safe-area-inset-top)); background: rgba(0,0,0,.35); color: #fff; border: 0; border-radius: 50%; width: 38px; height: 38px; padding: 0; font-size: 1.1rem; }
 .pf-cuerpo { max-width: 640px; margin: -46px auto 0; padding: 0 16px 40px; display: grid; gap: 14px; position: relative; }
 .pf-cab { display: flex; gap: 12px; align-items: flex-end; }
@@ -289,6 +293,16 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
 .pf-insignias { display: flex; flex-wrap: wrap; gap: 6px; }
 .pf-insignias span { padding: 6px 10px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); font-size: .82rem; }
 .pf-acciones { display: grid; gap: 8px; }
+#hz-nueva, #cmp { z-index: 140; }
+.pf-tk-cab { display: flex; justify-content: space-between; align-items: center; }
+.pf-tk-cab button { padding: 6px 12px; border-radius: 999px; }
+.pf-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; border-radius: 12px; overflow: hidden; }
+.pf-grid button { aspect-ratio: 1; padding: 0; border: 0; border-radius: 0; position: relative; background: var(--surface) center / cover no-repeat; }
+.pf-grid button span { position: absolute; right: 5px; top: 5px; font-size: .9rem; filter: drop-shadow(0 1px 2px rgba(0,0,0,.6)); }
+.pf-grid button small { position: absolute; left: 6px; bottom: 5px; color: #fff; font: 700 .72rem var(--font-mono); text-shadow: 0 1px 4px #000; }
+.pf-grid .vacio { grid-column: 1 / -1; aspect-ratio: auto; padding: 18px; color: var(--muted); text-align: center; font-size: .85rem; background: var(--surface); }
+.pf-ver { position: fixed; inset: 0; z-index: 130; background: #05080b; color: #fff; display: grid; grid-template-rows: 1fr auto; padding: max(54px, env(safe-area-inset-top)) 14px max(16px, env(safe-area-inset-bottom)); }
+.pf-ver .pf-x { position: absolute; }
 .pf-editor { display: grid; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px; }
 .pf-editor label { font-size: .82rem; color: var(--muted); }
 .pf-editor textarea { font: 500 1rem var(--font-body); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 9px; min-height: 64px; }
@@ -326,7 +340,7 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
 .hz-cuerpo .hz-txt { font: 600 1.15rem/1.35 var(--font-body); text-align: center; max-width: 30ch; text-shadow: 0 1px 6px rgba(0,0,0,.6); }
 .hz-boleto { width: min(100%, 360px); background: #fff; color: #14183a; border-radius: 18px; padding: 18px 18px 14px; display: grid; gap: 8px; position: relative;
   box-shadow: 0 20px 50px rgba(0,0,0,.5); -webkit-mask: radial-gradient(circle 10px at 0 62%, transparent 98%, #000) left / 51% 100% no-repeat, radial-gradient(circle 10px at 100% 62%, transparent 98%, #000) right / 51% 100% no-repeat; }
-.hz-boleto .par { font-size: .8rem; color: #5a6080; } .hz-boleto .sel { font: 800 1.5rem/1.1 var(--font-body); }
+.hz-boleto .par { font-size: .8rem; color: #5a6080; padding-right: 74px; } .hz-boleto .sel { font: 800 1.5rem/1.1 var(--font-body); padding-right: 74px; }
 .hz-boleto .mo { font: 800 2.6rem/1 var(--font-mono); letter-spacing: -.02em; }
 .hz-boleto .casa { font-size: .85rem; color: #5a6080; }
 .hz-boleto hr { border: 0; border-top: 2px dashed #d6dbea; margin: 6px 0; width: 100%; }
@@ -1449,15 +1463,20 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
     <div class="hz-pie" id="hz-pie"></div>
   </div>
   <div class="pf" id="pf" hidden role="dialog" aria-modal="true" aria-labelledby="pf-nombre">
-    <div class="pf-portada" id="pf-portada"><button type="button" class="pf-x" id="pf-cerrar" aria-label="Cerrar">✕</button></div>
+    <div class="pf-portada" id="pf-portada"><button type="button" class="pf-x" id="pf-cerrar" aria-label="Cerrar">✕</button>
+      <label class="pf-cam pf-cam-portada" id="pf-cam-portada" hidden>📷 Cambiar portada<input type="file" accept="image/*" id="pf-in-portada" hidden></label></div>
+    <div class="pf-ver" id="pf-ver" hidden><button type="button" class="pf-x" id="pf-ver-x" aria-label="Cerrar">✕</button><div id="pf-ver-c" class="hz-cuerpo"></div><div id="pf-ver-pie" class="hz-pie"></div></div>
     <div class="pf-cuerpo">
-      <div class="pf-cab"><span class="avatar pf-av" id="pf-av"></span>
+      <div class="pf-cab"><span class="pf-av-caja"><span class="avatar pf-av" id="pf-av"></span>
+        <label class="pf-cam pf-cam-av" id="pf-cam-av" hidden aria-label="Cambiar foto de perfil">📷<input type="file" accept="image/*" id="pf-in-av" hidden></label></span>
         <div><b id="pf-nombre"></b><span id="pf-frase" class="pf-frase"></span></div></div>
       <p id="pf-bio" class="pf-bio"></p>
       <div class="pf-chips" id="pf-chips"></div>
       <div class="pf-stats" id="pf-stats"></div>
       <div id="pf-mejor"></div>
       <div><h2 class="pf-h">🏅 Insignias</h2><div class="pf-insignias" id="pf-insignias"></div></div>
+      <div><div class="pf-tk-cab"><h2 class="pf-h">🎟️ Tickets</h2><button type="button" id="pf-subir" class="chico" hidden>➕ Subir ticket</button></div>
+        <div class="pf-grid" id="pf-grid"></div></div>
       <div class="pf-acciones"><button type="button" id="pf-historias" class="primary" hidden></button><button type="button" id="pf-editar" hidden>✏️ Editar mi perfil</button></div>
       <form class="pf-editor" id="pf-editor" hidden>
         <h2 class="pf-h">✏️ Tu perfil</h2>
@@ -1465,7 +1484,10 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
           <label class="foto">📷 Foto<input id="pf-e-foto" type="file" accept="image/*" hidden></label><button type="button" id="pf-e-sinfoto">Quitar foto</button></div>
         <label>Tu carita (si no subes foto)</label><div class="pf-emojis" id="pf-e-emojis"></div>
         <label>Tu color</label><div class="swatches" id="pf-e-colores"></div>
-        <label>Portada</label><div class="pf-portadas" id="pf-e-portadas"></div>
+        <label>Portada</label>
+        <div class="pf-foto-fila"><label class="foto">📷 Foto de portada<input id="pf-e-portada-foto" type="file" accept="image/*" hidden></label><button type="button" id="pf-e-sinportada">Quitar foto de portada</button></div>
+        <small class="hint" style="margin:0">Si no subes foto, se usa uno de estos fondos:</small>
+        <div class="pf-portadas" id="pf-e-portadas"></div>
         <label for="pf-e-frase">Tu frase (sale junto a tu nombre)</label><input id="pf-e-frase" maxlength="40" placeholder="Ej. El rey de los unders">
         <label for="pf-e-bio">Sobre ti</label><textarea id="pf-e-bio" maxlength="140" placeholder="Qué ligas sigues, tu equipo, tu estilo…"></textarea>
         <label class="hz-chk"><input type="checkbox" id="pf-e-dinero"> Mostrar mis ganancias en dinero (si no, solo porcentajes)</label>
@@ -1478,6 +1500,7 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
       <b id="cmp-tit">📤 ¿Qué hacemos con esta apuesta?</b>
       <div id="cmp-prev" class="hz-prev"></div>
       <button type="button" class="primary" id="cmp-historia">📸 Subirla a mi historia</button>
+      <button type="button" id="cmp-muro">🎟️ Subirla a mi perfil</button>
       <button type="button" id="cmp-registrar">📝 Registrarla en mi Bitácora (leo el boleto)</button>
       <button type="button" id="cmp-chat">💬 Mandarla al chat del grupo</button>
       <button type="button" id="cmp-cancelar">Cancelar</button>
@@ -1485,8 +1508,9 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
   </div>
   <div class="festejo" id="hz-nueva" hidden role="dialog" aria-modal="true" aria-labelledby="hz-n-tit">
     <form class="festejo-caja hz-nueva-caja" id="hz-form">
-      <b id="hz-n-tit">📸 Subir a mi historia</b>
-      <p>Dura 24 horas. Si es una apuesta registrada, se califica sola cuando termine el partido.</p>
+      <b id="hz-n-tit">📸 Compartir apuesta</b>
+      <div class="seg" id="hz-donde" role="group" aria-label="Dónde publicarla"><button type="button" data-d="historia" aria-selected="true">📸 Historia 24 h</button><button type="button" data-d="muro" aria-selected="false">🎟️ Mi perfil</button></div>
+      <p id="hz-n-ayuda">Dura 24 horas. Si es una apuesta registrada, se califica sola cuando termine el partido.</p>
       <div id="hz-prev" class="hz-prev"></div>
       <label class="foto hz-foto" id="hz-foto-l">📷 Agregar captura del boleto<input id="hz-foto" type="file" accept="image/*"></label>
       <textarea id="hz-texto" maxlength="300" placeholder="¿Por qué la jugaste? (opcional)"></textarea>
@@ -2849,11 +2873,17 @@ async function abrirPerfil(uid) {
   if (!pfDatos) { $("pf-nombre").textContent = "No encontré ese perfil."; return; }
   pintarPerfil();
 }
+function pintarPerfilCabeza() {
+  const d = pfDatos, pr = d.perfil || {}, eq = d.equipo;
+  const port = pr.portada === "equipo" && eq && eq.color ? `linear-gradient(140deg, ${eq.color}, ${eq.color2 || "#000"})` : (PORTADAS[pr.portada] || PORTADAS.cancha)[1];
+  $("pf-portada").style.backgroundImage = pr.portada_foto && /^data:image\//.test(pr.portada_foto)
+    ? `linear-gradient(180deg, transparent 55%, rgba(0,0,0,.35)), url("${pr.portada_foto}")` : port;
+  ponerCara($("pf-av"), { ...pr, foto: d.foto }, d.nombre);
+}
 function pintarPerfil() {
   const d = pfDatos, pr = d.perfil || {}, st = d.stats || {}, eq = d.equipo;
-  const port = pr.portada === "equipo" && eq && eq.color ? `linear-gradient(140deg, ${eq.color}, ${eq.color2 || "#000"})` : (PORTADAS[pr.portada] || PORTADAS.cancha)[1];
-  $("pf-portada").style.background = port;
-  ponerCara($("pf-av"), { ...pr, foto: d.foto }, d.nombre);
+  pintarPerfilCabeza();
+  $("pf-cam-portada").hidden = $("pf-cam-av").hidden = !d.mio;
   $("pf-nombre").textContent = d.nombre; $("pf-frase").textContent = pr.frase || ""; $("pf-bio").textContent = pr.bio || "";
   const ch = $("pf-chips"); ch.innerHTML = "";
   if (eq && eq.nombre) { const c = el("span"); if (okUrl(eq.logo)) { const im = el("img"); im.src = eq.logo; im.alt = ""; c.append(im); } c.append("Le va a " + eq.nombre); ch.append(c); }
@@ -2871,21 +2901,61 @@ function pintarPerfil() {
   const ins = $("pf-insignias"); ins.innerHTML = "";
   (d.logros || []).forEach(k => { const l = LOGROS[k]; if (l) { const s = el("span", "", `${l[0]} ${l[1]}`); s.title = l[2]; ins.append(s); } });
   if (!ins.childElementCount) ins.append(el("span", "", "Todavía ninguna"));
+  pintarGrid();
   const hb = $("pf-historias"); hb.hidden = !d.historias; hb.textContent = `📸 Ver sus historias (${d.historias})`;
   hb.onclick = () => { const gi = hzGrupos.findIndex(g => g.l[0] && g.l[0].uid === d.uid); cerrarPerfil(); if (gi >= 0) verHistoria(gi); };
   $("pf-editar").hidden = !d.mio;
 }
+function pintarGrid() {
+  const d = pfDatos, g = $("pf-grid"); g.innerHTML = "";
+  $("pf-subir").hidden = !d.mio;
+  const lista = d.muro || [];
+  if (!lista.length) { g.append(el("div", "vacio", d.mio ? "Sube tus tickets para presumirlos aquí (los ganados… y los perdidos 😅)." : "Todavía no sube tickets.")); return; }
+  lista.forEach(t => {
+    const b = el("button"); b.type = "button"; b.setAttribute("aria-label", "Ver ticket" + (t.texto ? ": " + t.texto : ""));
+    b.style.backgroundImage = `url("/api/img?id=${encodeURIComponent(t.id)}&t=${encodeURIComponent(token)}")`;
+    const r = t.apuesta && t.apuesta.resultado;
+    if (r) b.append(el("span", "", r === "gana" ? "✅" : r === "pierde" ? "❌" : "➖"));
+    if (t.apuesta) b.append(el("small", "", aAmericano(Number(t.apuesta.cuota))));
+    b.onclick = () => verTicket(t); g.append(b);
+  });
+}
+function verTicket(t) {
+  const v = $("pf-ver"), c = $("pf-ver-c"), pie = $("pf-ver-pie"); c.innerHTML = ""; pie.innerHTML = "";
+  const im = el("img"); im.alt = "Ticket"; im.src = `/api/img?id=${encodeURIComponent(t.id)}&t=${encodeURIComponent(token)}`; c.append(im);
+  if (t.apuesta) c.append(boletoApuesta(t.apuesta));
+  if (t.texto) c.append(el("p", "hz-txt", t.texto));
+  if (t.link && /^https:\/\//.test(t.link)) { const a = el("a", "hz-link", "🔁 Replicar apuesta ↗"); a.href = t.link; a.target = "_blank"; a.rel = "noopener noreferrer"; c.append(a); }
+  c.append(el("small", "", new Date(t.creada).toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" })));
+  const fu = el("button", "", "🔥 " + (t.reacciones || 0)); fu.type = "button";
+  fu.onclick = async () => { fu.disabled = true; try { await api("reaccionar", { id: t.id, emoji: "🔥" }); const on = fu.getAttribute("aria-pressed") !== "true";
+    t.reacciones = Math.max(0, (t.reacciones || 0) + (on ? 1 : -1)); fu.setAttribute("aria-pressed", String(on)); fu.textContent = "🔥 " + t.reacciones; } catch (e) {} fu.disabled = false; };
+  pie.append(fu);
+  if (pfDatos.mio && !(t.apuesta && t.apuesta.resultado)) {
+    const del = el("button", "", "🗑️ Borrar"); del.type = "button";
+    del.onclick = async () => { if (del.dataset.ok !== "1") { del.dataset.ok = "1"; del.textContent = "¿Seguro?"; return; }
+      try { await api("bajar", { id: t.id }); v.hidden = true; abrirPerfil(pfDatos.uid); } catch (e) { estado(e.message || "No se pudo borrar."); } };
+    pie.append(del);
+  }
+  v.hidden = false;
+}
+$("pf-ver-x").addEventListener("click", () => { $("pf-ver").hidden = true; });
+$("pf-subir").addEventListener("click", () => abrirNuevaHistoria(null, { donde: "muro" }));
 function cerrarPerfil() { $("pf").hidden = true; document.body.style.overflow = ""; }
 $("pf-cerrar").addEventListener("click", cerrarPerfil);
 $("menu-perfil").addEventListener("click", async () => { cerrarMenu && cerrarMenu(); const a = await cargarAvatares(); const yo = Object.entries(a).find(([, v]) => v.yo); if (yo) abrirPerfil(yo[0]); });
 $("pf-editar").addEventListener("click", () => {
   const pr = pfDatos.perfil || {};
-  pfEdit = { emoji: pr.emoji || "", color: pr.color || "", portada: pr.portada || "cancha", foto: pfDatos.foto || null };
+  pfEdit = { emoji: pr.emoji || "", color: pr.color || "", portada: pr.portada || "cancha", foto: pfDatos.foto || null, portada_foto: pr.portada_foto || null };
   $("pf-e-frase").value = pr.frase || ""; $("pf-e-bio").value = pr.bio || ""; $("pf-e-dinero").checked = !!pr.mostrar_dinero;
   pintarEditor(); $("pf-editor").hidden = false; setTimeout(() => $("pf-editor").scrollIntoView({ behavior: "smooth" }), 50);
 });
 function pintarEditor() {
   ponerCara($("pf-e-av"), pfEdit, pfDatos.nombre);
+  // vista previa en vivo arriba, como en Facebook
+  pfDatos = { ...pfDatos, foto: pfEdit.foto, perfil: { ...(pfDatos.perfil || {}), emoji: pfEdit.emoji, color: pfEdit.color, portada: pfEdit.portada, portada_foto: pfEdit.portada_foto } };
+  pintarPerfilCabeza();
+  $("pf-e-sinportada").hidden = !pfEdit.portada_foto;
   const em = $("pf-e-emojis"); em.innerHTML = "";
   CARITAS.forEach(c => { const b = el("button", "", c); b.type = "button"; b.setAttribute("aria-pressed", String(pfEdit.emoji === c)); b.onclick = () => { pfEdit.emoji = c; pintarEditor(); }; em.append(b); });
   const co = $("pf-e-colores"); co.innerHTML = "";
@@ -2900,8 +2970,41 @@ $("pf-e-foto").addEventListener("change", async () => {
   const f = $("pf-e-foto").files[0]; if (!f) return;
   try { pfEdit.foto = await fotoPerfil(f); pintarEditor(); } catch (e) { estado(e.message || "No se pudo usar esa foto."); }
 });
+// portada: recorte horizontal 1200×450, liviano
+function fotoPortada(file) {
+  return new Promise((ok, mal) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onerror = () => mal(new Error("Ese archivo no es una imagen."));
+    img.onload = () => {
+      const W = 1200, H = 450, r = W / H; let sw = img.width, sh = img.width / r;
+      if (sh > img.height) { sh = img.height; sw = sh * r; }
+      const c = document.createElement("canvas"); c.width = W; c.height = H;
+      c.getContext("2d").drawImage(img, (img.width - sw) / 2, (img.height - sh) / 2, sw, sh, 0, 0, W, H);
+      URL.revokeObjectURL(url);
+      let q = .78, d = c.toDataURL("image/jpeg", q); while (d.length > 240000 && q > .3) { q -= .08; d = c.toDataURL("image/jpeg", q); }
+      d.length > 255000 ? mal(new Error("La portada quedó muy pesada, prueba otra foto.")) : ok(d);
+    };
+    img.src = url;
+  });
+}
+$("pf-e-portada-foto").addEventListener("change", async () => {
+  const f = $("pf-e-portada-foto").files[0]; if (!f) return;
+  try { pfEdit.portada_foto = await fotoPortada(f); pintarEditor(); } catch (e) { estado(e.message); }
+});
+$("pf-e-sinportada").addEventListener("click", () => { pfEdit.portada_foto = null; $("pf-e-portada-foto").value = ""; pintarEditor(); });
+// atajos de cámara sobre la portada y la foto (como Facebook): abren el editor ya con la foto puesta
+async function atajoFoto(input, campo, fn) {
+  const f = input.files[0]; if (!f) return;
+  if ($("pf-editor").hidden) $("pf-editar").click();
+  try { pfEdit[campo] = await fn(f); pintarEditor(); estado("Revisa cómo quedó y toca Guardar."); setTimeout(() => estado(""), 3500); }
+  catch (e) { estado(e.message); }
+  input.value = "";
+}
+$("pf-in-portada").addEventListener("change", () => atajoFoto($("pf-in-portada"), "portada_foto", fotoPortada));
+$("pf-in-av").addEventListener("change", () => atajoFoto($("pf-in-av"), "foto", fotoPerfil));
+$("pf-e-cancelar").addEventListener("click", () => { if (pfDatos) abrirPerfil(pfDatos.uid); });
 $("pf-e-sinfoto").addEventListener("click", () => { pfEdit.foto = null; $("pf-e-foto").value = ""; pintarEditor(); });
-$("pf-e-cancelar").addEventListener("click", () => { $("pf-editor").hidden = true; });
+
 $("pf-editor").addEventListener("submit", async e => {
   e.preventDefault(); $("pf-e-guardar").disabled = true;
   try {
@@ -3044,8 +3147,16 @@ $("hz-sig").addEventListener("click", sigHistoria); $("hz-ant").addEventListener
 document.addEventListener("keydown", e => { if ($("hz-visor").hidden) return;
   if (e.key === "Escape") cerrarHistoria(); else if (e.key === "ArrowRight") sigHistoria(); else if (e.key === "ArrowLeft") antHistoria(); });
 // nueva historia: desde 📢 en la Bitácora (apuesta registrada) o desde "+" (captura o texto)
-let hzLink = null;
+let hzLink = null, hzDonde = "historia";
+function ponerDonde(d) {
+  hzDonde = d;
+  document.querySelectorAll("#hz-donde [data-d]").forEach(x => x.setAttribute("aria-selected", String(x.dataset.d === d)));
+  $("hz-n-ayuda").textContent = d === "muro" ? "Se queda en tu perfil como foto, para presumirla. Sube la captura del ticket." : "Dura 24 horas. Si es una apuesta registrada, se califica sola cuando termine el partido.";
+  $("hz-subir").textContent = d === "muro" ? "Subir a mi perfil" : "Subir historia";
+}
+document.querySelectorAll("#hz-donde [data-d]").forEach(x => x.addEventListener("click", () => ponerDonde(x.dataset.d)));
 function abrirNuevaHistoria(b, extra = {}) {
+  ponerDonde(extra.donde || "historia");
   hzNueva = b; hzFoto = extra.foto || null; hzLink = extra.link || null; $("hz-foto").value = ""; $("hz-texto").value = extra.texto || "";
   const pv = $("hz-prev"); pv.innerHTML = "";
   if (hzFoto) { const im = el("img"); im.src = hzFoto; im.alt = "Vista previa"; pv.append(im); }
@@ -3067,13 +3178,14 @@ $("hz-foto").addEventListener("change", async () => {
 $("hz-form").addEventListener("submit", async e => {
   e.preventDefault();
   const texto = $("hz-texto").value.trim();
+  if (hzDonde === "muro" && !hzFoto) { estado("📷 Para tu perfil sube la foto del ticket."); return; }
   if (!hzNueva && !hzFoto && !texto) { estado("Sube una captura o escribe algo para tu historia."); return; }
   $("hz-subir").disabled = true;
   try {
-    await api("publicar", { texto, imagen: hzFoto, link: hzLink, historia: true, apuesta_id: hzNueva ? hzNueva.id : null, mostrar_monto: !!(hzNueva && $("hz-monto").checked) });
+    await api("publicar", { texto, imagen: hzFoto, link: hzLink, historia: hzDonde === "historia", muro: hzDonde === "muro", apuesta_id: hzNueva ? hzNueva.id : null, mostrar_monto: !!(hzNueva && $("hz-monto").checked) });
     $("hz-nueva").hidden = true; hzNueva = null; hzFoto = null;
-    estado("📸 Listo, ya está en tu historia por 24 horas."); setTimeout(() => estado(""), 3500);
-    await cargarHistorias();
+    estado(hzDonde === "muro" ? "🎟️ Listo, ya está en tu perfil." : "📸 Listo, ya está en tu historia por 24 horas."); setTimeout(() => estado(""), 3500);
+    if (hzDonde === "muro" && !$("pf").hidden && pfDatos) abrirPerfil(pfDatos.uid); else await cargarHistorias();
   } catch (err) { estado(err.message || "No se pudo subir la historia."); }
   $("hz-subir").disabled = false;
 });
@@ -3101,6 +3213,7 @@ async function revisarCompartido() {
 }
 $("cmp-cancelar").addEventListener("click", () => { $("cmp").hidden = true; cmpDatos = null; });
 $("cmp-historia").addEventListener("click", () => { $("cmp").hidden = true; abrirNuevaHistoria(null, { foto: cmpDatos.foto, link: cmpDatos.link, texto: cmpDatos.texto }); });
+$("cmp-muro").addEventListener("click", () => { $("cmp").hidden = true; abrirNuevaHistoria(null, { foto: cmpDatos.foto, link: cmpDatos.link, texto: cmpDatos.texto, donde: "muro" }); });
 $("cmp-chat").addEventListener("click", () => {
   $("cmp").hidden = true; irA("comunidad");
   if (cmpDatos.foto) { fotoData = cmpDatos.foto; $("p-mini-img").src = fotoData; $("p-mini-txt").textContent = Math.round(fotoData.length * .75 / 1024) + " KB"; $("p-mini").hidden = false; }
