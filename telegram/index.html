@@ -318,6 +318,11 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
 /* 📸 historias de 24 h */
 .historias { display: flex; gap: 12px; overflow-x: auto; padding: 4px 2px 8px; scrollbar-width: none; }
 .historias::-webkit-scrollbar { display: none; }
+.hz-global { margin-block: -6px -4px; }
+@media (prefers-reduced-motion: no-preference) { .hz-global:not([hidden]) { animation: hzbaja .35s cubic-bezier(.2,.9,.25,1); } }
+@keyframes hzbaja { from { opacity: 0; transform: translateY(-14px); } }
+.hz-jala { position: fixed; left: 50%; top: 0; z-index: 60; width: 40px; height: 40px; margin-left: -20px; border-radius: 50%; background: var(--surface); border: 1px solid var(--line);
+  display: grid; place-items: center; box-shadow: 0 6px 18px rgba(0,0,0,.25); transform: translateY(-60px); opacity: 0; pointer-events: none; }
 .hz-burb { flex: 0 0 auto; width: 70px; display: grid; justify-items: center; gap: 4px; padding: 0; border: 0; background: none; color: var(--fg); font: 500 .74rem var(--font-body); }
 .hz-aro { width: 64px; height: 64px; border-radius: 50%; padding: 3px; background: conic-gradient(from 210deg, #ffb000, #e0567a, #8e44ad, #2d5bd3, #ffb000); display: grid; place-items: center; }
 .hz-burb.vista .hz-aro { background: var(--line); }
@@ -1280,6 +1285,8 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
     </div>
     <div class="quien" id="quien" hidden><span id="q-nombre"></span><button type="button" id="refrescar" aria-label="Actualizar">↻</button></div>
   </header>
+  <div class="historias hz-global" data-hz id="hz-global" hidden aria-label="Historias de 24 horas: qué estamos apostando"></div>
+  <div class="hz-jala" id="hz-jala" aria-hidden="true"><span>📸</span></div>
   <div class="instalar" id="instalar" hidden>
     <span id="inst-txt">📲 Instala la bitácora como app en tu celular.</span>
     <span class="inst-btns"><button type="button" class="primary" id="inst-si">Instalar</button><button type="button" id="inst-no">Ahora no</button></span>
@@ -1435,8 +1442,7 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
 
   <!-- ===================== COMUNIDAD ===================== -->
   <div id="v-comunidad" class="vista section" hidden>
-    <div class="historias" data-hz aria-label="Historias de 24 horas: qué estamos apostando"></div>
-    <p class="hint">Arriba, las <b>historias</b>: lo que el grupo está apostando hoy (duran 24 h). Abajo, el chat del grupo.</p>
+    <p class="hint">Arriba de la app salen las <b>historias</b>: lo que el grupo está apostando hoy (duran 24 h). Si ya las viste se esconden; desliza hacia abajo para volver a verlas. Aquí abajo, el chat del grupo.</p>
     <div class="feed" id="feed"></div>
     <form class="composer" id="pub">
       <textarea id="p-texto" maxlength="1000" placeholder="¿Qué vas a jugar y por qué?"></textarea>
@@ -1860,7 +1866,6 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
 
   <!-- ===================== INICIO ===================== -->
   <div id="v-inicio" class="vista section" hidden>
-    <div class="historias" data-hz aria-label="Historias de 24 horas: qué estamos apostando"></div>
     <div class="head"><span class="hint" id="ini-fecha"></span><button type="button" id="ini-editar" class="chico">✏️ Editar inicio</button></div>
     <div class="inicio" id="inicio"></div>
   </div>
@@ -2207,6 +2212,7 @@ async function api(op, datos) {
 }
 function estado(msg) { const s = $("status"); s.textContent = msg || ""; s.hidden = !msg; }
 function mostrarLogin(msg) {
+  $("hz-global").hidden = true; hzAbierto = false;
   [...["v-bot", "v-normal", "v-reg", "v-resultados", "v-comunidad", "v-hoy", "v-lineas", "v-quiniela", "v-retos", "v-practica", "v-equipo", "v-opiniones", "v-avisos", "v-admin", "v-mate", "v-archivo", "v-duelo"], "quien", "abrir-menu", "sec-actual"].forEach(id => $(id).hidden = true);
   $("marca").hidden = false; cerrarMenu();
   $("v-login").hidden = false; estado(msg || "");
@@ -2236,7 +2242,7 @@ async function cargar() {
       cobro: x.cobro != null ? Number(x.cobro) : null, montoOrig: x.monto_original != null ? Number(x.monto_original) : null,
       cuotaOrig: x.cuota_original != null ? Number(x.cuota_original) : null }));
     listo = true; estado("");
-    setTimeout(revisarCompartido, 300);
+    setTimeout(revisarCompartido, 300); hzRefrescar(true);
     $("v-login").hidden = true; $("quien").hidden = false; $("abrir-menu").hidden = false;
     $("marca").hidden = true; $("sec-actual").hidden = false;
     $("menu-nombre").textContent = r.nombre || "—";
@@ -2271,7 +2277,7 @@ function irA(v) {
   if (vista === "hoy") cargarHoy();
   if (vista === "bot") { cargarSenales(); pintarSuerte(); avisoRacha(); }
   if (vista === "comunidad") cargarFeed();
-  if (vista === "inicio") cargarHistorias();
+  hzRefrescar();
   if (vista === "lineas") cargarLineas();
   if (vista === "conviene") cargarConviene();
   if (vista === "guru" || vista === "duelo") cargarGuru();
@@ -3094,9 +3100,39 @@ function pintarHistorias(lista) {
       aro.append(cara); b.append(aro, el("span", "hz-n", g.autor)); b.onclick = () => verHistoria(gi);
       cont.append(b);
     });
-    cont.hidden = false;
+    if (cont.id !== "hz-global") cont.hidden = false;
   });
+  hzActualizarGlobal();
 }
+// barra de historias arriba de TODA la app: se ve si hay historias nuevas; si ya las viste se esconde
+// y vuelve a salir al deslizar hacia abajo estando hasta arriba (como "jalar para actualizar").
+let hzAbierto = false, hzCargadas = 0;
+function hzActualizarGlobal() {
+  const nuevas = hzGrupos.some(g => g.nueva && g.k !== "__yo");
+  const g = $("hz-global"), ver = !!(listo && token && (nuevas || hzAbierto));
+  if (g.hidden === ver) g.hidden = !ver;
+}
+function hzRefrescar(forzar) { if (!listo) return; if (forzar || Date.now() - hzCargadas > 60000) { hzCargadas = Date.now(); cargarHistorias(); } }
+(() => {
+  let y0 = null, jalado = 0;
+  const jala = $("hz-jala");
+  const soltar = () => { jala.style.transition = "transform .25s, opacity .25s"; jala.style.transform = ""; jala.style.opacity = ""; y0 = null; };
+  addEventListener("touchstart", e => { y0 = window.scrollY <= 0 && $("hz-global").hidden && listo ? e.touches[0].clientY : null; jalado = 0; jala.style.transition = "none"; }, { passive: true });
+  addEventListener("touchmove", e => {
+    if (y0 == null) return;
+    jalado = e.touches[0].clientY - y0;
+    if (jalado > 0) { const k = Math.min(1, jalado / 90); jala.style.transform = `translateY(${-60 + k * 90}px) rotate(${k * 180}deg)`; jala.style.opacity = k; }
+  }, { passive: true });
+  addEventListener("touchend", () => {
+    if (y0 != null && jalado > 90) { hzAbierto = true; hzActualizarGlobal(); hzRefrescar(true); try { navigator.vibrate && navigator.vibrate(12); } catch (e) {} }
+    soltar();
+  });
+  addEventListener("wheel", e => { if (window.scrollY <= 0 && e.deltaY < -40 && $("hz-global").hidden && listo) { hzAbierto = true; hzActualizarGlobal(); hzRefrescar(true); } }, { passive: true });
+  // al bajar en la página, si ya no hay nada nuevo, se vuelve a esconder
+  addEventListener("scroll", () => { if (hzAbierto && window.scrollY > 260 && !hzGrupos.some(g => g.nueva && g.k !== "__yo")) { hzAbierto = false; hzActualizarGlobal(); } }, { passive: true });
+  setInterval(() => { if (!document.hidden) hzRefrescar(true); }, 120000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) hzRefrescar(); });
+})();
 function verHistoria(gi, i = null) {
   hzG = gi; const g = hzGrupos[gi]; if (!g) return cerrarHistoria();
   if (i == null) { const v = hzVistas(); i = Math.max(0, g.l.findIndex(p => !v.includes(p.id))); }
