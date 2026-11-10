@@ -7,21 +7,6 @@ jobs:
   d:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - run: pip install requests -q
-      - name: Probar Polymarket
+      - name: Estadio Morelos en Wikipedia
         run: |
-          python3 polymarket.py
-          python3 - <<'P'
-          import datetime as dt, polymarket, pronosticos as pr
-          hoy = dt.datetime.now(dt.timezone.utc).date()
-          for ruta in polymarket.CODIGOS:
-              evs = [e for d in range(0, 3) for e in pr._dia_espn(ruta, hoy + dt.timedelta(days=d)) or [] if e["estado"] == "pre"]
-              ok = 0
-              for e in evs:
-                  m = polymarket.para_partido(ruta, [e["local"]["nombre"], e["local"]["completo"]], [e["visita"]["nombre"], e["visita"]["completo"]], e["fecha"])
-                  ok += bool(m)
-                  print("  ", "✅" if m else "❌", ruta, e["local"]["completo"], "vs", e["visita"]["completo"], e["fecha"], m)
-              print("==", ruta, ok, "/", len(evs))
-          print(polymarket.para_seleccion("americanfootball_nfl", "Atlanta Falcons", "Cincinnati Bengals", "2026-11-08T14:30:00+00:00", "Cincinnati Bengals"))
-          P
+          for lang in en es; do curl -s "https://$lang.wikipedia.org/w/api.php?action=query&prop=pageimages&piprop=thumbnail&pithumbsize=1600&redirects=1&format=json&titles=Estadio%20Morelos" -H "user-agent: bitacora-diag" ; echo; done
