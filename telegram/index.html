@@ -269,10 +269,19 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
 .ap-tag.ok { color: var(--win); border-color: var(--win); } .ap-tag.no { color: var(--loss); border-color: var(--loss); }
 /* 👤 perfiles */
 .pf { position: fixed; inset: 0; z-index: 110; background: var(--bg); overflow-y: auto; overscroll-behavior: contain; }
-.pf-portada { height: min(46vw, 230px); position: relative; background: linear-gradient(160deg,#0f5132,#1d7a52 60%,#0a3324); background-size: cover; background-position: center; }
+.pf-portada { width: 100%; aspect-ratio: 8 / 3; position: relative; background: linear-gradient(160deg,#0f5132,#1d7a52 60%,#0a3324); background-size: cover; background-position: center; }
 .pf-cam { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; background: rgba(0,0,0,.55); color: #fff; border-radius: 999px; font: 600 .8rem var(--font-body); backdrop-filter: blur(4px); }
 .pf-cam-portada { position: absolute; left: 12px; top: max(12px, env(safe-area-inset-top)); padding: 8px 12px; }
 .pf-av-caja { position: relative; flex: 0 0 auto; }
+.pf-acom { position: absolute; inset: 0; z-index: 4; }
+.pf-acom canvas { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+.pf-acom canvas:active { cursor: grabbing; }
+.pf-acom-tip { position: absolute; left: 50%; top: 10px; transform: translateX(-50%); background: rgba(0,0,0,.6); color: #fff; padding: 5px 10px; border-radius: 999px; font-size: .74rem; white-space: nowrap; pointer-events: none; }
+.pf-acom-bar { position: absolute; left: 8px; right: 8px; bottom: -56px; display: flex; gap: 8px; align-items: center; background: var(--surface); border: 1px solid var(--line); padding: 6px 8px; border-radius: 14px; color: var(--fg); }
+.pf-acom-bar input { flex: 1; min-width: 60px; }
+.pf-acom-bar button { padding: 7px 12px; font-size: .85rem; }
+.pf.acomodando .pf-cuerpo { margin-top: 62px; }
+.pf.acomodando .pf-x, .pf.acomodando .pf-cam { display: none; }
 .pf-cam-av { position: absolute; right: 0; bottom: 4px; width: 32px; height: 32px; justify-content: center; border: 2px solid var(--bg); }
 .pf-x { position: absolute; right: 12px; top: max(12px, env(safe-area-inset-top)); background: rgba(0,0,0,.35); color: #fff; border: 0; border-radius: 50%; width: 38px; height: 38px; padding: 0; font-size: 1.1rem; }
 .pf-cuerpo { max-width: 640px; margin: -46px auto 0; padding: 0 16px 40px; display: grid; gap: 14px; position: relative; }
@@ -1470,7 +1479,11 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
   </div>
   <div class="pf" id="pf" hidden role="dialog" aria-modal="true" aria-labelledby="pf-nombre">
     <div class="pf-portada" id="pf-portada"><button type="button" class="pf-x" id="pf-cerrar" aria-label="Cerrar">✕</button>
-      <label class="pf-cam pf-cam-portada" id="pf-cam-portada" hidden>📷 Cambiar portada<input type="file" accept="image/*" id="pf-in-portada" hidden></label></div>
+      <label class="pf-cam pf-cam-portada" id="pf-cam-portada" hidden>📷 Cambiar portada<input type="file" accept="image/*" id="pf-in-portada" hidden></label>
+      <div class="pf-acom" id="pf-acom" hidden><canvas id="pf-acom-cv" aria-label="Arrastra la foto para acomodarla"></canvas>
+        <span class="pf-acom-tip">✋ Arrastra para acomodar · pellizca o usa la barra para acercar</span>
+        <div class="pf-acom-bar"><span>🔍</span><input type="range" id="pf-acom-zoom" min="1" max="3" step="0.01" value="1" aria-label="Acercar">
+          <button type="button" id="pf-acom-no">Cancelar</button><button type="button" class="primary" id="pf-acom-ok">Listo</button></div></div></div>
     <div class="pf-ver" id="pf-ver" hidden><button type="button" class="pf-x" id="pf-ver-x" aria-label="Cerrar">✕</button><div id="pf-ver-c" class="hz-cuerpo"></div><div id="pf-ver-pie" class="hz-pie"></div></div>
     <div class="pf-cuerpo">
       <div class="pf-cab"><span class="pf-av-caja"><span class="avatar pf-av" id="pf-av"></span>
@@ -1491,7 +1504,7 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
         <label>Tu carita (si no subes foto)</label><div class="pf-emojis" id="pf-e-emojis"></div>
         <label>Tu color</label><div class="swatches" id="pf-e-colores"></div>
         <label>Portada</label>
-        <div class="pf-foto-fila"><label class="foto">📷 Foto de portada<input id="pf-e-portada-foto" type="file" accept="image/*" hidden></label><button type="button" id="pf-e-sinportada">Quitar foto de portada</button></div>
+        <div class="pf-foto-fila"><label class="foto">📷 Foto de portada<input id="pf-e-portada-foto" type="file" accept="image/*" hidden></label><button type="button" id="pf-e-acomodar">↔️ Acomodar</button><button type="button" id="pf-e-sinportada">Quitar</button></div>
         <small class="hint" style="margin:0">Si no subes foto, se usa uno de estos fondos:</small>
         <div class="pf-portadas" id="pf-e-portadas"></div>
         <label for="pf-e-frase">Tu frase (sale junto a tu nombre)</label><input id="pf-e-frase" maxlength="40" placeholder="Ej. El rey de los unders">
@@ -2954,14 +2967,14 @@ $("pf-editar").addEventListener("click", () => {
   const pr = pfDatos.perfil || {};
   pfEdit = { emoji: pr.emoji || "", color: pr.color || "", portada: pr.portada || "cancha", foto: pfDatos.foto || null, portada_foto: pr.portada_foto || null };
   $("pf-e-frase").value = pr.frase || ""; $("pf-e-bio").value = pr.bio || ""; $("pf-e-dinero").checked = !!pr.mostrar_dinero;
-  pintarEditor(); $("pf-editor").hidden = false; setTimeout(() => $("pf-editor").scrollIntoView({ behavior: "smooth" }), 50);
+  pintarEditor(); $("pf-editor").hidden = false; setTimeout(() => { if (!$("pf").classList.contains("acomodando")) $("pf-editor").scrollIntoView({ behavior: "smooth" }); }, 50);
 });
 function pintarEditor() {
   ponerCara($("pf-e-av"), pfEdit, pfDatos.nombre);
   // vista previa en vivo arriba, como en Facebook
   pfDatos = { ...pfDatos, foto: pfEdit.foto, perfil: { ...(pfDatos.perfil || {}), emoji: pfEdit.emoji, color: pfEdit.color, portada: pfEdit.portada, portada_foto: pfEdit.portada_foto } };
   pintarPerfilCabeza();
-  $("pf-e-sinportada").hidden = !pfEdit.portada_foto;
+  $("pf-e-sinportada").hidden = $("pf-e-acomodar").hidden = !pfEdit.portada_foto;
   const em = $("pf-e-emojis"); em.innerHTML = "";
   CARITAS.forEach(c => { const b = el("button", "", c); b.type = "button"; b.setAttribute("aria-pressed", String(pfEdit.emoji === c)); b.onclick = () => { pfEdit.emoji = c; pintarEditor(); }; em.append(b); });
   const co = $("pf-e-colores"); co.innerHTML = "";
@@ -2993,9 +3006,64 @@ function fotoPortada(file) {
     img.src = url;
   });
 }
-$("pf-e-portada-foto").addEventListener("change", async () => {
+// ↔️ acomodar la portada: arrastrar y acercar, como en Facebook; al final se recorta a 1200×450
+let acom = null;
+function acomodarPortada(src) {
+  $("pf").classList.add("acomodando");
+  const img = new Image();
+  img.onerror = () => { $("pf").classList.remove("acomodando"); estado("Esa imagen no se pudo abrir."); };
+  img.onload = () => {
+    const cv = $("pf-acom-cv"), caja = $("pf-portada"), dpr = Math.min(2, devicePixelRatio || 1);
+    $("pf-acom").hidden = false; $("pf").classList.add("acomodando");
+    cv.width = Math.round(caja.clientWidth * dpr); cv.height = Math.round(caja.clientHeight * dpr);
+    acom = { img, s0: Math.max(cv.width / img.width, cv.height / img.height), z: 1, x: 0, y: 0 };
+    $("pf-acom-zoom").value = 1; dibujarAcom();
+  };
+  img.src = src;
+}
+function limitesAcom(W, H) {           // que la foto siempre tape toda la portada
+  const s = acom.s0 * acom.z, w = acom.img.width * s, h = acom.img.height * s;
+  acom.x = Math.max(-(w - W) / 2, Math.min((w - W) / 2, acom.x)); acom.y = Math.max(-(h - H) / 2, Math.min((h - H) / 2, acom.y));
+  return { s, w, h };
+}
+function dibujarAcom() {
+  const cv = $("pf-acom-cv"), c = cv.getContext("2d"), W = cv.width, H = cv.height, { w, h } = limitesAcom(W, H);
+  c.clearRect(0, 0, W, H); c.drawImage(acom.img, (W - w) / 2 + acom.x, (H - h) / 2 + acom.y, w, h);
+}
+(() => {
+  const cv = $("pf-acom-cv"), pts = new Map(); let d0 = 0, z0 = 1;
+  const k = () => cv.width / cv.clientWidth;
+  cv.addEventListener("pointerdown", e => { cv.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]);
+    if (pts.size === 2) { const [a, b] = [...pts.values()]; d0 = Math.hypot(a[0] - b[0], a[1] - b[1]); z0 = acom.z; } });
+  cv.addEventListener("pointermove", e => {
+    if (!acom || !pts.has(e.pointerId)) return;
+    const prev = pts.get(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]);
+    if (pts.size === 2) { const [a, b] = [...pts.values()]; acom.z = Math.max(1, Math.min(3, z0 * Math.hypot(a[0] - b[0], a[1] - b[1]) / (d0 || 1))); $("pf-acom-zoom").value = acom.z; }
+    else { acom.x += (e.clientX - prev[0]) * k(); acom.y += (e.clientY - prev[1]) * k(); }
+    dibujarAcom();
+  });
+  const fin = e => { pts.delete(e.pointerId); };
+  cv.addEventListener("pointerup", fin); cv.addEventListener("pointercancel", fin);
+  cv.addEventListener("wheel", e => { if (!acom) return; e.preventDefault(); acom.z = Math.max(1, Math.min(3, acom.z * (e.deltaY < 0 ? 1.08 : .93))); $("pf-acom-zoom").value = acom.z; dibujarAcom(); }, { passive: false });
+  $("pf-acom-zoom").addEventListener("input", () => { if (acom) { acom.z = Number($("pf-acom-zoom").value); dibujarAcom(); } });
+})();
+function cerrarAcom() { $("pf-acom").hidden = true; $("pf").classList.remove("acomodando"); acom = null; }
+$("pf-acom-no").addEventListener("click", cerrarAcom);
+$("pf-acom-ok").addEventListener("click", () => {
+  if (!acom) return;
+  const cv = $("pf-acom-cv"), W = cv.width, H = cv.height, { w, h } = limitesAcom(W, H), O = 1200 / W;
+  const o = document.createElement("canvas"); o.width = 1200; o.height = Math.round(H * O);
+  const c = o.getContext("2d"); c.fillStyle = "#000"; c.fillRect(0, 0, o.width, o.height);
+  c.drawImage(acom.img, ((W - w) / 2 + acom.x) * O, ((H - h) / 2 + acom.y) * O, w * O, h * O);
+  let q = .8, d = o.toDataURL("image/jpeg", q); while (d.length > 240000 && q > .3) { q -= .08; d = o.toDataURL("image/jpeg", q); }
+  if (d.length > 255000) { estado("La portada quedó muy pesada, prueba otra foto."); return; }
+  pfEdit.portada_foto = d; cerrarAcom(); pintarEditor();
+  estado("Así quedó tu portada. Toca Guardar abajo para que la vean todos."); setTimeout(() => estado(""), 4000);
+});
+$("pf-e-acomodar").addEventListener("click", () => { if (pfEdit && pfEdit.portada_foto) { $("pf").scrollTop = 0; acomodarPortada(pfEdit.portada_foto); } });
+$("pf-e-portada-foto").addEventListener("change", () => {
   const f = $("pf-e-portada-foto").files[0]; if (!f) return;
-  try { pfEdit.portada_foto = await fotoPortada(f); pintarEditor(); } catch (e) { estado(e.message); }
+  $("pf").scrollTop = 0; acomodarPortada(URL.createObjectURL(f)); $("pf-e-portada-foto").value = "";
 });
 $("pf-e-sinportada").addEventListener("click", () => { pfEdit.portada_foto = null; $("pf-e-portada-foto").value = ""; pintarEditor(); });
 // atajos de cámara sobre la portada y la foto (como Facebook): abren el editor ya con la foto puesta
@@ -3006,7 +3074,11 @@ async function atajoFoto(input, campo, fn) {
   catch (e) { estado(e.message); }
   input.value = "";
 }
-$("pf-in-portada").addEventListener("change", () => atajoFoto($("pf-in-portada"), "portada_foto", fotoPortada));
+$("pf-in-portada").addEventListener("change", () => {
+  const f = $("pf-in-portada").files[0]; if (!f) return;
+  if ($("pf-editor").hidden) $("pf-editar").click();
+  $("pf").scrollTop = 0; acomodarPortada(URL.createObjectURL(f)); $("pf-in-portada").value = "";
+});
 $("pf-in-av").addEventListener("change", () => atajoFoto($("pf-in-av"), "foto", fotoPerfil));
 $("pf-e-cancelar").addEventListener("click", () => { if (pfDatos) abrirPerfil(pfDatos.uid); });
 $("pf-e-sinfoto").addEventListener("click", () => { pfEdit.foto = null; $("pf-e-foto").value = ""; pintarEditor(); });
