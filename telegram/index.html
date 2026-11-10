@@ -303,6 +303,11 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
 .pf-insignias span { padding: 6px 10px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); font-size: .82rem; }
 .pf-acciones { display: grid; gap: 8px; }
 #hz-nueva, #cmp { z-index: 140; }
+.pf-grupo { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+.pf-grupo button { flex: 0 0 auto; display: grid; justify-items: center; gap: 4px; padding: 0; border: 0; background: none; color: var(--fg); font-size: .74rem; width: 64px; }
+.pf-grupo .avatar { width: 54px; height: 54px; flex-basis: 54px; font-size: 1.4rem; }
+.pf-grupo button[aria-current="true"] .avatar { outline: 3px solid var(--accent); outline-offset: 2px; }
+.pf-grupo span.n { max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pf-tk-cab { display: flex; justify-content: space-between; align-items: center; }
 .pf-tk-cab button { padding: 6px 12px; border-radius: 999px; }
 .pf-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; border-radius: 12px; overflow: hidden; }
@@ -1501,6 +1506,7 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
       <div><h2 class="pf-h">🏅 Insignias</h2><div class="pf-insignias" id="pf-insignias"></div></div>
       <div><div class="pf-tk-cab"><h2 class="pf-h">🎟️ Tickets</h2><button type="button" id="pf-subir" class="chico" hidden>➕ Subir ticket</button></div>
         <div class="pf-grid" id="pf-grid"></div></div>
+      <div><h2 class="pf-h">👥 El grupo</h2><div class="pf-grupo" id="pf-grupo"></div></div>
       <div class="pf-acciones"><button type="button" id="pf-historias" class="primary" hidden></button><button type="button" id="pf-editar" hidden>✏️ Editar mi perfil</button></div>
       <form class="pf-editor" id="pf-editor" hidden>
         <h2 class="pf-h">✏️ Tu perfil</h2>
@@ -2884,12 +2890,14 @@ function ponerCara(span, a, nombre) {      // foto > emoji > inicial, con su col
   span.textContent = ""; span.style.backgroundImage = "";
   a = a || {}; nombre = nombre || a.nombre || "?";
   span.style.backgroundColor = a.color || colorDe(nombre);
+  span.style.backgroundSize = "cover"; span.style.backgroundPosition = "center";
   if (a.foto && /^data:image\//.test(a.foto)) span.style.backgroundImage = `url("${a.foto}")`;
   else span.textContent = a.emoji || nombre.trim()[0].toUpperCase();
 }
 let pfDatos = null, pfEdit = null;
 async function abrirPerfil(uid) {
   if (!uid) return;
+  cargarAvatares();
   const v = $("pf"); v.hidden = false; v.scrollTop = 0; document.body.style.overflow = "hidden";
   $("pf-editor").hidden = true; $("pf-nombre").textContent = "Cargando…"; ["pf-frase", "pf-bio"].forEach(i => $(i).textContent = "");
   ["pf-chips", "pf-stats", "pf-mejor", "pf-insignias"].forEach(i => $(i).innerHTML = "");
@@ -2926,7 +2934,14 @@ function pintarPerfil() {
   (d.logros || []).forEach(k => { const l = LOGROS[k]; if (l) { const s = el("span", "", `${l[0]} ${l[1]}`); s.title = l[2]; ins.append(s); } });
   if (!ins.childElementCount) ins.append(el("span", "", "Todavía ninguna"));
   pintarGrid();
-  const hb = $("pf-historias"); hb.hidden = !d.historias; hb.textContent = `📸 Ver sus historias (${d.historias})`;
+  const gr = $("pf-grupo"); gr.innerHTML = "";
+  Object.entries(avatares).sort((a, b) => (!!b[1].yo - !!a[1].yo) || a[1].nombre.localeCompare(b[1].nombre)).forEach(([uid, a]) => {
+    const bt = el("button"); bt.type = "button"; bt.setAttribute("aria-label", "Ver el perfil de " + a.nombre);
+    if (uid === d.uid) bt.setAttribute("aria-current", "true");
+    const av = el("span", "avatar"); ponerCara(av, a, a.nombre); bt.append(av, el("span", "n", a.yo ? "Tú" : a.nombre));
+    bt.onclick = () => { if (uid !== d.uid) abrirPerfil(uid); }; gr.append(bt);
+  });
+  const hb = $("pf-historias"); hb.hidden = !d.historias; hb.textContent = `📸 Ver ${d.mio ? "mis" : "sus"} historias (${d.historias})`;
   hb.onclick = () => { const gi = hzGrupos.findIndex(g => g.l[0] && g.l[0].uid === d.uid); cerrarPerfil(); if (gi >= 0) verHistoria(gi); };
   $("pf-editar").hidden = !d.mio;
 }
@@ -3174,7 +3189,8 @@ function pintarHistorias(lista) {
       const aro = el("span", "hz-aro"), cara = el("span"); ponerCara(cara, avatares[g.l[0].uid], g.autor);
       const ult = g.l.at(-1).apuesta;
       if (ult && ult.resultado) cara.append(el("span", "hz-res", ult.resultado === "gana" ? "✅" : ult.resultado === "pierde" ? "❌" : "➖"));
-      aro.append(cara); b.append(aro, el("span", "hz-n", g.autor)); b.onclick = () => verHistoria(gi);
+      aro.append(cara); b.append(aro, el("span", "hz-n", g.autor));
+      b.onclick = () => g.k === "__yo" ? abrirPerfil(g.l[0].uid) : verHistoria(gi);
       cont.append(b);
     });
     if (cont.id !== "hz-global") cont.hidden = false;

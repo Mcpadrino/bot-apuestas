@@ -1,6 +1,6 @@
 // Service worker mínimo: permite instalar la app. Guarda solo la página e íconos para que abra
 // rápido; los datos (/api) siempre van a internet para que nunca veas apuestas viejas.
-const CACHE = "bitacora-v50";
+const CACHE = "bitacora-v51";
 const BASICOS = ["/", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (e) => {
