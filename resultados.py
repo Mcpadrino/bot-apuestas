@@ -98,7 +98,13 @@ def enviar(a, p, propuesta, logo, nota=""):
          {"text": "❌ Perdió", "callback_data": f"c:{a['id']}:pierde"},
          {"text": "➖ Nula", "callback_data": f"c:{a['id']}:nula"}],
         [{"text": "🚫 No es este partido", "callback_data": f"n:{a['id']}"}]]}
+    loc, vis = p["local"], p["visita"]
+    fmt = lambda x: str(int(x)) if float(x).is_integer() else str(x)
     AVISOS_PUSH.append({"tipo": "resultados", "usuarios": [str(a["usuario"])], "tag": f"apuesta-{a['id']}", "url": "/#bot",
+                        "img": {"k": "resultado", "r": propuesta, "m": f"{fmt(vis['marcador'])} – {fmt(loc['marcador'])}",
+                                "l": {"n": vis.get("corto") or vis.get("nombre"), "logo": vis.get("logo")},
+                                "v": {"n": loc.get("corto") or loc.get("nombre"), "logo": loc.get("logo")},
+                                "s": f"{seleccion} · ${float(a['monto']):.0f} a {amer(a['cuota'])}"},
                         "titulo": f"🏁 Final: {espn.texto_marcador(p)}"[:80],
                         "cuerpo": {"gana": "Parece que ganaste ✅", "pierde": "Parece que perdiste ❌", "nula": "Parece que quedó nula ➖"}.get(propuesta, "¿Cómo quedó?")
                                   + f" · {seleccion} · ${float(a['monto']):.0f}. Confírmala en Telegram o en la app."})

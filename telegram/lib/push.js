@@ -56,16 +56,31 @@ export function enSilencio(avisos) {
   return de < a ? h >= de && h < a : h >= de || h < a;
 }
 
+// ✨ Cómo se ve cada tipo: ícono propio, botones de acción y vibración
+const ACCIONES = {
+  senales: [["Ver señales", "/#bot"], ["Gurú", "/#guru"]],
+  resultados: [["Confirmar", "/#bot"]],
+  movimientos: [["Ver líneas", "/#lineas"]],
+  comunidad: [["Abrir", "/#comunidad"]],
+  retos: [["Responder", "/#retos"]],
+  melate: [["Ver teorías", "/#melate"]],
+  progol: [["Ver boletos", "/#progol"]],
+  quiniela: [["Armar mi boleto", "/#progol"]],
+  resumen: [["Mi banca", "/#bot"], ["Quinielas", "/#progol"]],
+};
+const VIBRA = { resultados: [90, 50, 90], senales: [40, 30, 40, 30, 140], retos: [120, 60, 120], resumen: [60] };
+export const tarjeta = (d) => d ? `${WEB}/api/tarjeta?d=${Buffer.from(JSON.stringify(d)).toString("base64url")}` : undefined;
+
 // Manda una notificación a cada celular de los usuarios que la quieren.
 //   tipo: uno de TIPOS · titulo/cuerpo/url · usuarios: lista (o null = todos) · excepto: usuario que no la recibe
 //   para(usuario, avisos) → {titulo, cuerpo, url} para personalizarla (o null para no mandarle)
 //   telegram: true → también por Telegram a quien lo pidió (solo para los tipos que no manda ya otra parte del bot)
-export async function notificar({ tipo, titulo, cuerpo, url = "/", tag, usuarios = null, excepto = null, para = null, telegram = false, ignorarSilencio = false, forzar = false }) {
+export async function notificar({ tipo, titulo, cuerpo, url = "/", tag, usuarios = null, excepto = null, para = null, telegram = false, ignorarSilencio = false, forzar = false, img = null }) {
   let enviados = 0, porTg = 0;
   const armar = (u, avisos) => {
     if (excepto && String(u) === String(excepto)) return null;
     if (!ignorarSilencio && enSilencio(avisos)) return null;
-    const p = para ? para(u, avisos) : { titulo, cuerpo, url };
+    const p = para ? para(u, avisos) : { titulo, cuerpo, url, img };
     return p && p.titulo ? { url, tag: tag || tipo, ...p } : null;
   };
   try {
@@ -77,7 +92,9 @@ export async function notificar({ tipo, titulo, cuerpo, url = "/", tag, usuarios
       if (!m) return;
       try {
         await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
-          JSON.stringify({ t: m.titulo, b: m.cuerpo, u: m.url, tag: m.tag, tipo }), { TTL: 6 * 3600, urgency: tipo === "resultados" ? "high" : "normal" });
+          JSON.stringify({ t: m.titulo, b: m.cuerpo, u: m.url, tag: m.tag, tipo, img: tarjeta(m.img), ic: `/iconos/${TIPOS[tipo] ? tipo : "app"}.png`,
+            acc: (ACCIONES[tipo] || []).map(([t, u]) => ({ t, u })), vib: VIBRA[tipo] || [60], ts: Date.now() }),
+          { TTL: 6 * 3600, urgency: ["resultados", "retos"].includes(tipo) ? "high" : "normal" });
         enviados++;
         notif("enviado", { endpoint: s.endpoint }).catch(() => {});
       } catch (e) {
@@ -113,7 +130,9 @@ export function cuerpoSenales(senales, avisos) {
   const estrellas = suyas.filter((s) => s.estrella).sort((x, y) => y.prob - x.prob);
   const top = (estrellas.length ? estrellas : suyas).slice(0, 2).map((s) => `⭐ ${s.texto} (${Math.round(s.prob * 100)}%)`);
   const partidos = new Set(suyas.map((s) => s.partido)).size;
-  return { titulo: `🎯 ${partidos} partido${partidos === 1 ? "" : "s"} con señal`, cuerpo: top.join("\n") + (partidos > 2 ? `\n…y ${partidos - 2} más` : ""), url: "/#bot" };
+  const t = (estrellas.length ? estrellas : suyas)[0];
+  return { titulo: `🎯 ${partidos} partido${partidos === 1 ? "" : "s"} con señal`, cuerpo: top.join("\n") + (partidos > 2 ? `\n…y ${partidos - 2} más` : ""), url: "/#bot",
+    img: { k: "senal", n: partidos, sel: t.sel || t.texto.split(" · ")[0], p: t.det || t.partido, prob: t.prob, min: t.min, poly: t.poly } };
 }
 
 // ---------------------------------------------------------------- resumen diario
@@ -136,7 +155,20 @@ export function textoResumen(r, avisos) {
   if (inc.senales && r.senales_hoy) l.push(`${r.senales_hoy} partido${r.senales_hoy === 1 ? "" : "s"} con señal hoy`);
   if (inc.sorteos && r.progol && r.progol.length)
     l.push("Quinielas abiertas: " + r.progol.sort((a, b) => String(a.cierre).localeCompare(String(b.cierre))).map((p) => `${NOM_JUEGO[p.juego] || p.juego} ${p.concurso} (empieza ${cuando(p.cierre)})`).join(", "));
-  return { titulo: `${saludo}${r.nombre ? ", " + String(r.nombre).split(" ")[0] : ""}`, cuerpo: l.join("\n") || "Todo tranquilo por hoy.", url: "/" };
+  const d = h < 12 ? r.ayer : r.hoy, nombre = r.nombre ? ", " + String(r.nombre).split(" ")[0] : "";
+  const clave = inc.dia && d && d.n ? ` · ${h < 12 ? "ayer" : "hoy"} ${signo(d.g)}` : "";
+  const corto = [];
+  if (inc.banca) corto.push(`Banca ${dinero(r.banca_bot)}` + (r.pendientes ? ` · en juego ${dinero(r.en_juego)}` : ""));
+  if (inc.semana && r.semana) corto.push(`7 días ${signo(r.semana.g)} (${r.semana.gan || 0}-${r.semana.per || 0})`);
+  const extra = [];
+  if (inc.senales && r.senales_hoy) extra.push(`${r.senales_hoy} con señal`);
+  if (inc.sorteos && r.progol && r.progol.length) extra.push(`${r.progol.length} quiniela${r.progol.length === 1 ? "" : "s"} abierta${r.progol.length === 1 ? "" : "s"}`);
+  const fecha = new Date().toLocaleDateString("es-MX", { timeZone: "America/Mexico_City", weekday: "short", day: "numeric", month: "short" });
+  return { titulo: `${saludo}${nombre}${clave}`, cuerpo: [corto.join(" · "), extra.join(" · ")].filter(Boolean).join("\n") || "Todo tranquilo por hoy.",
+    texto: l.join("\n") || "Todo tranquilo por hoy.", url: "/",
+    img: { k: "resumen", fecha, dia: inc.dia ? { etiqueta: h < 12 ? "Ayer" : "Hoy", n: (d || {}).n || 0, g: (d || {}).g || 0 } : null,
+      banca: inc.banca ? r.banca_bot : null, juego: inc.banca ? r.en_juego : null, pend: r.pendientes,
+      semana: inc.semana && r.semana ? { g: r.semana.g, r: `${r.semana.gan || 0}-${r.semana.per || 0}` } : null } };
 }
 
 export async function mandarResumenes(hora = horaMx(), dia = null) {
@@ -146,7 +178,7 @@ export async function mandarResumenes(hora = horaMx(), dia = null) {
   for (const q of quienes) {
     const r = await notif("resumen", { usuario: q.usuario });
     const m = textoResumen(r, q.avisos);
-    const x = await notificar({ tipo: "resumen", usuarios: [q.usuario], titulo: m.titulo, cuerpo: m.cuerpo, url: m.url, telegram: true, ignorarSilencio: true });
+    const x = await notificar({ tipo: "resumen", usuarios: [q.usuario], para: () => m, url: m.url, telegram: true, ignorarSilencio: true });
     n += x.enviados + x.porTg;
   }
   return { usuarios: quienes.length, mensajes: n };

@@ -391,12 +391,13 @@ export default async function handler(req, res) {
         if (tipo === "resumen") {
           const [r, av] = await Promise.all([notif("resumen", { usuario: String(usuario) }), admin("avisos_get", { usuario })]);
           const m = textoResumen(r, av);
-          const x = await notificar({ tipo: "resumen", usuarios: [String(usuario)], titulo: m.titulo, cuerpo: m.cuerpo, url: "/#avisos", telegram: true, ignorarSilencio: true, forzar: true });
+          const x = await notificar({ tipo: "resumen", usuarios: [String(usuario)], para: () => m, url: "/#avisos", telegram: true, ignorarSilencio: true, forzar: true });
           return res.status(200).json(x);
         }
         // prueba directa a sus celulares, sin importar preferencias
         const x = await notificar({ tipo: "resultados", usuarios: [String(usuario)], ignorarSilencio: true, forzar: true, tag: "prueba",
-          para: () => ({ titulo: "🔔 ¡Listo! Así te van a llegar", cuerpo: "Las notificaciones de la Bitácora ya funcionan en este celular.", url: "/#avisos" }) }).catch(() => ({ enviados: 0 }));
+          para: () => ({ titulo: "🔔 ¡Listo! Así te van a llegar", cuerpo: "Las notificaciones de la Bitácora ya funcionan en este celular. Despliégala para ver la tarjeta.", url: "/#avisos",
+            img: { k: "resultado", r: "gana", m: "2 – 1", l: { n: "Tu equipo" }, v: { n: "El rival" }, s: "Así se ve el resultado de una apuesta" } }) }).catch(() => ({ enviados: 0 }));
         return res.status(200).json(x);
       }
       case "avisos_set": {

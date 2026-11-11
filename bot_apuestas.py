@@ -785,7 +785,9 @@ def escanear(args):
                 mejor[f["partido"]] = f
         push([{"tipo": "senales", "senales": [
             {"grupo": grupo_liga(f["deporte"]), "prob": round(f["prob"], 4), "partido": f["partido"],
-             "texto": f"{f['seleccion']} · {f['partido']}"[:90], "estrella": mejor.get(f["partido"]) is f} for f in tabla]}])
+             "texto": f"{f['seleccion']} · {f['partido']}"[:90], "estrella": mejor.get(f["partido"]) is f,
+             "sel": str(f["seleccion"])[:40], "det": f"{f['partido']} · {f['hora']}"[:60],
+             "min": a_americano(f["minima"]), "poly": round(f["poly"], 3) if f.get("poly") else None} for f in tabla]}])
         guardar_estado("escaneo", {"senales": len(tabla), "partidos": len({f["partido"] for f in tabla}), "enviados": enviados})
         BANCA = banca_original
         # ⚡ Movimientos fuertes de Pinnacle desde el escaneo anterior: el dinero de los profesionales

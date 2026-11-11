@@ -116,7 +116,10 @@ export default async function handler(req, res) {
       if (nuevos.length) {
         nuevos.sort((a, b) => Object.keys(JUEGOS).indexOf(a.juego) - Object.keys(JUEGOS).indexOf(b.juego));
         const nombres = nuevos.map((x) => JUEGOS[x.juego].nombre);
+        const mj = nuevos.find((x) => x.juego === "melate" || x.juego === "retro") || nuevos[0];
         await notificar({ tipo: "melate", telegram: true, tag: "melate", url: "/#melate",
+          img: { k: "melate", j: nuevos.slice(0, 3).map((x) => ({ n: `${JUEGOS[x.juego].nombre}${x === nuevos[0] ? " " + x.concurso : ""}`, nums: x.nums, a: x.adic || null })),
+            t: `Mejor teoría en ${JUEGOS[mj.juego].nombre}: ${mj.mejor[1]} de 6 (${NOM_T[mj.mejor[0]] || mj.mejor[0]}). Al azar se esperan 0.6.` },
           titulo: `🎱 Ya salió ${nombres.length > 1 ? nombres.slice(0, -1).join(", ") + " y " + nombres.slice(-1) : nombres[0]}`,
           cuerpo: nuevos.map((x) => `${JUEGOS[x.juego].nombre} ${x.concurso}: ${x.nums.join(" · ")}${x.adic ? ` (+${x.adic})` : ""} · mejor teoría: ${x.mejor[1]} de 6 (${NOM_T[x.mejor[0]] || x.mejor[0]})`).join("\n") });
       }

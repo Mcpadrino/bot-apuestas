@@ -687,7 +687,10 @@ async function avisosProgol(accion, datos, antes) {
     const P = (fila.datos || {}).partidos || [];
     const fav = P.map((p) => ["L", "E", "V"].reduce((a, k) => (p.p[k] > p.p[a] ? k : a), "L"));
     const atino = fav.filter((k, i) => res[i] === k).length;
+    const letra = (k) => (j === "protouch" && k === "E" ? "D" : k);
     await notificar({ tipo: "progol", telegram: true, tag: "progol-" + j,
+      img: { k: "progol", nom: `${NOM_Q[j]} ${c.concurso}`, a: atino, r: res.slice(0, P.length).map((k, i) => ({ l: letra(k), ok: fav[i] === k })),
+        t: `Al azar se esperan ${(P.length / 3).toFixed(1)}. Mira cuánto habría pagado cada boleto.` },
       titulo: `⚽ Resultados de ${NOM_Q[j]} ${c.concurso}`,
       cuerpo: `El favorito atinó ${atino} de ${P.length}. Mira cuánto habría pagado cada boleto.`, url: "/#progol" });
   }
@@ -746,7 +749,7 @@ export default async function handler(req, res) {
         total += x.enviados;
       } else if (["resultados", "movimientos"].includes(e.tipo)) {
         const x = await notificar({ tipo: e.tipo, usuarios: e.usuarios || null, titulo: String(e.titulo || "").slice(0, 80),
-          cuerpo: String(e.cuerpo || "").slice(0, 300), url: e.url || "/", tag: e.tag });
+          cuerpo: String(e.cuerpo || "").slice(0, 300), url: e.url || "/", tag: e.tag, img: e.img && typeof e.img === "object" ? e.img : null });
         total += x.enviados;
       }
     }
