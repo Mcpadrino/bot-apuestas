@@ -1,4 +1,6 @@
-"""⚽ Progol a prueba: lee la quiniela oficial de la semana y le pone probabilidad a cada partido.
+"""⚽ Progol a prueba: lee las quinielas oficiales (Progol + Revancha, Progol Media Semana y Protouch) y le pone
+probabilidad a cada partido. También arma los boletos reales más probables de cada tamaño permitido (sencilla, dobles,
+triples) y, cuando salen los resultados, guarda cuánto pagó cada lugar para ver cuánto habría ganado cada boleto.
 
 La Lotería Nacional publica el boleto como imagen; aquí se lee con OCR (tesseract), se buscan los partidos en ESPN
 (que trae momios gratis de casi todas las ligas) y, si no hay, en Polymarket o en el promedio histórico del Progol.
@@ -32,6 +34,7 @@ IMG_QUINIELA = LN + "/Documentos/juegos/Concursosysorteos/progol_quiniela/Quinie
 IMG_PORCENTAJES = LN + "/Documentos/juegos/Concursosysorteos/progol_momios/porce.jpg"
 CSV_PROGOL = LN + "/Home/Historicos?ARHP=UAByAG8AZwBvAGwA"
 CSV_REVANCHA = LN + "/Home/Historicos?ARHP=UAByAG8AZwBvAGwALQBSAGUAdgBhAG4AYwBoAGEA"
+DOC = LN + "/Documentos/juegos/Concursosysorteos/"
 UA = {"user-agent": "Mozilla/5.0 (bitacora-apuestas)"}
 PRUEBA = "--prueba" in sys.argv
 
@@ -79,6 +82,53 @@ def get(url, **kw):
     return None
 
 
+# ---------------------------------------------------------------- reglas oficiales de cada juego
+# Tabla de quinielas múltiples (loterianacional.gob.mx → Quinielas Múltiples): con T triples, cuántos dobles caben.
+MAX_DOBLES = {"progol": [8, 6, 5, 3, 2, 0], "protouch": [8, 6, 5, 3, 2, 0], "revancha": [3, 3, 3], "media": [3, 3, 3]}
+PRECIO = {"progol": 15, "revancha": 5, "media": 15, "protouch": 10}
+
+
+def mejor_boleto(ps, triples, dobles):
+    """Dónde poner T triples y D dobles para que el boleto tenga la mayor probabilidad de atinarle a todo.
+    Programación dinámica exacta: en cada partido se elige sencillo (el más probable), doble (los dos más probables) o triple."""
+    import math
+    INF = float("-inf")
+    opciones = []
+    for p in ps:
+        orden = sorted("LEV", key=lambda k: -p[k])
+        opciones.append([(orden[0], p[orden[0]]), (orden[0] + orden[1], p[orden[0]] + p[orden[1]]), ("LEV", 1.0)])
+    # f[t][d] = (log prob, marcas) usando t triples y d dobles
+    f = {(0, 0): (0.0, [])}
+    for op in opciones:
+        g = {}
+        for (t, d), (lp, m) in f.items():
+            for tipo, (marca, pr) in enumerate(op):
+                nt, nd = t + (tipo == 2), d + (tipo == 1)
+                if nt > triples or nd > dobles:
+                    continue
+                v = lp + math.log(max(pr, 1e-9))
+                if v > g.get((nt, nd), (INF,))[0]:
+                    g[(nt, nd)] = (v, m + ["".join(sorted(marca, key="LEV".index))])
+        f = g
+    lp, marcas = f.get((triples, dobles), (INF, None))
+    return marcas, (math.exp(lp) if marcas else 0)
+
+
+def boletos(juego, ps):
+    """Todos los tamaños de boleto que permite la Lotería, cada uno con sus marcas más probables."""
+    out = []
+    n = len(ps)
+    for t, maxd in enumerate(MAX_DOBLES[juego]):
+        for d in range(maxd + 1):
+            if t + d > n:
+                continue
+            marcas, pr = mejor_boleto(ps, t, d)
+            if marcas:
+                comb = 2 ** d * 3 ** t
+                out.append({"t": t, "d": d, "combos": comb, "costo": comb * PRECIO[juego], "marcas": marcas, "p": round(pr, 8)})
+    return out
+
+
 # ---------------------------------------------------------------- OCR del boleto
 def _ocr(im, caja, psm=6, umbral=140):
     c = im.crop(caja)
@@ -113,18 +163,104 @@ def leer_quiniela():
     return {"concurso": int(con.group(1)) if con else None, "texto": texto, "partidos": partidos, "revancha": revancha}
 
 
+QUINIELAS = {   # imagen de la quiniela de la semana y dónde están los nombres (proporciones de la imagen)
+    "media": {"img": DOC + "progol_media_quiniela/proxima-media.jpg", "loc": (.245, .49, .465, .85), "vis": (.55, .49, .755, .85),
+              "cab": (.1, .24, .9, .4), "tit": (.1, .2, .9, .3), "n": 9},
+    "protouch": {"img": DOC + "protouch_quiniela/Quiniela_de_la_semana.jpg", "loc": (.215, .565, .47, .975), "vis": (.55, .565, .79, .975),
+                 "cab": (.1, .17, .9, .29), "tit": (.1, .14, .9, .25), "n": 13},
+}
+
+
+def _limpia_linea(l):
+    l = re.sub(r"^[\s|\[\](){}!:;,'\"_—=-]+|[\s|\[\](){}!:;,'\"_—=-]+$", "", l)
+    return re.sub(r"\s+", " ", l.upper())
+
+
+def leer_otra(juego):
+    cfg = QUINIELAS[juego]
+    r = get(cfg["img"])
+    if not r or not pytesseract:
+        return None
+    im = Image.open(io.BytesIO(r.content)).convert("L")
+    W, H = im.size
+    caja = lambda b: (int(W * b[0]), int(H * b[1]), int(W * b[2]), int(H * b[3]))
+    def nombres(b):
+        out = []
+        for l in _ocr(im, caja(b)).splitlines():
+            l = _limpia_linea(l)
+            if re.fullmatch(r"[A-ZÁÉÍÓÚÑÜ0-9][A-ZÁÉÍÓÚÑÜ0-9 .&'-]{1,}", l) and not re.search(r"LOCAL|VISITA|EMPATE|DIFERENCIA|SENCILLA|CONCURSO", l):
+                out.append(l)
+        return out
+    lo, vi = nombres(cfg["loc"]), nombres(cfg["vis"])
+    cab = re.sub(r"\s+", " ", re.sub(r"[^\w\s:]", " ", _ocr(im, caja(cfg["cab"]), umbral=110))).strip()
+    con = re.search(r"CONCURSO\s*(\d{3,5})", _ocr(im, caja(cfg["tit"]), psm=6, umbral=100))
+    partidos = [{"n": i + 1, "local": lo[i].title(), "visita": vi[i].title()} for i in range(min(len(lo), len(vi), cfg["n"]))]
+    return {"concurso": int(con.group(1)) if con else None, "texto": cab, "partidos": partidos}
+
+
+# ---------------------------------------------------------------- premios (imagen de resultados)
+PREMIOS = {   # imagen de resultados del último concurso y la franja donde vienen los premios
+    "progol": {"img": DOC + "progol_resultados/QG_progol-revancha.jpg", "bandas": {"progol": (.15, .42, 14), "revancha": (.75, .82, 7)}},
+    "media": {"img": DOC + "progol_media_resultados/QG_progol_media.jpg", "bandas": {"media": (.33, .47, 9)}},
+    "protouch": {"img": DOC + "protouch_resultados/resultados_Protouch.jpg", "bandas": {"protouch": (.4, .6, 13)}},
+}
+
+
+def leer_premios(juego, ultimo=None):
+    """Cuánto pagó cada lugar (por quiniela sencilla) en el último concurso. Devuelve (concurso, {bloque: [{aciertos, ganadores, premio}]})."""
+    cfg = PREMIOS[juego]
+    r = get(cfg["img"])
+    if not r or not pytesseract:
+        return None, {}
+    im = Image.open(io.BytesIO(r.content)).convert("RGB")
+    W, H = im.size
+    tit = im.crop((0, int(H * .08), W, int(H * .3))).convert("L")
+    tit = ImageOps.autocontrast(tit.resize((tit.width * 3, tit.height * 3)))
+    con = re.search(r"CONCURSO\s*(\d{3,5})", pytesseract.image_to_string(tit, lang="spa", config="--psm 6"))
+    out = {}
+    for bloque, (y0, y1, total) in cfg["bandas"].items():
+        c = im.crop((int(W * .15), int(H * y0), int(W * .87), int(H * y1)))
+        c = c.resize((c.width * 3, c.height * 3), Image.LANCZOS).convert("L").point(lambda v: 0 if v < 110 else 255)
+        filas, prev = [], total + 1
+        for l in pytesseract.image_to_string(c, lang="spa", config="--psm 6").splitlines():
+            m = re.search(r"([\d,.]+)\s+(\S+)\s+\S*\$\s*([\dIl,]+\.\d\d)", l)
+            if not m:
+                continue
+            premio = float(m.group(3).replace("I", "1").replace("l", "1").replace(",", ""))
+            ac = re.sub(r"\D", "", m.group(2).replace("T", "1").replace("n", "1").replace("I", "1"))
+            ac = int(ac) if ac else 0
+            # el OCR a veces lee "11" como "1": los lugares van seguidos y en orden descendente
+            if filas:
+                ac = prev - 1
+            elif not (total - 4 <= ac <= total):
+                ac = total
+            gan = int(re.sub(r"\D", "", m.group(1)) or 0)
+            filas.append({"aciertos": ac, "ganadores": gan, "premio": premio})
+            prev = ac
+        out[bloque] = filas
+    # si no se alcanza a leer el número, es el último concurso con resultado oficial
+    return (int(con.group(1)) if con else ultimo), out
+
+
 # ---------------------------------------------------------------- resultados oficiales e histórico
+BOLSAS = {}
+
+
 def resultados(url, cuantos):
     r = get(url)
     if not r or not r.text.lstrip().upper().startswith("NPRODUCTO"):
         return {}
     filas = list(csv.reader(io.StringIO(r.text)))
-    cab = filas[0]
+    cab = [c.strip().upper() for c in filas[0]]
     idx = [i for i, c in enumerate(cab) if re.fullmatch(r"R\d+", c)][:cuantos]
+    ib = cab.index("BOLSA") if "BOLSA" in cab else None
     out = {}
     for f in filas[1:]:
         try:
-            out[int(f[1])] = [f[i].strip().upper() for i in idx]
+            # Protouch usa "D" (diferencia de hasta 6 puntos); aquí se guarda como "E" para tratar igual a todos los juegos
+            out[int(f[1])] = [f[i].strip().upper().replace("D", "E") for i in idx]
+            if ib is not None and f[ib].strip():
+                BOLSAS[(url, int(f[1]))] = float(f[ib])
         except (ValueError, IndexError):
             continue
     return out
@@ -191,6 +327,112 @@ def eventos_espn(desde, hasta):
                         "marcador": f"{eq['home'].get('score', '')}-{eq['away'].get('score', '')}",
                         "p": _momios(c), "id": e.get("id"), "neutral": bool(c.get("neutralSite"))})
     return evs
+
+
+# ---------------------------------------------------------------- Protouch (NFL / colegial)
+NFL = {"leones": "lions", "patriotas": "patriots", "halcones": "falcons", "jefes": "chiefs", "browns": "browns", "texanos": "texans",
+       "empacadores": "packers", "vikingos": "vikings", "potros": "colts", "delfines": "dolphins", "santos": "saints", "panteras": "panthers",
+       "jets": "jets", "bills": "bills", "titanes": "titans", "jaguares": "jaguars", "cardenales": "cardinals", "carneros": "rams",
+       "raiders": "raiders", "halc mar": "seahawks", "halcones marinos": "seahawks", "vaqueros": "cowboys", "49s": "49ers", "49ers": "49ers",
+       "bengalies": "bengals", "acereros": "steelers", "cuervos": "ravens", "cargadores": "chargers", "aguilas": "eagles", "gigantes": "giants",
+       "commanders": "commanders", "broncos": "broncos", "bucaneros": "buccaneers", "osos": "bears", "pieles rojas": "commanders"}
+SD_MARGEN = {"nfl": 13.5, "college-football": 15.5}    # desviación típica del margen final contra la línea (puntos)
+
+
+def _ncdf(x):
+    import math
+    return .5 * (1 + math.erf(x / math.sqrt(2)))
+
+
+def _ninv(p):
+    lo, hi = -6.0, 6.0
+    for _ in range(60):
+        m = (lo + hi) / 2
+        lo, hi = (m, hi) if _ncdf(m) < p else (lo, m)
+    return (lo + hi) / 2
+
+
+def _lineas(comp, liga):
+    """L / D / V del Protouch a partir de la línea de puntos: el margen final (local − visita) se modela como normal
+    centrada en la línea. L = gana el local por 7 o más, V = la visita por 7 o más, D = diferencia de 6 o menos."""
+    o = next((x for x in (comp.get("odds") or []) if x), None) or {}
+    eq = {x.get("homeAway"): x for x in comp.get("competitors", [])}
+    sd = SD_MARGEN.get(liga, 14)
+    mu = None
+    m = re.match(r"\s*(\S+)\s+(-?\d+(?:\.\d+)?)", str(o.get("details") or ""))
+    if m:
+        ab = m.group(1).upper()
+        x = abs(float(m.group(2)))
+        home = ((eq.get("home") or {}).get("team") or {}).get("abbreviation", "").upper()
+        away = ((eq.get("away") or {}).get("team") or {}).get("abbreviation", "").upper()
+        mu = x if ab == home else (-x if ab == away else None)
+    elif str(o.get("details") or "").upper().startswith("EVEN"):
+        mu = 0.0
+    if mu is None:
+        h, a = _ml((o.get("homeTeamOdds") or {}).get("moneyLine")), _ml((o.get("awayTeamOdds") or {}).get("moneyLine"))
+        if h and a:
+            mu = sd * _ninv((1 / h) / (1 / h + 1 / a))
+    if mu is None:
+        return None
+    pl, pv = 1 - _ncdf((6.5 - mu) / sd), _ncdf((-6.5 - mu) / sd)
+    return {"L": round(pl, 4), "E": round(1 - pl - pv, 4), "V": round(pv, 4), "casa": (o.get("provider") or {}).get("name"), "linea": round(mu, 1)}
+
+
+def eventos_americano(desde, hasta):
+    from concurrent.futures import ThreadPoolExecutor
+    dias = [desde + dt.timedelta(days=i) for i in range((hasta - desde).days + 1)]
+    pedidos = [(liga, d) for liga in ("nfl", "college-football") for d in dias]
+    def pide(x):
+        extra = {"groups": "80", "limit": "300"} if x[0] == "college-football" else {}
+        return x[0], espn._get(espn.BASE.format(ruta=f"football/{x[0]}") + "/scoreboard", dates=f"{x[1]:%Y%m%d}", **extra)
+    with ThreadPoolExecutor(8) as ex:
+        resp = list(ex.map(pide, pedidos))
+    evs, vistos = [], set()
+    for liga, j in resp:
+        for e in (j or {}).get("events", []):
+            if e.get("id") in vistos:
+                continue
+            vistos.add(e.get("id"))
+            c = (e.get("competitions") or [{}])[0]
+            eq = {x.get("homeAway"): x for x in c.get("competitors", [])}
+            if "home" not in eq or "away" not in eq:
+                continue
+            nom = lambda t: [t.get(k) for k in ("name", "shortDisplayName", "displayName", "location", "abbreviation") if t.get(k)]
+            evs.append({"liga": liga, "liga_nombre": "NFL" if liga == "nfl" else "Colegial (NCAA)", "inicio": e.get("date"),
+                        "local": nom(eq["home"].get("team", {})), "visita": nom(eq["away"].get("team", {})),
+                        "p": _lineas(c, liga), "id": e.get("id"), "neutral": bool(c.get("neutralSite"))})
+    return evs
+
+
+def _limpio_nfl(nombre):
+    n = re.sub(r"\s+", " ", espn.normalizar(nombre).replace(".", " ")).strip()
+    return NFL.get(n, n)
+
+
+def probabilidades_americano(lista, evs, base):
+    for p in lista:
+        loc, vis = _limpio_nfl(p["local"]), _limpio_nfl(p["visita"])
+        mejor, pts = None, 0.0
+        for e in evs:
+            pl = max(espn.parecido(loc, x) for x in e["local"]); pv = max(espn.parecido(vis, x) for x in e["visita"])
+            il = max(espn.parecido(loc, x) for x in e["visita"]); iv = max(espn.parecido(vis, x) for x in e["local"])
+            if min(pl, pv) >= .7 and pl + pv > pts:
+                mejor, pts = (e, False), pl + pv
+            elif min(il, iv) >= .75 and il + iv > pts:
+                mejor, pts = (e, True), il + iv
+        if mejor:
+            e, al_reves = mejor
+            p.update({"liga": e["liga_nombre"], "inicio": e["inicio"], "espn": e["id"], "espn_local": e["local"][2] if len(e["local"]) > 2 else e["local"][0],
+                      "espn_visita": e["visita"][2] if len(e["visita"]) > 2 else e["visita"][0], "al_reves": al_reves})
+            q = e["p"]
+            if q:
+                p["p"] = {"L": q["V"], "E": q["E"], "V": q["L"]} if al_reves else {k: q[k] for k in "LEV"}
+                lin = -q["linea"] if al_reves else q["linea"]
+                fav = p["local"] if lin > 0 else p["visita"]
+                p["fuente"] = f"Línea {q.get('casa') or 'ESPN'} ({fav} por {abs(lin):g})" if lin else f"Línea {q.get('casa') or 'ESPN'} (parejo)"
+        if "p" not in p:
+            p["p"], p["fuente"] = dict(base), "Promedio histórico del Protouch"
+    return lista
 
 
 def _limpio(nombre):
@@ -290,33 +532,107 @@ def api(accion, datos):
     return r.json()
 
 
+def guardar(juego, q):
+    q["juego"] = juego
+    if not PRUEBA:
+        print(api("guardar", {"juego": juego, "concurso": q["concurso"], "datos": q}))
+
+
+def mostrar(q, claves=("partidos", "revancha")):
+    for k in claves:
+        for p in q.get(k) or []:
+            print(f"  {k[:3]} {p['n']:>2} {p['local']:<16} vs {p['visita']:<16} → {p.get('espn_local', '¿?'):<22} {p['p']} ({p['fuente']})")
+
+
 def main():
     hoy = dt.date.today()
+    CSV_MEDIA = LN + "/Home/Historicos?ARHP=UAByAG8AZwBvAGwALQBNAGUAZABpAGEALQBTAA=="
+    CSV_PROTOUCH = LN + "/Home/Historicos?ARHP=UAByAG8AdABvAHUAYwBoAA=="
     res_p, res_r = resultados(CSV_PROGOL, 14), resultados(CSV_REVANCHA, 7)
+    res_m, res_t = resultados(CSV_MEDIA, 9), resultados(CSV_PROTOUCH, 13)
     base = tasas_base(res_p) if res_p else {"L": .45, "E": .27, "V": .28}
-    print("Tasas históricas del Progol:", base, "· concursos con resultado:", len(res_p))
-    q = leer_quiniela()
-    if not q or len(q["partidos"]) < 10:
-        print("⚠️ No pude leer la quiniela de la semana", q)
-    else:
-        if not q["concurso"] and res_p:
-            q["concurso"] = max(res_p) + 1
-        d1, d2 = fechas(q["texto"], hoy)
-        evs = eventos_espn(d1, d2)
-        print(f"Concurso {q['concurso']} · partidos ESPN del {d1} al {d2}: {len(evs)}")
-        probabilidades(q["partidos"], evs, base)
-        probabilidades(q["revancha"], evs, base)
-        for p in q["partidos"] + q["revancha"]:
-            print(f"  {p['n']:>2} {p['local']:<16} vs {p['visita']:<16} → {p.get('espn_local', '¿?'):<22} {p['p']} ({p['fuente']})")
-        inicios = [p["inicio"] for p in q["partidos"] if p.get("inicio")]
-        q["cierre"] = min(inicios) if inicios else f"{d1 + dt.timedelta(days=1)}T00:00:00Z"
-        q["base"] = base
-        if not PRUEBA:
-            print(api("guardar", {"concurso": q["concurso"], "datos": q}))
-    # resultados oficiales de los últimos concursos
-    ult = sorted(res_p)[-8:]
-    if ult and not PRUEBA:
-        print(api("resultados", {"concursos": [{"concurso": k, "progol": res_p[k], "revancha": res_r.get(k)} for k in ult]}))
+    base_m = tasas_base(res_m) if res_m else base
+    base_t = tasas_base(res_t) if res_t else {"L": .35, "E": .33, "V": .32}
+    print("Tasas históricas · Progol:", base, "· Media:", base_m, "· Protouch (E = diferencia ≤ 6):", base_t)
+
+    # ---- Progol + Revancha
+    try:
+        q = leer_quiniela()
+        if not q or len(q["partidos"]) < 10:
+            print("⚠️ No pude leer la quiniela del Progol", q)
+        else:
+            if not q["concurso"] and res_p:
+                q["concurso"] = max(res_p) + 1
+            d1, d2 = fechas(q["texto"], hoy)
+            evs = eventos_espn(d1, d2)
+            print(f"Progol {q['concurso']} · partidos ESPN del {d1} al {d2}: {len(evs)}")
+            probabilidades(q["partidos"], evs, base)
+            probabilidades(q["revancha"], evs, base)
+            mostrar(q)
+            inicios = [p["inicio"] for p in q["partidos"] if p.get("inicio")]
+            q["cierre"] = min(inicios) if inicios else f"{d1 + dt.timedelta(days=1)}T00:00:00Z"
+            q["base"] = base
+            q["boletos"] = {"progol": boletos("progol", [p["p"] for p in q["partidos"]]),
+                            "revancha": boletos("revancha", [p["p"] for p in q["revancha"]])}
+            if not res_p or q["concurso"] not in res_p:
+                guardar("progol", q)
+    except Exception as e:   # un juego que falle no tumba a los demás
+        print("⚠️ Progol:", repr(e))
+
+    # ---- Media Semana y Protouch
+    for juego, res, b in (("media", res_m, base_m), ("protouch", res_t, base_t)):
+        try:
+            q = leer_otra(juego)
+            if not q or len(q["partidos"]) < QUINIELAS[juego]["n"] - 2:
+                print(f"⚠️ No pude leer la quiniela de {juego}", q)
+                continue
+            if res and (not q["concurso"] or q["concurso"] < max(res)):
+                q["concurso"] = max(res) + 1
+            d1, d2 = fechas(q["texto"], hoy)
+            if juego == "media":
+                evs = eventos_espn(d1, d2)
+                probabilidades(q["partidos"], evs, b)
+                for p in q["partidos"]:
+                    if p["fuente"].startswith("Promedio"):
+                        p["fuente"] = "Promedio histórico de Media Semana"
+            else:
+                evs = eventos_americano(d1, d2)
+                probabilidades_americano(q["partidos"], evs, b)
+            print(f"{juego} {q['concurso']} · eventos ESPN del {d1} al {d2}: {len(evs)}")
+            mostrar(q, ("partidos",))
+            inicios = [p["inicio"] for p in q["partidos"] if p.get("inicio")]
+            q["cierre"] = min(inicios) if inicios else f"{d1 + dt.timedelta(days=1)}T00:00:00Z"
+            q["base"] = b
+            q["boletos"] = {juego: boletos(juego, [p["p"] for p in q["partidos"]])}
+            if q["concurso"] not in res:
+                guardar(juego, q)
+        except Exception as e:
+            print(f"⚠️ {juego}:", repr(e))
+
+    # ---- resultados oficiales y premios del último concurso de cada juego
+    premios = {}
+    for juego in ("progol", "media", "protouch"):
+        try:
+            r_ = {"progol": res_p, "media": res_m, "protouch": res_t}[juego]
+            c, pr = leer_premios(juego, max(r_) if r_ else None)
+            print(f"Premios {juego} concurso {c}: {pr}")
+            if c:
+                premios[(juego, c)] = pr
+        except Exception as e:
+            print(f"⚠️ premios {juego}:", repr(e))
+    filas = []
+    for juego, res, url in (("progol", res_p, CSV_PROGOL), ("media", res_m, CSV_MEDIA), ("protouch", res_t, CSV_PROTOUCH)):
+        for k in sorted(res)[-8:]:
+            r = {juego: res[k]}
+            if juego == "progol":
+                r["revancha"] = res_r.get(k)
+            if (url, k) in BOLSAS:
+                r["bolsa"] = BOLSAS[(url, k)]
+            if (juego, k) in premios:
+                r["premios"] = premios[(juego, k)]
+            filas.append({"juego": juego, "concurso": k, "resultados": r})
+    if filas and not PRUEBA:
+        print(api("resultados", {"concursos": filas}))
 
 
 if __name__ == "__main__":
