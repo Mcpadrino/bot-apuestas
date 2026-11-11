@@ -1620,12 +1620,15 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
   <div class="festejo" id="terminos" hidden role="dialog" aria-modal="true" aria-labelledby="tm-tit" style="z-index:96">
     <div class="festejo-caja tm-caja" style="justify-items:stretch;text-align:left;max-height:90vh;overflow:auto;font-size:.9rem">
       <b id="tm-tit" class="tm-tit" style="text-align:center">⚖️ Antes de seguir</b>
+      <p class="tm-nuevo" style="margin:0;font-size:.85rem;color:var(--muted);text-align:center">Términos actualizados el 10 de noviembre de 2026.</p>
       <p style="margin:0">La Bitácora es una herramienta de <b>información y estadística</b> hecha entre amigos. No es casa de apuestas ni asesoría financiera, y no maneja dinero real.</p>
       <ul style="margin:0;padding-left:18px;display:grid;gap:4px;font-size:.92rem">
         <li>Los porcentajes salen de <b>modelos predictivos</b>: pueden fallar y <b>no garantizan ganancias</b>.</li>
         <li><b>Tú decides y eres responsable</b> de lo que apuestas; el creador no responde por pérdidas.</li>
         <li>Solo <b>mayores de 18</b>. Usa casas con permiso en México.</li>
         <li>La cartera, la tienda y los juegos son <b>dinero virtual</b> sin valor real.</li>
+        <li>Melate y Progol a prueba son <b>estadística</b>: no venden boletos ni predicen resultados.</li>
+        <li>Lo que publicas (historias, perfil, apuestas compartidas) lo ve el grupo; las apuestas ya calificadas no se pueden bajar.</li>
         <li>Tus datos solo se usan para que funcione y no se comparten.</li>
       </ul>
       <a href="/terminos.html" target="_blank" rel="noopener" style="color:var(--accent);font-weight:600">Leer los términos completos ›</a>
@@ -7816,7 +7819,7 @@ function pintarOpiniones() {
 }
 
 // ---------------------------------------------------------------- ⚖️ Términos
-const TERM_V = "2026-11-05";
+const TERM_V = "2026-11-10";
 let terminosOk = false;
 async function revisarTerminos() {
   if (terminosOk) return;
