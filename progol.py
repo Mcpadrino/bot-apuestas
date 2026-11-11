@@ -167,7 +167,7 @@ QUINIELAS = {   # imagen de la quiniela de la semana y dónde están los nombres
     "media": {"img": DOC + "progol_media_quiniela/proxima-media.jpg", "loc": (.245, .49, .465, .85), "vis": (.55, .49, .755, .85),
               "cab": (.1, .24, .9, .4), "tit": (.2, .3), "n": 9},
     "protouch": {"img": DOC + "protouch_quiniela/Quiniela_de_la_semana.jpg", "loc": (.215, .565, .47, .975), "vis": (.55, .565, .79, .975),
-                 "cab": (.1, .17, .9, .29), "tit": (.16, .23), "n": 13},
+                 "cab": (.1, .17, .9, .29), "tit": (.16, .23), "n": 13, "inicial": (.14, .32, .62, .43)},
 }
 
 
@@ -204,7 +204,14 @@ def leer_otra(juego):
     cab = re.sub(r"\s+", " ", re.sub(r"[^\w\s:]", " ", _ocr(im, caja(cfg["cab"]), umbral=110))).strip()
     con = _titulo(im, *cfg["tit"])
     partidos = [{"n": i + 1, "local": lo[i].title(), "visita": vi[i].title()} for i in range(min(len(lo), len(vi), cfg["n"]))]
-    return {"concurso": con, "texto": cab, "partidos": partidos}
+    out = {"concurso": con, "texto": cab, "partidos": partidos}
+    if cfg.get("inicial"):      # Protouch Inicial: "LOCAL CUERVOS" / "VISITA CARGADORES"
+        t = _ocr(im, caja(cfg["inicial"]), psm=6, umbral=120).upper()
+        lo_ = re.search(r"LOCAL\s+([A-ZÁÉÍÓÚÑ0-9][A-ZÁÉÍÓÚÑ0-9 .]+)", t)
+        vi_ = re.search(r"VISITA\s+([A-ZÁÉÍÓÚÑ0-9][A-ZÁÉÍÓÚÑ0-9 .]+)", t)
+        if lo_ and vi_:
+            out["inicial"] = {"local": lo_.group(1).strip().title(), "visita": vi_.group(1).strip().title()}
+    return out
 
 
 # ---------------------------------------------------------------- premios (imagen de resultados)
@@ -225,6 +232,23 @@ def leer_premios(juego, ultimo=None):
     W, H = im.size
     con = _titulo(im, *cfg["tit"])
     out = {}
+    if juego == "protouch":
+        g = im.convert("L")
+        def oscuro(x, y):
+            b = g.crop((int(W * (x - .018)), int(H * (y - .005)), int(W * (x + .018)), int(H * (y + .005))))
+            px = b.tobytes()
+            return sum(v < 90 for v in px) / max(1, len(px))
+        casillas = {f"{e}{q}": (x, y) for e, y in (("L", .3176), ("V", .361)) for q, x in zip((1, 2, 3, 4), (.186, .271, .354, .44))}
+        casillas["S"] = (.753, .3396)
+        vals = {k: oscuro(*v) for k, v in casillas.items()}
+        mejor = max(vals, key=vals.get)
+        if vals[mejor] > .5 and sorted(vals.values())[-2] < .45:
+            out["inicial_res"] = mejor
+        c = im.crop((int(W * .12), int(H * .24), int(W * .88), int(H * .28)))
+        c = c.resize((c.width * 3, c.height * 3), Image.LANCZOS).convert("L").point(lambda v: 0 if v < 110 else 255)
+        m = re.search(r"\$\s*([\d,]+\.\d\d)", pytesseract.image_to_string(c, lang="spa", config="--psm 6"))
+        if m:
+            out["inicial"] = [{"aciertos": "13+1", "premio": float(m.group(1).replace(",", ""))}]
     for bloque, (y0, y1, total) in cfg["bandas"].items():
         c = im.crop((int(W * .15), int(H * y0), int(W * .87), int(H * y1)))
         c = c.resize((c.width * 3, c.height * 3), Image.LANCZOS).convert("L").point(lambda v: 0 if v < 110 else 255)
@@ -385,7 +409,29 @@ def _lineas(comp, liga):
     if mu is None:
         return None
     pl, pv = 1 - _ncdf((6.5 - mu) / sd), _ncdf((-6.5 - mu) / sd)
-    return {"L": round(pl, 4), "E": round(1 - pl - pv, 4), "V": round(pv, 4), "casa": (o.get("provider") or {}).get("name"), "linea": round(mu, 1)}
+    tot = o.get("overUnder")
+    return {"L": round(pl, 4), "E": round(1 - pl - pv, 4), "V": round(pv, 4), "casa": (o.get("provider") or {}).get("name"), "linea": round(mu, 1),
+            "total": float(tot) if isinstance(tot, (int, float)) else None}
+
+
+# Protouch Inicial: quién anota el primer touchdown y en qué cuarto (o sin touchdown en tiempo regular).
+# Ajustado con 1,087 partidos de temporada regular de la NFL 2022-2025 (ESPN): el primer TD cayó en el 1er cuarto 68% de las veces,
+# 2º 26%, 3º 3.8%, 4º 1.6% y sin TD en tiempo regular 0.7%; el local anotó primero 54%. Con la línea: logística
+# P(local primero) = 1 / (1 + e^-(A + B·línea)), y el "ritmo" de touchdowns por cuarto crece con (total / T0)^G.
+PTI = {"A": 0.16, "B": 0.068, "c": [1.142, 1.66, 0.971, 1.139], "T0": 44.1, "G": 2.0}
+
+
+def p_inicial(mu, total):
+    import math
+    pl = 1 / (1 + math.exp(-(PTI["A"] + PTI["B"] * (mu or 0))))
+    k = ((total or PTI["T0"]) / PTI["T0"]) ** PTI["G"]
+    vivo, out = 1.0, {}
+    for i, c in enumerate(PTI["c"]):
+        q = vivo * (1 - math.exp(-c * k))
+        out[f"L{i + 1}"], out[f"V{i + 1}"] = round(q * pl, 4), round(q * (1 - pl), 4)
+        vivo -= q
+    out["S"] = round(vivo, 4)
+    return out
 
 
 def eventos_americano(desde, hasta):
@@ -438,6 +484,7 @@ def probabilidades_americano(lista, evs, base):
             if q:
                 p["p"] = {"L": q["V"], "E": q["E"], "V": q["L"]} if al_reves else {k: q[k] for k in "LEV"}
                 lin = -q["linea"] if al_reves else q["linea"]
+                p["linea"], p["total"] = lin, q.get("total")
                 fav = p["local"] if lin > 0 else p["visita"]
                 p["fuente"] = f"Línea {q.get('casa') or 'ESPN'} ({fav} por {abs(lin):g})" if lin else f"Línea {q.get('casa') or 'ESPN'} (parejo)"
         if "p" not in p:
@@ -609,12 +656,32 @@ def main():
             else:
                 evs = eventos_americano(d1, d2)
                 probabilidades_americano(q["partidos"], evs, b)
+                ini = q.get("inicial")
+                if ini:
+                    l_, v_ = _limpio_nfl(ini["local"]), _limpio_nfl(ini["visita"])
+                    cual = next((p for p in q["partidos"] if espn.parecido(_limpio_nfl(p["local"]), l_) >= .8 and espn.parecido(_limpio_nfl(p["visita"]), v_) >= .8), None)
+                    if not cual:
+                        cual = probabilidades_americano([{"n": 0, "local": ini["local"], "visita": ini["visita"]}], evs, b)[0]
+                    else:
+                        ini["n"] = cual["n"]
+                    if cual.get("linea") is not None:
+                        ini["p"] = p_inicial(cual["linea"], cual.get("total"))
+                        ini["fuente"] = f"Línea {cual['linea']:+g} y total {cual.get('total') or '¿?'} + estadística NFL 2022-2025"
+                    else:
+                        ini["p"] = p_inicial(0, None)
+                        ini["fuente"] = "Estadística NFL 2022-2025 (sin línea)"
+                    for k_ in ("espn", "inicio", "liga"):
+                        if cual.get(k_):
+                            ini[k_] = cual[k_]
+                    print("Protouch Inicial:", ini)
             print(f"{juego} {q['concurso']} · eventos ESPN del {d1} al {d2}: {len(evs)}")
             mostrar(q, ("partidos",))
             inicios = [p["inicio"] for p in q["partidos"] if p.get("inicio")]
             q["cierre"] = min(inicios) if inicios else f"{d1 + dt.timedelta(days=1)}T00:00:00Z"
             q["base"] = b
             q["boletos"] = {juego: boletos(juego, [p["p"] for p in q["partidos"]])}
+            if q.get("inicial", {}).get("p"):
+                q["boletos"]["inicial"] = max(q["inicial"]["p"], key=q["inicial"]["p"].get)
             if q["concurso"] not in res:
                 guardar(juego, q)
         except Exception as e:
@@ -640,7 +707,10 @@ def main():
             if (url, k) in BOLSAS:
                 r["bolsa"] = BOLSAS[(url, k)]
             if (juego, k) in premios:
-                r["premios"] = premios[(juego, k)]
+                pr = dict(premios[(juego, k)])
+                if "inicial_res" in pr:
+                    r["inicial"] = pr.pop("inicial_res")
+                r["premios"] = pr
             filas.append({"juego": juego, "concurso": k, "resultados": r})
     if filas and not PRUEBA:
         print(api("resultados", {"concursos": filas}))
