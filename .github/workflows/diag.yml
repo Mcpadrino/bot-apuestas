@@ -1,5 +1,6 @@
 name: diag
 on: workflow_dispatch
+permissions: { contents: write }
 env:
   BOT_URL: ${{ vars.BOT_URL }}   # la dirección de TU página en Vercel (variable del repositorio)
 
@@ -7,11 +8,10 @@ jobs:
   d:
     runs-on: ubuntu-latest
     steps:
-      - name: Bajar imágenes Progol
+      - name: Bajar imágenes Progol a una rama temporal
         run: |
-          mkdir -p out
-          curl -s -L -A "Mozilla/5.0" "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/progol_quiniela/QuinielaProgol.jpg" -o out/quiniela.jpg
-          curl -s -L -A "Mozilla/5.0" "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/progol_momios/porce.jpg" -o out/porce.jpg
-          ls -la out; file out/*
-      - uses: actions/upload-artifact@v4
-        with: { name: progol, path: out }
+          mkdir out && cd out
+          curl -s -L -A "Mozilla/5.0" "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/progol_quiniela/QuinielaProgol.jpg" -o quiniela.jpg
+          curl -s -L -A "Mozilla/5.0" "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/progol_momios/porce.jpg" -o porce.jpg
+          git init -q && git checkout -q -b diag-img && git add . && git -c user.name=diag -c user.email=diag@x commit -qm img
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" diag-img
