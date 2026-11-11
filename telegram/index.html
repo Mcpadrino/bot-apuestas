@@ -744,6 +744,8 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
 .ml-veredicto { padding: 12px 14px; border-radius: 14px; background: var(--win-bg); color: var(--fg); border: 1px solid var(--win); }
 .ml-veredicto.rojo { background: var(--loss-bg); border-color: var(--loss); }
 .ml-barras { width: 100%; height: 150px; }
+.ml-per { display: grid; gap: 2px; } .ml-per > span { font-size: .8rem; color: var(--muted); }
+.ml-aviso { font-size: .8rem; padding: 8px 10px; border-radius: 10px; background: var(--loss-bg); color: var(--fg); }
 .mt-card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 14px; display: grid; gap: 10px; }
 .mt-card h3 { margin: 0; font-size: 1rem; }
 .mt-card .hint { margin: 0; }
@@ -1795,6 +1797,10 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
       <button type="button" role="tab" data-j="retro" aria-selected="false">📼 Retro</button>
     </div>
     <div id="ml-ultimo"></div>
+    <div class="ml-per"><span>📅 Periodo:</span><div class="mt-tabs" id="ml-per" role="group" aria-label="Periodo a analizar">
+      <button type="button" data-per="1" aria-selected="false">Último mes</button><button type="button" data-per="6" aria-selected="false">6 meses</button>
+      <button type="button" data-per="12" aria-selected="false">1 año</button><button type="button" data-per="24" aria-selected="false">2 años</button>
+      <button type="button" data-per="60" aria-selected="false">5 años</button><button type="button" data-per="0" aria-selected="true">Todo</button></div></div>
     <div class="mt-tabs" id="ml-tabs" role="tablist" aria-label="Teorías">
       <button type="button" role="tab" data-ml="numeros" aria-selected="true">📊 Números</button>
       <button type="button" role="tab" data-ml="calientes" aria-selected="false">🔥 Calientes</button>
@@ -2957,7 +2963,17 @@ async function cargarFeed() {
 // ================= 🎱 MELATE A PRUEBA =================
 // Datos oficiales (api/melate.js). Cada teoría arma una combinación SOLO con lo que se sabía antes de cada sorteo,
 // y la comparamos con lo que salió de verdad. Si las teorías sirvieran, le ganarían al azar. Spoiler: no.
-let mlJuego = "melate", mlTab = "numeros", mlCache = {}, mlD = null, mlSel = [], mlRed = [];
+let mlJuego = "melate", mlTab = "numeros", mlCache = {}, mlD = null, mlSel = [], mlRed = [], mlPer = 0;
+const ML_PER = { 0: "toda la historia", 1: "el último mes", 6: "los últimos 6 meses", 12: "el último año", 24: "los últimos 2 años", 60: "los últimos 5 años" };
+function mlFiltrar() {
+  if (!mlPer) return mlD.sorteos;
+  const ult = new Date(mlD.sorteos[mlD.sorteos.length - 1][1] + "T12:00:00"); ult.setMonth(ult.getMonth() - mlPer);
+  const corte = ult.toISOString().slice(0, 10);
+  return mlD.sorteos.filter(x => x[1] > corte);
+}
+document.querySelectorAll("#ml-per [data-per]").forEach(b => b.addEventListener("click", () => {
+  mlPer = Number(b.dataset.per); document.querySelectorAll("#ml-per [data-per]").forEach(x => x.setAttribute("aria-selected", String(x === b))); mlPintar();
+}));
 const mlC = (n, k) => { if (k < 0 || k > n) return 0; let r = 1; for (let i = 1; i <= k; i++) r = r * (n - k + i) / i; return Math.round(r); };
 const mlP = (n, k) => mlC(6, k) * mlC(n - 6, 6 - k) / mlC(n, 6);          // prob. de k aciertos con un boleto
 const mlColor = x => ["#ffd23f", "#7fc8ff", "#ff9a8a", "#9be7a6", "#c9a7ff", "#ffb86b"][Math.floor((x - 1) / 10) % 6];
@@ -3060,36 +3076,44 @@ function mlBarras(vals, esperado, resaltar = []) {          // gráfica de barra
 }
 function mlPintar() {
   if (!mlD) return;
-  const p = $("ml-panel"), d = mlD, n = d.n, e = d.e, S = d.sorteos.length, esp = S * 6 / n, r = mlRng(Date.now() % 1e6);
+  const p = $("ml-panel"), d = mlD, n = d.n, full = d.e, Sf = d.sorteos.length, r = mlRng(Date.now() % 1e6);
+  const sor = mlFiltrar(), S = sor.length, esp = S * 6 / n, per = ML_PER[mlPer];
+  // conteos del periodo elegido; el "sin salir" siempre se mide contra el último sorteo
+  const e = S === Sf ? full : { ...mlEstado(sor, n, S), ult: full.ult, t: full.t };
+  const sdE = Math.sqrt(esp * (1 - 6 / n));
   p.innerHTML = "";
-  const espRec = 50 * 6 / n;
+  const usaPer = !["reduccion", "prueba"].includes(mlTab);
+  $("ml-per").closest(".ml-per").hidden = !usaPer;
+  if (usaPer && S < 60) p.append(el("p", "ml-aviso", `⚠️ En ${per} solo hubo ${S} sorteos. Con tan pocos, las diferencias entre números son enormes por puro azar: justo lo que hace creer que hay "calientes" y "fríos".`));
   if (mlTab === "numeros") {
-    const c = mlTarjeta("📊 Cada número: veces, tendencia y atraso",
-      `<b>Frecuencia</b> = cuántas veces ha salido. Si todo es azar, cada número debería salir unas <b>${esp.toFixed(0)}</b> veces (línea verde). <b>Tendencia</b> = si en los últimos 50 sorteos sale más (↑) o menos (↓) de lo normal (${espRec.toFixed(1)}). <b>Atraso</b> = sorteos que lleva sin salir.`);
+    const c = mlTarjeta(`📊 Cada número en ${per} (${S} sorteos)`,
+      `<b>Frecuencia</b> = cuántas veces salió en el periodo. Si todo es azar, cada número debería salir unas <b>${esp.toFixed(esp < 20 ? 1 : 0)}</b> veces (línea verde). <b>Tendencia</b> = si en este periodo salió más (↑) o menos (↓) de lo normal, más allá de la variación típica (±${sdE.toFixed(1)}). <b>Atraso</b> = sorteos que lleva sin salir hasta hoy.`);
     c.append(mlBarras(e.f.slice(1), esp));
     const orden = el("div", "mt-tabs"); let modo = "num";
     const grid = el("div", "ml-grid");
     const pinta = () => {
       grid.innerHTML = "";
       const ids = Array.from({ length: n }, (_, i) => i + 1);
-      if (modo === "veces") ids.sort((a, b) => e.f[b] - e.f[a]); if (modo === "tend") ids.sort((a, b) => e.rec[b] - e.rec[a]); if (modo === "atraso") ids.sort((a, b) => (e.ult[a] - e.ult[b]));
-      ids.forEach(x => { const atr = S - 1 - e.ult[x], dif = e.rec[x] - espRec, cel = el("div", "ml-num");
+      if (modo === "veces" || modo === "tend") ids.sort((a, b) => e.f[b] - e.f[a]); if (modo === "atraso") ids.sort((a, b) => (e.ult[a] - e.ult[b]));
+      if (modo === "tend") ids.sort((a, b) => Math.abs(e.f[b] - esp) - Math.abs(e.f[a] - esp));
+      ids.forEach(x => { const atr = Sf - 1 - e.ult[x], dif = e.f[x] - esp, cel = el("div", "ml-num"), up = dif > sdE, dn = dif < -sdE;
         const bo = el("span", "ml-bola chica", String(x)); bo.style.setProperty("--bc", mlColor(x));
-        cel.append(bo, el("b", "", `${e.f[x]}×`), el("span", dif > 1.5 ? "up" : dif < -1.5 ? "down" : "", `${dif > 1.5 ? "↑" : dif < -1.5 ? "↓" : "→"} ${e.rec[x]} rec.`), el("span", "", `${atr} sin salir`));
+        cel.append(bo, el("b", "", `${e.f[x]}×`), el("span", up ? "up" : dn ? "down" : "", `${up ? "↑" : dn ? "↓" : "→"} ${dif >= 0 ? "+" : ""}${dif.toFixed(esp < 20 ? 1 : 0)}`), el("span", "", `${atr} sin salir`));
         grid.append(cel); });
     };
-    [["num", "Por número"], ["veces", "Más veces"], ["tend", "Tendencia"], ["atraso", "Más atrasados"]].forEach(([k, t]) => {
+    [["num", "Por número"], ["veces", "Más veces"], ["tend", "Más fuera de lo normal"], ["atraso", "Más atrasados"]].forEach(([k, t]) => {
       const b = el("button", "", t); b.type = "button"; b.setAttribute("aria-selected", String(k === modo));
       b.onclick = () => { modo = k; orden.querySelectorAll("button").forEach(x => x.setAttribute("aria-selected", String(x === b))); pinta(); }; orden.append(b); });
     pinta(); c.append(orden, grid); p.append(c);
     const mx = Math.max(...e.f.slice(1)), mn = Math.min(...e.f.slice(1));
-    p.append(mlTarjeta("¿Qué significa?", `El que más ha salido lleva <b>${mx}</b> y el que menos <b>${mn}</b>. Parece mucha diferencia, pero con ${S} sorteos el azar solo ya produce diferencias así: la variación normal es de ±${Math.round(2 * Math.sqrt(esp))} veces. En ⚖️ <b>¿Es justo?</b> está la prueba formal.`));
+    const fuera = Array.from({ length: n }, (_, i) => i + 1).filter(x => Math.abs(e.f[x] - esp) > 2 * sdE).length;
+    p.append(mlTarjeta("¿Qué significa?", `En ${per} el que más salió lleva <b>${mx}</b> y el que menos <b>${mn}</b>. Parece mucha diferencia, pero con ${S} sorteos el azar solo ya produce diferencias así: la variación normal es de ±${(2 * sdE).toFixed(esp < 20 ? 1 : 0)} veces. Por puro azar se esperan unos ${Math.round(n * .046)} números "muy fuera de lo normal" y hubo <b>${fuera}</b>. Cambia el periodo y verás que los "calientes" de un periodo no son los del otro. En ⚖️ <b>¿Es justo?</b> está la prueba formal.`));
   }
   if (mlTab === "calientes") {
     const c = mlTarjeta("🔥 Teoría de los números calientes",
       "Dice que los números que más han salido \"están en racha\" y van a seguir saliendo. <b>El problema:</b> las esferas no tienen memoria. Si un número salió mucho fue por azar, y eso no cambia su probabilidad en el siguiente sorteo.");
     const top = mlTop(n, x => e.f[x], 10), rec = mlTop(n, x => e.rec[x] * 1000 + e.f[x], 10);
-    c.append(el("b", "", "Los 10 que más han salido en la historia"), mlBolas(top, { chica: true }), el("b", "", "Los 10 más calientes en los últimos 50 sorteos (tendencia)"), mlBolas(rec, { chica: true }),
+    c.append(el("b", "", `Los 10 que más salieron en ${per}`), mlBolas(top, { chica: true }), el("b", "", `Los 10 más calientes en los últimos ${Math.min(50, S)} sorteos de ese periodo`), mlBolas(rec, { chica: true }),
       mlBarras(e.f.slice(1), esp, top));
     c.append(mlComboCaja("calientes", mlCombo("calientes", e, n, r, d.tip)), mlComboCaja("recientes", mlCombo("recientes", e, n, r, d.tip)));
     p.append(c);
@@ -3098,7 +3122,7 @@ function mlPintar() {
     const c = mlTarjeta("🧊 Teoría de los números fríos",
       "Es la contraria: los que menos han salido \"ya se tienen que emparejar\" (la famosa <b>falacia del jugador</b>). A la larga las frecuencias sí se parecen, pero no porque los fríos \"recuperen\": es porque los números grandes diluyen las diferencias.");
     const fr = mlTop(n, x => e.f[x], 10, true);
-    c.append(el("b", "", "Los 10 que menos han salido"), mlBolas(fr, { chica: true }), mlBarras(e.f.slice(1), esp, fr), mlComboCaja("frios", mlCombo("frios", e, n, r, d.tip)));
+    c.append(el("b", "", `Los 10 que menos salieron en ${per}`), mlBolas(fr, { chica: true }), mlBarras(e.f.slice(1), esp, fr), mlComboCaja("frios", mlCombo("frios", e, n, r, d.tip)));
     p.append(c);
   }
   if (mlTab === "atrasados") {
@@ -3106,11 +3130,11 @@ function mlPintar() {
     // atraso máximo histórico de cada número
     const maxGap = new Array(n + 1).fill(0), ultI = new Array(n + 1).fill(-1);
     d.sorteos.forEach((s2, i) => { for (let k = 2; k < 8; k++) { const x = s2[k]; maxGap[x] = Math.max(maxGap[x], i - ultI[x] - 1); ultI[x] = i; } });
-    const at = mlTop(n, x => S - 1 - e.ult[x], 10);
+    const at = mlTop(n, x => Sf - 1 - e.ult[x], 10);
     const c = mlTarjeta("⏳ Teoría de los números atrasados",
       `Dice que si un número lleva mucho sin salir, \"ya le toca\". En promedio un número sale cada <b>${gapEsp.toFixed(1)}</b> sorteos, pero a veces pasan muchos más sin salir, por puro azar. Que lleve tiempo sin salir no le sube la probabilidad: sigue siendo 6 de ${n} en cada sorteo.`);
     const t = el("table", "ml-tabla"); t.innerHTML = "<thead><tr><th>Número</th><th>Sin salir</th><th>Su récord</th><th>Promedio</th></tr></thead>";
-    const tb = el("tbody"); at.forEach(x => { const tr = el("tr"); tr.innerHTML = `<td>${x}</td><td>${S - 1 - e.ult[x]} sorteos</td><td>${maxGap[x]}</td><td>${gapEsp.toFixed(1)}</td>`; tb.append(tr); }); t.append(tb);
+    const tb = el("tbody"); at.forEach(x => { const tr = el("tr"); tr.innerHTML = `<td>${x}</td><td>${Sf - 1 - e.ult[x]} sorteos</td><td>${maxGap[x]}</td><td>${gapEsp.toFixed(1)}</td>`; tb.append(tr); }); t.append(tb);
     c.append(t, mlComboCaja("atrasados", mlCombo("atrasados", e, n, r, d.tip)));
     p.append(c);
   }
@@ -3119,7 +3143,8 @@ function mlPintar() {
       "Dice que conviene jugar combinaciones \"balanceadas\": 3 pares y 3 nones, mitad bajos y mitad altos, una suma intermedia, sin muchos consecutivos. <b>La trampa:</b> esas combinaciones salen más seguido solo porque <b>hay muchísimas más</b> de ese tipo. Cada boleto en particular tiene la misma probabilidad que 1-2-3-4-5-6.");
     // observado vs teoría (simulada)
     const rr = mlRng(11), N2 = 20000, cuenta = (arr, fn) => { const m = {}; arr.forEach(x => { const k = fn(x); m[k] = (m[k] || 0) + 1; }); return m; };
-    const teo = Array.from({ length: N2 }, () => mlAzar(n, rr)), obs = d.sorteos.map(s2 => s2.slice(2, 8));
+    const teo = Array.from({ length: N2 }, () => mlAzar(n, rr)), obs = sor.map(s2 => s2.slice(2, 8));
+    c.append(el("p", "hint", `Periodo: ${per} (${S} sorteos).`));
     const filas = [
       ["Pares / nones", c2 => { const pa = c2.filter(x => x % 2 === 0).length; return `${pa} pares`; }],
       ["Bajos (≤" + Math.floor(n / 2) + ") / altos", c2 => `${c2.filter(x => x <= n / 2).length} bajos`],
@@ -3148,11 +3173,13 @@ function mlPintar() {
     const c = mlTarjeta("⚖️ ¿El sorteo es justo? (prueba de chi-cuadrada)",
       `Compara cuántas veces salió cada número contra lo que daría el azar puro (${esp.toFixed(1)} cada uno). Si alguna esfera o la máquina tuvieran sesgo, saldría un valor muy grande y una probabilidad muy chica (menos de 1%).`);
     const t = el("table", "ml-tabla");
-    t.innerHTML = `<tbody><tr><td>Sorteos analizados</td><td>${S}</td></tr><tr><td>Chi-cuadrada</td><td>${chi.toFixed(1)}</td></tr><tr><td>Lo normal con azar puro</td><td>alrededor de ${df} (±${Math.round(2 * Math.sqrt(2 * df))})</td></tr><tr><td>Probabilidad de ver diferencias así por azar</td><td class="${p2 < .01 ? "no" : "ok"}">${(p2 * 100).toFixed(p2 < .01 ? 2 : 0)}%</td></tr></tbody>`;
+    t.innerHTML = `<tbody><tr><td>Sorteos analizados (${per})</td><td>${S}</td></tr><tr><td>Chi-cuadrada</td><td>${chi.toFixed(1)}</td></tr><tr><td>Lo normal con azar puro</td><td>alrededor de ${df} (±${Math.round(2 * Math.sqrt(2 * df))})</td></tr><tr><td>Probabilidad de ver diferencias así por azar</td><td class="${p2 < .01 ? "no" : "ok"}">${(p2 * 100).toFixed(p2 < .01 ? 2 : 0)}%</td></tr></tbody>`;
     const v = el("div", "ml-veredicto" + (p2 < .01 ? " rojo" : ""));
     v.innerHTML = p2 < .01 ? "🚨 Las diferencias son más grandes de lo que el azar suele dar. Podría haber algo raro (o ser uno de esos casos de 1 en 100). Valdría la pena revisarlo con más sorteos."
       : `✅ <b>No hay evidencia de sesgo.</b> Las diferencias entre números son del tamaño que produce el azar. Los "calientes" y "fríos" son ruido normal.`;
-    c.append(t, v); p.append(c);
+    c.append(t, v);
+    if (esp < 5) c.append(el("p", "ml-aviso", `Con ${S} sorteos cada número debería salir apenas ${esp.toFixed(1)} veces: la prueba no es confiable con tan pocos datos. Usa 2 años o más.`));
+    p.append(c);
   }
 }
 function mlSelector(lista, max, alCambiar) {
