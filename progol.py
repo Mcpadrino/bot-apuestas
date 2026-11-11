@@ -67,11 +67,16 @@ NOMBRES = {
 
 
 def get(url, **kw):
-    try:
-        r = requests.get(url, headers=UA, timeout=40, **kw)
-        return r if r.ok else None
-    except requests.RequestException:
-        return None
+    import time
+    for intento in range(3):              # la página de la Lotería a veces tarda o no contesta
+        try:
+            r = requests.get(url, headers=UA, timeout=45, **kw)
+            if r.ok:
+                return r
+        except requests.RequestException:
+            pass
+        time.sleep(8 * (intento + 1))
+    return None
 
 
 # ---------------------------------------------------------------- OCR del boleto
