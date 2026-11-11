@@ -10,8 +10,13 @@ jobs:
         run: |
           mkdir -p o && cd o
           B=https://www.loterianacional.gob.mx
-          for p in Progol/Coperacha ProgolMediaSemana/Coperacha ProgolMediaSemana/ComoJugar ProgolMediaSemana/Resultados ProgolMediaSemana/Quiniela Protouch/Coperacha Protouch/ComoJugar Protouch/Quiniela Protouch/Resultados Progol/Quiniela Progol/Resultados Home/Historicos MediaSemana/Coperacha; do
+          for p in Protouch/CombinacionesMultiples Progol/Momios Protouch/Momios ProgolMediaSemana/Momios Mascarillas/ListasPremios Protouch/Protouch ProgolMediaSemana/ProgolMediaSemana; do
             f=$(echo $p | tr / _); curl -s -L -A "Mozilla/5.0" "$B/$p" -o "$f.html"; echo "$p $(wc -c < $f.html)"; done
+          for u in Documentos/juegos/Concursosysorteos/progol_guia_quiniela/GUIA.pdf Documentos/juegos/Concursosysorteos/progol_media_guia_quiniela/guiamedia.pdf Documentos/juegos/Concursosysorteos/protouch_guia_quiniela/guiaprotouch.pdf Documentos/juegos/Concursosysorteos/progol_media_quiniela/proxima-media.jpg Documentos/juegos/Concursosysorteos/protouch_quiniela/Quiniela_de_la_semana.jpg Documentos/juegos/Concursosysorteos/progol_media_resultados/QG_progol_media.jpg Documentos/juegos/Concursosysorteos/protouch_resultados/resultados_Protouch.jpg Documentos/juegos/Concursosysorteos/progol_resultados/QG_progol-revancha.jpg; do
+            curl -s -L -A "Mozilla/5.0" "$B/$u" -o "$(basename $u)"; done
+          for a in UAByAG8AZwBvAGwALQBNAGUAZABpAGEALQBTAA== UAByAG8AdABvAHUAYwBoAA== UAByAG8AZwBvAGwA UAByAG8AZwBvAGwALQBSAGUAdgBhAG4AYwBoAGEA; do
+            curl -s -L -A "Mozilla/5.0" "$B/Home/Historicos?ARHP=$a" -o "h_$(echo $a | cut -c1-24 | tr -d =).csv"; done
+          sudo apt-get install -y -qq poppler-utils >/dev/null 2>&1; for f in *.pdf; do pdftotext -layout $f; done
           python3 - <<'PY'
           import re,glob,html
           for f in glob.glob('*.html'):
