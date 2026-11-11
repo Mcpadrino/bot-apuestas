@@ -765,6 +765,19 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
 .pg-cab { display: grid; grid-template-columns: 22px 1fr repeat(3, 52px); gap: 6px; font-size: .7rem; color: var(--muted); text-align: center; }
 .pg-cab span:nth-child(2) { text-align: left; }
 .pg-res { position: absolute; right: 4px; bottom: 2px; font-size: .62rem; }
+.pg-juegos { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.pg-juegos button { flex: none; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 999px; padding: 8px 14px; font: 700 .84rem var(--font-body); }
+.pg-juegos button[aria-selected="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.pg-tam { display: grid; gap: 4px; overflow-x: auto; }
+.pg-tam table { border-collapse: separate; border-spacing: 3px; font-size: .7rem; }
+.pg-tam th { color: var(--muted); font-weight: 600; padding: 2px; }
+.pg-tam td button { width: 44px; min-height: 40px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); font: 700 .72rem/1.1 var(--font-mono); padding: 2px 0; }
+.pg-tam td button small { display: block; font: 500 .6rem var(--font-body); color: var(--muted); }
+.pg-tam td button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.pg-tam td button[aria-pressed="true"] small { color: var(--accent-ink); }
+.pg-mal { color: var(--loss); font-weight: 700; }
+.pg-res-tabla td:nth-child(n+2) { font-family: var(--font-mono); }
+.pg-gana { color: var(--win); font-weight: 700; }
 .mt-card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 14px; display: grid; gap: 10px; }
 .mt-card h3 { margin: 0; font-size: 1rem; }
 .mt-card .hint { margin: 0; }
@@ -1838,16 +1851,22 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
   <div id="v-progol" class="vista section" hidden>
     <div class="mt-hero pg-hero">
       <small>A PRUEBA</small>
-      <h2>Progol sin cuentos</h2>
-      <p>La quiniela oficial de la semana con la probabilidad real de cada partido (momios de las casas o ranking de fuerza). Ve qué tan difícil es de verdad atinarle a las 14 y, cuando terminen, cómo nos fue.</p>
+      <h2>Quinielas sin cuentos</h2>
+      <p>Progol, Revancha, Media Semana y Protouch con la probabilidad real de cada partido. Arma el boleto real más probable de cada tamaño y ve, concurso tras concurso, cuánto costó y cuánto habría pagado.</p>
+    </div>
+    <div class="pg-juegos" id="pg-juegos" role="tablist" aria-label="Juego">
+      <button type="button" role="tab" data-pj="progol" aria-selected="true">⚽ Progol</button>
+      <button type="button" role="tab" data-pj="revancha" aria-selected="false">🔁 Revancha</button>
+      <button type="button" role="tab" data-pj="media" aria-selected="false">½ Media Semana</button>
+      <button type="button" role="tab" data-pj="protouch" aria-selected="false">🏈 Protouch</button>
     </div>
     <div class="mt-tabs" id="pg-tabs" role="tablist" aria-label="Progol">
       <button type="button" role="tab" data-pg="boleto" aria-selected="true">🎟️ Boleto de la semana</button>
-      <button type="button" role="tab" data-pg="arma" aria-selected="false">🧮 Arma tu quiniela</button>
+      <button type="button" role="tab" data-pg="arma" aria-selected="false">🧮 Arma tu boleto</button>
       <button type="button" role="tab" data-pg="fue" aria-selected="false">📒 ¿Cómo nos fue?</button>
     </div>
     <div id="pg-panel" class="mt-panel"></div>
-    <p class="hint" style="text-align:center">Quiniela y resultados oficiales de la Lotería Nacional; probabilidades de momios publicados (ESPN) o del ranking Elo de selecciones. Se actualiza solo.</p>
+    <p class="hint" style="text-align:center">Quiniela y resultados oficiales de la Lotería Nacional; probabilidades de momios y líneas publicadas (ESPN) o del ranking Elo de selecciones. Precios y límites de dobles y triples: tabla oficial de quinielas múltiples. Se actualiza solo.</p>
   </div>
   <div id="v-archivo" class="vista section" hidden>
     <section id="ar-sec">
@@ -3374,11 +3393,20 @@ function mlPintarPrueba(p) {
 }
 
 // ================= ⚽ PROGOL A PRUEBA =================
-let pgTab = "boleto", pgDatos = null, pgSel = {};
+// Reglas oficiales (tabla de quinielas múltiples de la Lotería Nacional): con T triples, cuántos dobles caben, y precio por quiniela sencilla.
+const PG_J = {
+  progol: { nom: "Progol", fila: "progol", lista: "partidos", res: "progol", precio: 15, maxD: [8, 6, 5, 3, 2, 0], E: "E", empate: "Empate", base: "del Progol" },
+  revancha: { nom: "Revancha", fila: "progol", lista: "revancha", res: "revancha", precio: 5, maxD: [3, 3, 3], E: "E", empate: "Empate", base: "del Progol",
+    nota: "La Revancha solo se juega junto con un boleto de Progol: su precio se suma al del Progol." },
+  media: { nom: "Media Semana", fila: "media", lista: "partidos", res: "media", precio: 15, maxD: [3, 3, 3], E: "E", empate: "Empate", base: "de Media Semana" },
+  protouch: { nom: "Protouch", fila: "protouch", lista: "partidos", res: "protouch", precio: 10, maxD: [8, 6, 5, 3, 2, 0], E: "D", empate: "Dif. ≤6", base: "del Protouch",
+    nota: "En Protouch: L = gana el local por 7 o más, D = diferencia de 6 puntos o menos (para cualquiera), V = gana la visita por 7 o más. El Protouch Inicial (primer touchdown) no se calcula aquí." },
+};
+let pgJ = "progol", pgTab = "boleto", pgDatos = null, pgSel = {}, pgTam = {};
 async function pgCargar() {
   const p = $("pg-panel");
   if (!pgDatos) {
-    p.innerHTML = '<p class="hint">⏳ Leyendo la quiniela oficial…</p>';
+    p.innerHTML = '<p class="hint">⏳ Leyendo las quinielas oficiales…</p>';
     try { const r = await fetch("/api/melate?op=progol"); pgDatos = await r.json(); if (!r.ok) throw new Error(pgDatos.error); }
     catch (e) { pgDatos = null; p.innerHTML = ""; p.append(el("p", "empty", e.message || "No se pudo leer el Progol.")); return; }
   }
@@ -3387,93 +3415,202 @@ async function pgCargar() {
 document.querySelectorAll("#pg-tabs [data-pg]").forEach(b => b.addEventListener("click", () => {
   pgTab = b.dataset.pg; document.querySelectorAll("#pg-tabs [data-pg]").forEach(x => x.setAttribute("aria-selected", String(x === b))); pgPintar();
 }));
+document.querySelectorAll("#pg-juegos [data-pj]").forEach(b => b.addEventListener("click", () => {
+  pgJ = b.dataset.pj; document.querySelectorAll("#pg-juegos [data-pj]").forEach(x => x.setAttribute("aria-selected", String(x === b))); if (pgDatos) pgPintar();
+}));
 const pgK = ["L", "E", "V"], pgNom = { L: "Local", E: "Empate", V: "Visita" };
+const pgLetra = k => k === "E" ? PG_J[pgJ].E : k;
+const pgOrden = m => [...m].sort((a, b) => pgK.indexOf(a) - pgK.indexOf(b)).join("");
 // probabilidad de atinar exactamente k de n (cada partido con su propia probabilidad): Poisson-binomial
 function pgDistrib(ps) { let d = [1]; ps.forEach(p => { const n = new Array(d.length + 1).fill(0); d.forEach((v, k) => { n[k] += v * (1 - p); n[k + 1] += v * p; }); d = n; }); return d; }
-const pgUno = x => x > 0 ? "1 en " + Math.round(1 / x).toLocaleString("es-MX") : "prácticamente imposible";
+const pgUno = x => x >= .5 ? Math.round(x * 100) + "%" : x > 0 ? "1 en " + Math.round(1 / x).toLocaleString("es-MX") : "prácticamente imposible";
+const pgPeso = n => "$" + Math.round(n).toLocaleString("es-MX");
+const pgTamNom = (t, d) => t + d === 0 ? "Sencilla" : [d ? `${d} doble${d > 1 ? "s" : ""}` : "", t ? `${t} triple${t > 1 ? "s" : ""}` : ""].filter(Boolean).join(" + ");
+// Dónde poner T triples y D dobles para que el boleto tenga la mayor probabilidad de atinarle a todo (programación dinámica exacta)
+function pgMejor(P, t, d) {
+  let f = new Map([["0,0", [0, []]]]);
+  for (const x of P) {
+    const o = [...pgK].sort((a, b) => x.p[b] - x.p[a]);
+    const op = [[o[0], x.p[o[0]]], [pgOrden(o[0] + o[1]), x.p[o[0]] + x.p[o[1]]], ["LEV", 1]];
+    const g = new Map();
+    for (const [key, [lp, m]] of f) {
+      const [ft, fd] = key.split(",").map(Number);
+      op.forEach(([marca, pr], tipo) => {
+        const nt = ft + (tipo === 2), nd = fd + (tipo === 1);
+        if (nt > t || nd > d) return;
+        const v = lp + Math.log(Math.max(pr, 1e-9)), k2 = nt + "," + nd;
+        if (!g.has(k2) || v > g.get(k2)[0]) g.set(k2, [v, [...m, marca]]);
+      });
+    }
+    f = g;
+  }
+  const r = f.get(t + "," + d); return r ? r[1] : null;
+}
+function pgTamanos(J, n) { const out = []; J.maxD.forEach((md, t) => { for (let d = 0; d <= md; d++) if (t + d <= n) out.push({ t, d, combos: 2 ** d * 3 ** t, costo: 2 ** d * 3 ** t * J.precio }); }); return out; }
+// boletos guardados antes del concurso (o, si es un registro viejo, calculados igual que en el servidor)
+function pgBoletos(fila, J) {
+  const P = fila.datos[J.lista] || [], g = ((fila.datos.boletos || {})[J.res]) || [];
+  return pgTamanos(J, P.length).map(z => { const s = g.find(b => b.t === z.t && b.d === z.d); return { ...z, marcas: s ? s.marcas : pgMejor(P, z.t, z.d), guardado: !!s }; });
+}
+// cuántas quinielas sencillas del boleto atinaron k partidos y cuánto pagan
+function pgCalifica(marcas, res, premios, bolsa, N) {
+  let c = [1];
+  marcas.forEach((m, i) => { const ok = res[i] && m.includes(res[i]) ? 1 : 0, mal = m.length - ok, n = new Array(c.length + 1).fill(0); c.forEach((v, k) => { n[k] += v * mal; n[k + 1] += v * ok; }); c = n; });
+  let premio = 0, aprox = false;
+  c.forEach((cnt, k) => {
+    if (!cnt) return;
+    const f = (premios || []).find(x => x.aciertos === k);
+    if (f) premio += cnt * f.premio;
+    else if (k === N && bolsa) { premio += cnt * bolsa; aprox = true; }
+  });
+  const mejor = c.reduce((m, v, k) => v ? k : m, 0);
+  return { premio, mejor, conteo: c, aprox };
+}
 function pgFila(p, o = {}) {
   const f = el("div", "pg-fila"), mx = pgK.reduce((a, k) => p.p[k] > p.p[a] ? k : a, "L");
   const eq = el("div", "eq"); eq.append(`${p.local} – ${p.visita}`, el("small", "", (p.liga ? p.liga + " · " : "") + (p.fuente || "")));
   f.append(el("span", "n", String(p.n)), eq);
   pgK.forEach(k => {
     const b = el(o.elegir ? "button" : "div", "pg-c" + (k === mx ? " max" : "") + (o.res === k ? " ok" : ""));
-    if (o.elegir) { b.type = "button"; b.setAttribute("aria-pressed", String(!!(o.sel && o.sel.includes(k)))); b.setAttribute("aria-label", `${pgNom[k]} ${Math.round(p.p[k] * 100)}%`); b.onclick = () => o.elegir(k); }
-    const i = el("i"); i.style.height = Math.round(p.p[k] * 100) + "%"; b.append(i, el("small", "", k), el("span", "", Math.round(p.p[k] * 100) + "%"));
+    if (o.elegir) { b.type = "button"; b.onclick = () => o.elegir(k); }
+    if (o.sel) b.setAttribute("aria-pressed", String(o.sel.includes(k)));
+    if (o.elegir) b.setAttribute("aria-label", `${k === "E" ? PG_J[pgJ].empate : pgNom[k]} ${Math.round(p.p[k] * 100)}%`);
+    const i = el("i"); i.style.height = Math.round(p.p[k] * 100) + "%"; b.append(i, el("small", "", pgLetra(k)), el("span", "", Math.round(p.p[k] * 100) + "%"));
     if (o.res === k) b.append(el("span", "pg-res", "✓"));
     f.append(b);
   });
   return f;
 }
-function pgCabeza() { const c = el("div", "pg-cab"); ["#", "Partido", "Local", "Empate", "Visita"].forEach(t => c.append(el("span", "", t))); return c; }
+function pgCabeza() { const c = el("div", "pg-cab"); ["#", "Partido", "Local", PG_J[pgJ].empate, "Visita"].forEach(t => c.append(el("span", "", t))); return c; }
 function pgPintar() {
-  const p = $("pg-panel"); p.innerHTML = "";
-  const lista = pgDatos || [], act = lista[0];
-  if (!act) { p.append(el("p", "empty", "Todavía no se ha leído ninguna quiniela. Se revisa sola varias veces al día.")); return; }
-  const d = act.datos, P = d.partidos || [], R = d.revancha || [];
+  const p = $("pg-panel"), J = PG_J[pgJ]; p.innerHTML = "";
+  const filas = (pgDatos || []).filter(x => (x.juego || "progol") === J.fila && (x.datos[J.lista] || []).length).sort((a, b) => b.concurso - a.concurso);
+  const act = filas[0];
+  if (J.nota) p.append(el("p", "hint", J.nota));
+  if (!act) { p.append(el("p", "empty", `Todavía no se ha leído ninguna quiniela de ${J.nom}. Se revisa sola varias veces al día.`)); return; }
+  const d = act.datos, P = d[J.lista], N = P.length, resAct = (act.resultados || {})[J.res];
   if (pgTab === "boleto") {
-    const c = mlTarjeta(`🎟️ Concurso ${act.concurso}`, d.texto || "");
-    c.append(pgCabeza()); P.forEach(x => c.append(pgFila(x, { res: act.resultados && act.resultados.progol ? act.resultados.progol[x.n - 1] : null })));
-    const best = P.map(x => Math.max(x.p.L, x.p.E, x.p.V)), dist = pgDistrib(best), N = P.length;
-    const p14 = best.reduce((a, b) => a * b, 1), p13 = dist[N] + dist[N - 1], p12 = p13 + dist[N - 2], esp = best.reduce((a, b) => a + b, 0);
+    const c = mlTarjeta(`🎟️ ${J.nom} · concurso ${act.concurso}`, d.texto || "");
+    c.append(pgCabeza()); P.forEach((x, i) => c.append(pgFila(x, { res: resAct ? resAct[i] : null })));
+    const best = P.map(x => Math.max(x.p.L, x.p.E, x.p.V)), dist = pgDistrib(best);
+    const pTodo = best.reduce((a, b) => a * b, 1), esp = best.reduce((a, b) => a + b, 0), al = k => dist.slice(k).reduce((a, b) => a + b, 0);
     const t = el("table", "ml-tabla");
     t.innerHTML = `<tbody>
       <tr><td>Combinaciones posibles (3<sup>${N}</sup>)</td><td>${(3 ** N).toLocaleString("es-MX")}</td></tr>
       <tr><td>Atinar las ${N} llenando al azar</td><td>${pgUno(1 / 3 ** N)}</td></tr>
-      <tr><td>Atinar las ${N} con el boleto <b>más probable</b> (el favorito en cada partido)</td><td><b>${pgUno(p14)}</b></td></tr>
-      <tr><td>…13 o más</td><td>${pgUno(p13)}</td></tr><tr><td>…12 o más</td><td>${pgUno(p12)}</td></tr>
+      <tr><td>Atinar las ${N} con el boleto <b>más probable</b> (el favorito en cada partido)</td><td><b>${pgUno(pTodo)}</b></td></tr>
+      <tr><td>…${N - 1} o más</td><td>${pgUno(al(N - 1))}</td></tr><tr><td>…${N - 2} o más</td><td>${pgUno(al(N - 2))}</td></tr>
       <tr><td>Aciertos que se esperan con ese boleto</td><td>${esp.toFixed(1)} de ${N}</td></tr>
       <tr><td>…y llenando al azar</td><td>${(N / 3).toFixed(1)} de ${N}</td></tr></tbody>`;
     const v = el("div", "ml-veredicto");
-    v.innerHTML = `Aunque eligieras siempre lo más probable, atinarle a las ${N} es <b>${pgUno(p14)}</b>. Conocer de futbol sí ayuda (sube de ${(N / 3).toFixed(1)} a ${esp.toFixed(1)} aciertos esperados), pero la quiniela completa sigue siendo casi imposible: por eso la bolsa se acumula semana tras semana.`;
+    v.innerHTML = `Aunque eligieras siempre lo más probable, atinarle a las ${N} es <b>${pgUno(pTodo)}</b>. Saber de deporte sí ayuda (sube de ${(N / 3).toFixed(1)} a ${esp.toFixed(1)} aciertos esperados), pero el boleto completo sigue siendo casi imposible.`;
     c.append(t, v); p.append(c);
-    if (R.length) {
-      const c2 = mlTarjeta("🔁 Revancha", "");
-      c2.append(pgCabeza()); R.forEach(x => c2.append(pgFila(x, { res: act.resultados && act.resultados.revancha ? act.resultados.revancha[x.n - 1] : null })));
-      const bR = R.map(x => Math.max(x.p.L, x.p.E, x.p.V)).reduce((a, b) => a * b, 1);
-      c2.append(el("p", "hint", `Atinar las ${R.length} con lo más probable: ${pgUno(bR)} (al azar: ${pgUno(1 / 3 ** R.length)}).`));
-      p.append(c2);
-    }
-    const fu = {}; [...P, ...R].forEach(x => { const k = (x.fuente || "").startsWith("Momios") ? "momios" : (x.fuente || "").startsWith("Ranking") ? "elo" : "base"; fu[k] = (fu[k] || 0) + 1; });
-    p.append(mlTarjeta("¿De dónde salen los porcentajes?", `<b>Momios</b> (${fu.momios || 0} partidos): lo que pagan las casas, sin su margen; es lo más preciso. <b>Ranking Elo</b> (${fu.elo || 0}): fuerza histórica de cada selección cuando no hay momios. <b>Promedio histórico</b> (${fu.base || 0}): cuando no encontramos el partido, se usa cómo suelen terminar los partidos del Progol (${Math.round((d.base || {}).L * 100 || 37)}% local, ${Math.round((d.base || {}).E * 100 || 30)}% empate, ${Math.round((d.base || {}).V * 100 || 33)}% visita).`));
+    const fu = {}; P.forEach(x => { const f = x.fuente || ""; const k = f.startsWith("Momios") || f.startsWith("Línea") ? "momios" : f.startsWith("Ranking") ? "elo" : "base"; fu[k] = (fu[k] || 0) + 1; });
+    const b = d.base || {};
+    p.append(mlTarjeta("¿De dónde salen los porcentajes?", (pgJ === "protouch"
+      ? `<b>Línea de puntos</b> (${fu.momios || 0} partidos): de la línea que publican las casas se calcula qué tan seguido el margen final queda en 6 puntos o menos. `
+      : `<b>Momios</b> (${fu.momios || 0} partidos): lo que pagan las casas, sin su margen; es lo más preciso. <b>Ranking Elo</b> (${fu.elo || 0}): fuerza histórica de cada selección cuando no hay momios. `)
+      + `<b>Promedio histórico</b> (${fu.base || 0}): cuando no encontramos el partido se usa cómo suelen terminar los partidos ${J.base} (${Math.round((b.L || 0) * 100)}% L, ${Math.round((b.E || 0) * 100)}% ${J.E}, ${Math.round((b.V || 0) * 100)}% V).`));
   }
   if (pgTab === "arma") {
-    const key = act.concurso; pgSel[key] = pgSel[key] || P.map(x => [pgK.reduce((a, k) => x.p[k] > x.p[a] ? k : a, "L")]);
+    const key = pgJ + act.concurso, tams = pgTamanos(J, N);
+    if (!pgTam[pgJ]) pgTam[pgJ] = { t: 0, d: 0 };
+    const tm = pgTam[pgJ];
+    if (!pgSel[key]) pgSel[key] = pgMejor(P, tm.t, tm.d).map(m => [...m]);
     const sel = pgSel[key];
-    const c = mlTarjeta("🧮 Arma tu quiniela (sencillos, dobles y triples)", "Toca uno, dos o los tres resultados de cada partido, como en el volante. Arrancamos con el favorito en cada uno. Abajo ves cuántas combinaciones pagas y tu probabilidad real de atinar.");
-    const filas = el("div"), res = el("div");
+    const c = mlTarjeta(`🧮 Arma tu boleto de ${J.nom}`, `Escoge cuántos dobles y triples quieres (la tabla oficial de la Lotería: arriba cuántas quinielas, abajo cuánto cuesta). La app pone cada doble y triple en los partidos donde más sube tu probabilidad. Luego puedes cambiar marcas a mano.`);
+    const grid = el("div", "pg-tam"), tb = el("table"), maxD = Math.max(...J.maxD);
+    tb.innerHTML = `<thead><tr><th>Triples ↓ / Dobles →</th>${Array.from({ length: maxD + 1 }, (_, i) => `<th>${i}</th>`).join("")}</tr></thead>`;
+    const body = el("tbody");
+    J.maxD.forEach((md, t) => {
+      const tr = el("tr"); tr.append(el("th", "", String(t)));
+      for (let dd = 0; dd <= maxD; dd++) {
+        const td = el("td");
+        const z = tams.find(x => x.t === t && x.d === dd);
+        if (z) {
+          const bt = el("button"); bt.type = "button"; bt.setAttribute("aria-pressed", String(tm.t === t && tm.d === dd));
+          bt.setAttribute("aria-label", `${pgTamNom(t, dd)}: ${z.combos} quinielas, ${pgPeso(z.costo)}`);
+          bt.append(String(z.combos), el("small", "", pgPeso(z.costo)));
+          bt.onclick = () => { pgTam[pgJ] = { t, d: dd }; pgSel[key] = pgMejor(P, t, dd).map(m => [...m]); pgPintar(); };
+          td.append(bt);
+        }
+        tr.append(td);
+      }
+      body.append(tr);
+    });
+    tb.append(body); grid.append(tb);
+    const filasV = el("div"), res = el("div");
     const pinta = () => {
-      filas.innerHTML = ""; filas.append(pgCabeza());
-      P.forEach((x, i) => filas.append(pgFila(x, { sel: sel[i], elegir: k => { const j = sel[i].indexOf(k); if (j >= 0 && sel[i].length > 1) sel[i].splice(j, 1); else if (j < 0) sel[i].push(k); pinta(); } })));
-      const comb = sel.reduce((a, s2) => a * s2.length, 1), ps = P.map((x, i) => sel[i].reduce((a, k) => a + x.p[k], 0)), d2 = pgDistrib(ps), N = P.length;
-      const dobles = sel.filter(s2 => s2.length === 2).length, triples = sel.filter(s2 => s2.length === 3).length;
+      filasV.innerHTML = ""; filasV.append(pgCabeza());
+      P.forEach((x, i) => filasV.append(pgFila(x, { sel: sel[i], elegir: k => { const j = sel[i].indexOf(k); if (j >= 0 && sel[i].length > 1) sel[i].splice(j, 1); else if (j < 0) sel[i].push(k); pinta(); } })));
+      const dob = sel.filter(s2 => s2.length === 2).length, tri = sel.filter(s2 => s2.length === 3).length;
+      const ok = tri < J.maxD.length && dob <= J.maxD[tri];
+      const comb = 2 ** dob * 3 ** tri, ps = P.map((x, i) => sel[i].reduce((a, k) => a + x.p[k], 0)), d2 = pgDistrib(ps), al = k => d2.slice(k).reduce((a, b) => a + b, 0);
+      const pp = ps.reduce((a, b) => a * b, 1);
       res.innerHTML = "";
       const t = el("table", "ml-tabla");
-      t.innerHTML = `<tbody><tr><td>Tu volante</td><td>${N - dobles - triples} sencillo${N - dobles - triples === 1 ? "" : "s"} · ${dobles} doble${dobles === 1 ? "" : "s"} · ${triples} triple${triples === 1 ? "" : "s"}</td></tr>
-        <tr><td>Combinaciones (quinielas que pagas)</td><td><b>${comb.toLocaleString("es-MX")}</b> × $15 = <b>${fmt0(comb * 15)}</b></td></tr>
-        <tr><td>Probabilidad de atinar las ${N}</td><td><b>${pgUno(ps.reduce((a, b) => a * b, 1))}</b></td></tr>
-        <tr><td>…13 o más</td><td>${pgUno(d2[N] + d2[N - 1])}</td></tr>
+      t.innerHTML = `<tbody><tr><td>Tu volante</td><td>${pgTamNom(tri, dob)}${ok ? "" : ' <span class="pg-mal">· no lo permite la Lotería</span>'}</td></tr>
+        <tr><td>Quinielas que pagas</td><td><b>${comb.toLocaleString("es-MX")}</b> × $${J.precio} = <b>${pgPeso(comb * J.precio)}</b></td></tr>
+        <tr><td>Probabilidad de atinar las ${N}</td><td><b>${pgUno(pp)}</b></td></tr>
+        <tr><td>…${N - 1} o más</td><td>${pgUno(al(N - 1))}</td></tr>
+        <tr><td>…${N - 2} o más</td><td>${pgUno(al(N - 2))}</td></tr>
         <tr><td>Aciertos esperados</td><td>${ps.reduce((a, b) => a + b, 0).toFixed(1)} de ${N}</td></tr></tbody>`;
       res.append(t);
-      const pp = ps.reduce((a, b) => a * b, 1);
-      res.append(el("p", "hint", comb > 1 ? `Con ${comb.toLocaleString("es-MX")} quinielas tu probabilidad sube, pero el costo sube igual o más rápido: cada quiniela extra cuesta lo mismo y aporta un pedacito parecido de probabilidad. Para tener 50% de atinar las ${N} necesitarías ~${Math.round(.5 / Math.max(pp / comb, 1e-12)).toLocaleString("es-MX")} quinielas de este tipo.` : "Una sola quiniela sencilla: lo que cuesta menos, y lo que menos probabilidad tiene."));
+      res.append(el("p", "hint", comb > 1 ? `Con ${comb.toLocaleString("es-MX")} quinielas tu probabilidad de las ${N} sube a ${pgUno(pp)}, pero pagas ${comb.toLocaleString("es-MX")} veces más. Para tener 50% de atinarle necesitarías unas ${Math.round(.5 / Math.max(pp / comb, 1e-15)).toLocaleString("es-MX")} quinielas así (${pgPeso(.5 / Math.max(pp / comb, 1e-15) * J.precio)}).` : "Una sola quiniela sencilla: lo que cuesta menos, y lo que menos probabilidad tiene."));
+      const rs = el("button", "", "↺ Volver al boleto más probable de este tamaño"); rs.type = "button";
+      rs.onclick = () => { pgSel[key] = pgMejor(P, tm.t, tm.d).map(m => [...m]); pgPintar(); };
+      res.append(rs);
     };
-    pinta(); c.append(filas, res); p.append(c);
+    pinta(); c.append(grid, filasV, res); p.append(c);
   }
   if (pgTab === "fue") {
-    const cal = lista.filter(x => x.resultados && x.resultados.progol);
-    const c = mlTarjeta("📒 ¿Cómo nos fue?", "Antes de cada concurso la app guarda la probabilidad de cada partido (no se puede cambiar después de que empieza el primero). Cuando sale el resultado oficial lo comparamos: ¿cuántos atinó el boleto más probable y qué tan probable era lo que de verdad salió?");
-    if (!cal.length) c.append(el("div", "ml-veredicto", `🆕 Empezamos con el concurso ${act.concurso}. En cuanto la Lotería publique los resultados verás aquí cuántos atinó el favorito, cuántos el azar y qué probabilidad tenía la quiniela ganadora.`));
+    const cal = filas.filter(x => (x.resultados || {})[J.res]);
+    const intro = mlTarjeta("📒 ¿Cómo nos fue?", `Antes de cada concurso se guarda la probabilidad de cada partido y el boleto real más probable de <b>cada tamaño permitido</b> (de la sencilla al volante más grande); después de que empieza el primer partido ya no se puede cambiar. Con el resultado oficial y lo que pagó cada lugar, se calcula cuánto costó cada boleto y cuánto habría ganado.`);
+    p.append(intro);
+    if (!cal.length) { intro.append(el("div", "ml-veredicto", `🆕 Empezamos con el concurso ${act.concurso} de ${J.nom}. En cuanto la Lotería publique resultados y premios verás aquí cuánto costó cada boleto y cuánto habría pagado.`)); return; }
+    // acumulado por tamaño de boleto
+    const acum = {};
     cal.forEach(x => {
-      const P2 = x.datos.partidos || [], r = x.resultados.progol, box = el("div", "ml-combo");
+      const r = x.resultados, pr = (r.premios || {})[J.res];
+      if (!pr) return;
+      pgBoletos(x, J).forEach(b => {
+        const g = pgCalifica(b.marcas, r[J.res], pr, r.bolsa, (x.datos[J.lista] || []).length), k = b.t + "," + b.d;
+        const a = acum[k] = acum[k] || { t: b.t, d: b.d, n: 0, gasto: 0, gana: 0, premiados: 0 };
+        a.n++; a.gasto += b.costo; a.gana += g.premio; if (g.premio > 0) a.premiados++;
+      });
+    });
+    const lista = Object.values(acum).sort((a, b) => a.gasto - b.gasto);
+    if (lista.length) {
+      const c = mlTarjeta("Si siempre hubieras jugado el boleto más probable…", `Concursos con premios oficiales: ${lista[0].n}. Neto = lo que habría pagado menos lo que costó.`);
+      const t = el("table", "ml-tabla pg-res-tabla");
+      t.innerHTML = `<thead><tr><th>Boleto</th><th>Costó</th><th>Pagó</th><th>Neto</th></tr></thead><tbody>${lista.map(a => `<tr><td>${pgTamNom(a.t, a.d)}<br><small class="muted">${a.premiados} de ${a.n} con premio</small></td><td>${pgPeso(a.gasto)}</td><td>${pgPeso(a.gana)}</td><td class="${a.gana - a.gasto >= 0 ? "ok" : "no"}">${a.gana - a.gasto >= 0 ? "+" : "−"}${pgPeso(Math.abs(a.gana - a.gasto))}</td></tr>`).join("")}</tbody>`;
+      const tot = lista.reduce((s2, a) => ({ g: s2.g + a.gasto, w: s2.w + a.gana }), { g: 0, w: 0 });
+      const mejor = lista.reduce((m, x) => (x.gana - x.gasto > m.gana - m.gasto ? x : m), lista[0]);
+      c.append(el("p", "hint", `Sencilla: costó ${pgPeso(lista[0].gasto)} y pagó ${pgPeso(lista[0].gana)}. El que mejor ha salido: ${pgTamNom(mejor.t, mejor.d)} (neto ${mejor.gana - mejor.gasto >= 0 ? "+" : "−"}${pgPeso(Math.abs(mejor.gana - mejor.gasto))}).`));
+      const det = el("details"); det.append(el("summary", "", `Ver los ${lista.length} tamaños de boleto`), t);
+      c.append(det, el("div", "ml-veredicto", tot.w >= tot.g ? `Por ahora, en conjunto, los boletos pagaron más de lo que costaron (${pgPeso(tot.w)} contra ${pgPeso(tot.g)}). Con pocos concursos eso puede ser suerte: hay que ver muchos más.` : `En conjunto costaron ${pgPeso(tot.g)} y pagaron ${pgPeso(tot.w)}: por cada $100 regresaron $${Math.round(tot.w / tot.g * 100)}. Así funcionan las quinielas: una parte grande de lo que se vende no regresa en premios.`));
+      p.append(c);
+    }
+    cal.forEach(x => {
+      const P2 = x.datos[J.lista] || [], r = x.resultados[J.res], pr = (x.resultados.premios || {})[J.res], box = mlTarjeta(`${J.nom} · concurso ${x.concurso}`, "");
       const fav = P2.map(y => pgK.reduce((a, k) => y.p[k] > y.p[a] ? k : a, "L"));
       const atino = fav.filter((k, i) => r[i] === k).length, pReal = P2.reduce((a, y, i) => a * (y.p[r[i]] || 1 / 3), 1);
       const sorpresas = P2.filter((y, i) => (y.p[r[i]] || 1) < .25).length;
-      box.append(el("b", "", `Concurso ${x.concurso}: el favorito atinó ${atino} de ${P2.length}`));
-      box.append(el("p", "hint", `Resultado oficial: ${r.join(" ")}. La quiniela ganadora tenía ${pgUno(pReal)} según nuestras probabilidades. Hubo ${sorpresas} sorpresa${sorpresas === 1 ? "" : "s"} (resultados con menos de 25%). Llenando al azar se esperaban ${(P2.length / 3).toFixed(1)} aciertos.`));
-      box.append(pgCabeza()); P2.forEach((y, i) => box.append(pgFila(y, { res: r[i] })));
-      c.append(box);
+      box.append(el("p", "hint", `Resultado oficial: ${r.map(pgLetra).join(" ")}. El favorito atinó ${atino} de ${P2.length} (al azar se esperan ${(P2.length / 3).toFixed(1)}). La combinación ganadora tenía ${pgUno(pReal)} según nuestras probabilidades; hubo ${sorpresas} sorpresa${sorpresas === 1 ? "" : "s"} (resultados con menos de 25%).`));
+      if (pr && pr.length) box.append(el("p", "hint", "Premio por quiniela sencilla: " + pr.map(z => `${z.aciertos} aciertos ${pgPeso(z.premio)}`).join(" · ") + (x.resultados.bolsa ? ` · bolsa ${pgPeso(x.resultados.bolsa)}` : "")));
+      else box.append(el("p", "hint", "Todavía no tenemos lo que pagó cada lugar en este concurso; los boletos se califican solo por aciertos."));
+      const bs = pgBoletos(x, J).map(b => ({ ...b, g: pgCalifica(b.marcas, r, pr, x.resultados.bolsa, P2.length) }));
+      const top = bs.reduce((m, b) => (b.g.premio - b.costo > m.g.premio - m.costo ? b : m), bs[0]);
+      if (pr && top) box.append(el("div", "ml-veredicto", top.g.premio > 0 ? `El que mejor salió: ${pgTamNom(top.t, top.d)} — costó ${pgPeso(top.costo)} y pagó ${pgPeso(top.g.premio)}${top.g.aprox ? " (aprox., bolsa)" : ""}.` : `Ningún boleto más probable alcanzó premio en este concurso.`));
+      const det = el("details"); det.append(el("summary", "", `Ver los ${bs.length} boletos (costo, aciertos y premio)`));
+      const t = el("table", "ml-tabla pg-res-tabla");
+      t.innerHTML = `<thead><tr><th>Boleto</th><th>Costó</th><th>Mejor</th><th>Pagó</th></tr></thead><tbody>${bs.map(b => `<tr><td>${pgTamNom(b.t, b.d)}<br><small class="muted">${b.marcas.map(m => m.length === 1 ? pgLetra(m) : "(" + [...m].map(pgLetra).join("") + ")").join(" ")}</small></td><td>${pgPeso(b.costo)}</td><td>${b.g.mejor}/${P2.length}</td><td class="${b.g.premio > 0 ? "ok" : ""}">${pr ? pgPeso(b.g.premio) : "—"}</td></tr>`).join("")}</tbody>`;
+      det.append(t); box.append(det);
+      const d3 = el("details"); d3.append(el("summary", "", "Ver partido por partido"));
+      d3.append(pgCabeza()); P2.forEach((y, i) => d3.append(pgFila(y, { res: r[i] })));
+      box.append(d3);
+      p.append(box);
     });
-    p.append(c);
   }
 }
 

@@ -43,7 +43,7 @@ LIGAS = ["fifa.friendly", "fifa.worldq.uefa", "fifa.worldq.concacaf", "fifa.worl
          "uefa.nations", "concacaf.nations.league", "concacaf.gold", "conmebol.america", "fifa.world",
          "mex.1", "mex.2", "usa.1", "eng.1", "eng.2", "esp.1", "esp.2", "ita.1", "ita.2", "ger.1", "ger.2", "fra.1", "fra.2",
          "por.1", "ned.1", "bel.1", "sco.1", "tur.1", "bra.1", "bra.2", "arg.1", "col.1", "chi.1", "uru.1", "par.1", "ecu.1", "per.1",
-         "jpn.1", "kor.1", "chn.1", "ksa.1", "aus.1", "uefa.champions", "uefa.europa", "uefa.europa.conf",
+         "jpn.1", "kor.1", "chn.1", "ksa.1", "aus.1", "uefa.champions", "uefa.wchampions", "uefa.europa", "uefa.europa.conf",
          "conmebol.libertadores", "conmebol.sudamericana", "concacaf.champions"]
 # Nombres del boleto (español, abreviados) → como los escribe ESPN
 NOMBRES = {
@@ -165,15 +165,24 @@ def leer_quiniela():
 
 QUINIELAS = {   # imagen de la quiniela de la semana y dónde están los nombres (proporciones de la imagen)
     "media": {"img": DOC + "progol_media_quiniela/proxima-media.jpg", "loc": (.245, .49, .465, .85), "vis": (.55, .49, .755, .85),
-              "cab": (.1, .24, .9, .4), "tit": (.1, .2, .9, .3), "n": 9},
+              "cab": (.1, .24, .9, .4), "tit": (.2, .3), "n": 9},
     "protouch": {"img": DOC + "protouch_quiniela/Quiniela_de_la_semana.jpg", "loc": (.215, .565, .47, .975), "vis": (.55, .565, .79, .975),
-                 "cab": (.1, .17, .9, .29), "tit": (.1, .14, .9, .25), "n": 13},
+                 "cab": (.1, .17, .9, .29), "tit": (.16, .23), "n": 13},
 }
 
 
 def _limpia_linea(l):
     l = re.sub(r"^[\s|\[\](){}!:;,'\"_—=-]+|[\s|\[\](){}!:;,'\"_—=-]+$", "", l)
     return re.sub(r"\s+", " ", l.upper())
+
+
+def _titulo(im, y0, y1):
+    """Número de concurso del encabezado (franja horizontal completa, sin umbral: el título es grande y oscuro)."""
+    W, H = im.size
+    c = im.convert("L").crop((0, int(H * y0), W, int(H * y1)))
+    c = ImageOps.autocontrast(c.resize((c.width * 3, c.height * 3)))
+    m = re.search(r"CONCURSO\s*(\d{3,5})", pytesseract.image_to_string(c, lang="spa", config="--psm 6"))
+    return int(m.group(1)) if m else None
 
 
 def leer_otra(juego):
@@ -193,16 +202,16 @@ def leer_otra(juego):
         return out
     lo, vi = nombres(cfg["loc"]), nombres(cfg["vis"])
     cab = re.sub(r"\s+", " ", re.sub(r"[^\w\s:]", " ", _ocr(im, caja(cfg["cab"]), umbral=110))).strip()
-    con = re.search(r"CONCURSO\s*(\d{3,5})", _ocr(im, caja(cfg["tit"]), psm=6, umbral=100))
+    con = _titulo(im, *cfg["tit"])
     partidos = [{"n": i + 1, "local": lo[i].title(), "visita": vi[i].title()} for i in range(min(len(lo), len(vi), cfg["n"]))]
-    return {"concurso": int(con.group(1)) if con else None, "texto": cab, "partidos": partidos}
+    return {"concurso": con, "texto": cab, "partidos": partidos}
 
 
 # ---------------------------------------------------------------- premios (imagen de resultados)
 PREMIOS = {   # imagen de resultados del último concurso y la franja donde vienen los premios
-    "progol": {"img": DOC + "progol_resultados/QG_progol-revancha.jpg", "bandas": {"progol": (.15, .42, 14), "revancha": (.75, .82, 7)}},
-    "media": {"img": DOC + "progol_media_resultados/QG_progol_media.jpg", "bandas": {"media": (.33, .47, 9)}},
-    "protouch": {"img": DOC + "protouch_resultados/resultados_Protouch.jpg", "bandas": {"protouch": (.4, .6, 13)}},
+    "progol": {"img": DOC + "progol_resultados/QG_progol-revancha.jpg", "tit": (.1, .16), "bandas": {"progol": (.15, .42, 14), "revancha": (.75, .82, 7)}},
+    "media": {"img": DOC + "progol_media_resultados/QG_progol_media.jpg", "tit": (.2, .3), "bandas": {"media": (.33, .47, 9)}},
+    "protouch": {"img": DOC + "protouch_resultados/resultados_Protouch.jpg", "tit": (.12, .18), "bandas": {"protouch": (.4, .6, 13)}},
 }
 
 
@@ -214,9 +223,7 @@ def leer_premios(juego, ultimo=None):
         return None, {}
     im = Image.open(io.BytesIO(r.content)).convert("RGB")
     W, H = im.size
-    tit = im.crop((0, int(H * .08), W, int(H * .3))).convert("L")
-    tit = ImageOps.autocontrast(tit.resize((tit.width * 3, tit.height * 3)))
-    con = re.search(r"CONCURSO\s*(\d{3,5})", pytesseract.image_to_string(tit, lang="spa", config="--psm 6"))
+    con = _titulo(im, *cfg["tit"])
     out = {}
     for bloque, (y0, y1, total) in cfg["bandas"].items():
         c = im.crop((int(W * .15), int(H * y0), int(W * .87), int(H * y1)))
@@ -239,7 +246,9 @@ def leer_premios(juego, ultimo=None):
             prev = ac
         out[bloque] = filas
     # si no se alcanza a leer el número, es el último concurso con resultado oficial
-    return (int(con.group(1)) if con else ultimo), out
+    if not con:
+        return None, {}     # sin número seguro no se guarda: podría ser de otro concurso
+    return con, out
 
 
 # ---------------------------------------------------------------- resultados oficiales e histórico
@@ -336,7 +345,8 @@ NFL = {"leones": "lions", "patriotas": "patriots", "halcones": "falcons", "jefes
        "raiders": "raiders", "halc mar": "seahawks", "halcones marinos": "seahawks", "vaqueros": "cowboys", "49s": "49ers", "49ers": "49ers",
        "bengalies": "bengals", "acereros": "steelers", "cuervos": "ravens", "cargadores": "chargers", "aguilas": "eagles", "gigantes": "giants",
        "commanders": "commanders", "broncos": "broncos", "bucaneros": "buccaneers", "osos": "bears", "pieles rojas": "commanders"}
-SD_MARGEN = {"nfl": 13.5, "college-football": 15.5}    # desviación típica del margen final contra la línea (puntos)
+SD_MARGEN = {"nfl": 12.0, "college-football": 14.0}   # dispersión del margen final contra la línea (puntos), ajustada para
+# que la "D" salga tan seguido como en el histórico del Protouch (~40% de los partidos)
 
 
 def _ncdf(x):
@@ -586,8 +596,9 @@ def main():
             if not q or len(q["partidos"]) < QUINIELAS[juego]["n"] - 2:
                 print(f"⚠️ No pude leer la quiniela de {juego}", q)
                 continue
-            if res and (not q["concurso"] or q["concurso"] < max(res)):
-                q["concurso"] = max(res) + 1
+            if not q["concurso"]:
+                print(f"⚠️ {juego}: no pude leer el número de concurso")
+                continue
             d1, d2 = fechas(q["texto"], hoy)
             if juego == "media":
                 evs = eventos_espn(d1, d2)
