@@ -6,10 +6,11 @@ jobs:
   d:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: Primer touchdown NFL
         run: |
           mkdir -p o && pip install -q requests && python diag_primer_td.py > o/primer_td.csv && wc -l o/primer_td.csv
       - name: Subir
         run: |
-          cd o && git init -q && git checkout -q -b diag-img && git add -A && git -c user.name=d -c user.email=d@d commit -qm d
+          cd o && rm -rf .git && git init -q && git checkout -q -b diag-img && git add -A && git -c user.name=d -c user.email=d@d commit -qm d
           git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" diag-img
