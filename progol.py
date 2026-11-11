@@ -184,7 +184,7 @@ def eventos_espn(desde, hasta):
                         "local": nom(eq["home"].get("team", {})), "visita": nom(eq["away"].get("team", {})),
                         "estado": (e.get("status") or {}).get("type", {}).get("state"),
                         "marcador": f"{eq['home'].get('score', '')}-{eq['away'].get('score', '')}",
-                        "p": _momios(c), "id": e.get("id")})
+                        "p": _momios(c), "id": e.get("id"), "neutral": bool(c.get("neutralSite"))})
     return evs
 
 
@@ -205,7 +205,8 @@ def emparejar(p, evs):
         s = pl + pv
         if min(pl, pv) >= .55 and s > pts:
             mejor, pts = (e, False), s
-        elif inv > max(pts, 1.3) and inv / 2 >= .62:      # el boleto a veces pone de "local" al que juega de visita
+        elif min(max(espn.parecido(loc, x) for x in e["visita"]), max(espn.parecido(vis, x) for x in e["local"])) >= .7 and inv > pts:
+            # el boleto a veces pone de "local" al que juega de visita
             mejor, pts = (e, True), inv
     return mejor
 
@@ -223,6 +224,40 @@ def fechas(texto, hoy):
     return hoy, hoy + dt.timedelta(days=7)
 
 
+_elo = None
+def elo_selecciones():
+    """Ranking Elo de selecciones (eloratings.net): fuerza de cada país, gratis."""
+    global _elo
+    if _elo is None:
+        _elo = {}
+        w, t = get("https://www.eloratings.net/World.tsv"), get("https://www.eloratings.net/en.teams.tsv")
+        if w and t:
+            nombre = dict(l.split("\t")[:2] for l in t.text.splitlines() if "\t" in l)
+            for l in w.text.splitlines():
+                c = l.split("\t")
+                if len(c) > 3 and c[3].isdigit() and c[2] in nombre:
+                    _elo[espn.normalizar(nombre[c[2]])] = int(c[3])
+    return _elo
+
+
+def p_elo(local, visita, neutral=False):
+    elo = elo_selecciones()
+    if not elo:
+        return None
+    def buscar(n):
+        n = _limpio(n); k = max(elo, key=lambda x: espn.parecido(n, x))
+        return elo[k] if espn.parecido(n, k) >= .85 else None
+    a, b = buscar(local), buscar(visita)
+    if a is None or b is None:
+        return None
+    dr = a - b + (0 if neutral else 100)
+    we = 1 / (10 ** (-dr / 400) + 1)
+    pe = max(.12, min(.32, .32 - abs(we - .5) * .45))
+    pl, pv = max(.02, we - pe / 2), max(.02, 1 - we - pe / 2)
+    s_ = pl + pe + pv
+    return {"L": round(pl / s_, 4), "E": round(pe / s_, 4), "V": round(pv / s_, 4)}
+
+
 def probabilidades(lista, evs, base):
     for p in lista:
         par = emparejar(p, evs)
@@ -234,6 +269,10 @@ def probabilidades(lista, evs, base):
             if q:
                 p["p"] = {"L": q["V"], "E": q["E"], "V": q["L"]} if al_reves else {k: q[k] for k in "LEV"}
                 p["fuente"] = f"Momios {q.get('casa') or 'ESPN'}"
+        if "p" not in p:
+            q = p_elo(p["local"], p["visita"], neutral=bool(par and par[0].get("neutral")))
+            if q:
+                p["p"], p["fuente"] = q, "Ranking Elo de selecciones"
         if "p" not in p:
             p["p"], p["fuente"] = dict(base), "Promedio histórico del Progol"
     return lista
