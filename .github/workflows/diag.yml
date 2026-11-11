@@ -7,9 +7,8 @@ jobs:
   d:
     runs-on: ubuntu-latest
     steps:
-      - name: Melate Retro y certificado
+      - name: Enlaces de históricos
         run: |
-          for a in TQBlAGwAYQB0AGUAUgBlAHQAcgBvAA== TQBlAGwAYQB0AGUAIABSAGUAdAByAG8A UgBlAHQAcgBvAA==; do
-            code=$(curl -s -L -o /tmp/x.csv -w "%{http_code} %{content_type} %{size_download}" -A "Mozilla/5.0" "https://www.loterianacional.gob.mx/Home/Historicos?ARHP=$a" || echo "FALLO $?"); echo "LN $a -> $code"; head -c 200 /tmp/x.csv; echo; echo ---
+          for u in "https://www.loterianacional.gob.mx/Home/Historicos" "https://www.loterianacional.gob.mx/MelateRetro/Historicos" "https://www.loterianacional.gob.mx/Melate/Historicos" "https://www.loterianacional.gob.mx/MelateRetro/Resultados"; do
+            echo "== $u"; curl -s -L -A "Mozilla/5.0" "$u" | grep -oiE '[^"]*ARHP=[^"]*|[^"]*[Hh]istoric[^"]*\.(csv|xls)[^"]*' | sort -u | head -20
           done
-          node -e 'fetch("https://www.loterianacional.gob.mx/Home/Historicos?ARHP=TQBlAGwAYQB0AGUA").then(r=>r.text()).then(t=>console.log("NODE OK", t.length, t.split("\n").length)).catch(e=>console.log("NODE FALLO", e.cause||e))'
