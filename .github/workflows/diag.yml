@@ -7,9 +7,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Primer touchdown NFL
+      - name: Revisar la página
         run: |
-          mkdir -p o && pip install -q requests && python diag_primer_td.py > o/primer_td.csv && wc -l o/primer_td.csv
+          mkdir -p o; U=https://bot-apuestas-telegram.vercel.app
+          for i in 1 2 3; do
+            for p in / /sw.js "/api/web" "/api/melate?op=progol" "/api/deportes?op=galeria"; do
+              curl -s -o /dev/null -w "$p %{http_code} %{time_total}s\n" -X GET "$U$p"; done
+            curl -s -w " POST %{http_code} %{time_total}s\n" -X POST -H "content-type: application/json" -d '{"op":"ping"}' "$U/api/web" | tail -c 300
+          done | tee o/ping.txt
       - name: Subir
         run: |
           cd o && rm -rf .git && git init -q && git checkout -q -b diag-img && git add -A && git -c user.name=d -c user.email=d@d commit -qm d
