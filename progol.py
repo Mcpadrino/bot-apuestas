@@ -148,7 +148,7 @@ def _ml(x):
 
 
 def _momios(comp):
-    o = (comp.get("odds") or [{}])[0] or {}
+    o = next((x for x in (comp.get("odds") or []) if x), None) or {}
     h = _ml((o.get("homeTeamOdds") or {}).get("moneyLine"))
     a = _ml((o.get("awayTeamOdds") or {}).get("moneyLine"))
     d = _ml((o.get("drawOdds") or {}).get("moneyLine"))
@@ -163,10 +163,18 @@ def _momios(comp):
 
 
 def eventos_espn(desde, hasta):
-    evs = []
-    for liga in LIGAS:
-        j = espn._get(espn.BASE.format(ruta=f"soccer/{liga}") + "/scoreboard", dates=f"{desde:%Y%m%d}-{hasta:%Y%m%d}", limit=300)
+    """Partidos de ESPN en esas fechas (ESPN no acepta rangos: se pide día por día, en paralelo)."""
+    from concurrent.futures import ThreadPoolExecutor
+    dias = [desde + dt.timedelta(days=i) for i in range((hasta - desde).days + 1)]
+    pedidos = [(liga, d) for liga in LIGAS for d in dias]
+    with ThreadPoolExecutor(12) as ex:
+        resp = list(ex.map(lambda x: (x[0], espn._get(espn.BASE.format(ruta=f"soccer/{x[0]}") + "/scoreboard", dates=f"{x[1]:%Y%m%d}")), pedidos))
+    evs, vistos = [], set()
+    for liga, j in resp:
         for e in (j or {}).get("events", []):
+            if e.get("id") in vistos:
+                continue
+            vistos.add(e.get("id"))
             c = (e.get("competitions") or [{}])[0]
             eq = {x.get("homeAway"): x for x in c.get("competitors", [])}
             if "home" not in eq or "away" not in eq:
