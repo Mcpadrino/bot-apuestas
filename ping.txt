@@ -1,0 +1,18 @@
+/ 200 0.408077s
+/sw.js 200 0.319647s
+/api/web 405 0.291704s
+/api/melate?op=progol 200 0.697569s
+/api/deportes?op=galeria 400 0.285175s
+{"error":"Tu sesión venció. Vuelve a iniciar sesión."} POST 401 0.287365s
+/ 200 0.106627s
+/sw.js 200 0.102687s
+/api/web 405 0.127373s
+/api/melate?op=progol 200 0.086438s
+/api/deportes?op=galeria 400 0.154438s
+{"error":"Tu sesión venció. Vuelve a iniciar sesión."} POST 401 0.209986s
+/ 200 0.084680s
+/sw.js 200 0.049375s
+/api/web 405 0.134799s
+/api/melate?op=progol 200 0.048961s
+/api/deportes?op=galeria 400 0.130390s
+{"error":"Tu sesión venció. Vuelve a iniciar sesión."} POST 401 0.284777s
