@@ -692,6 +692,16 @@ export default async function handler(req, res) {
     if (!["hambrientos"].includes(b.accion)) return res.status(400).json({ error: "acción" });
     return res.status(200).json(await jugar(b.accion, b.datos || {}));
   }
+  // Para progol.py de GitHub: boleto del Progol con probabilidades y resultados oficiales
+  if (req.query.progol !== undefined && req.method === "POST") {
+    if (!tokenOk()) return res.status(401).json({ error: "no" });
+    const b = req.body || {}, acc = { guardar: "progol_guardar", resultados: "progol_resultados" }[b.accion];
+    if (!acc) return res.status(400).json({ error: "acción" });
+    const r = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/melate`, { method: "POST",
+      headers: { "content-type": "application/json", apikey: process.env.SUPABASE_KEY, authorization: `Bearer ${process.env.SUPABASE_KEY}` },
+      body: JSON.stringify({ p_clave: process.env.BOT_CLAVE, p_accion: acc, p_datos: b.datos || {} }) });
+    return res.status(r.ok ? 200 : 500).json(await r.json());
+  }
   // Para pronosticos.py de GitHub: guardar pronósticos del Gurú y sus resultados
   if (req.query.guru !== undefined && req.method === "POST") {
     if (!tokenOk()) return res.status(401).json({ error: "no" });

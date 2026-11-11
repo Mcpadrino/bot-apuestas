@@ -1,0 +1,31 @@
+name: Progol a prueba
+
+on:
+  # Lo dispara Supabase (pg_cron) varias veces al día: lee la quiniela oficial, le pone probabilidades y guarda resultados.
+  workflow_dispatch:
+    inputs:
+      prueba:
+        description: "Solo mostrar (no guarda nada)"
+        type: boolean
+        default: false
+
+env:
+  BOT_URL: ${{ vars.BOT_URL }}   # la dirección de TU página en Vercel (variable del repositorio)
+
+jobs:
+  progol:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Instalar lector de imágenes (OCR)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq tesseract-ocr tesseract-ocr-spa > /dev/null
+          pip install -r requirements.txt pytesseract pillow
+      - name: Leer quiniela, calcular probabilidades y calificar
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+        run: python progol.py ${{ inputs.prueba && '--prueba' || '' }}

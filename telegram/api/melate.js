@@ -90,6 +90,10 @@ async function registrar(juego) {
 export default async function handler(req, res) {
   const q = req.query || {};
   const juego = String(q.juego || "melate").toLowerCase();
+  if (q.op === "progol") {
+    try { res.setHeader("cache-control", "s-maxage=300, stale-while-revalidate=1800"); return res.status(200).json(await rpc("progol_ver", {})); }
+    catch (e) { console.error(e); return res.status(500).json({ error: "No se pudo leer el Progol." }); }
+  }
   if (q.op === "registro") {
     try {
       const lista = juego === "todos" ? Object.keys(JUEGOS) : JUEGOS[juego] ? [juego] : [];
