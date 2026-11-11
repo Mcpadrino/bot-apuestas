@@ -7,13 +7,9 @@ jobs:
   d:
     runs-on: ubuntu-latest
     steps:
-      - name: ESPN fechas
+      - name: Elo selecciones y J1
         run: |
-          for l in fifa.friendly fifa.worldq.uefa bra.1 bra.2 jpn.1 mex.1 usa.1 fifa.worldq.concacaf; do
-            for q in "dates=20261113-20261117" "dates=20261114" "dates=20261114&limit=300"; do
-              curl -s "https://site.api.espn.com/apis/site/v2/sports/soccer/$l/scoreboard?$q" | python3 -c "import sys,json
-          try:
-            d=json.load(sys.stdin); ev=d.get('events',[]); print('$l','$q',len(ev),[e['name'] for e in ev[:4]], [list((e['competitions'][0].get('odds') or [{}])[0].keys())[:8] for e in ev[:1]])
-          except Exception as e: print('$l','$q','ERR',e)"
-            done
-          done
+          curl -s -A "Mozilla/5.0" https://www.eloratings.net/World.tsv | head -5
+          curl -s -A "Mozilla/5.0" https://www.eloratings.net/en.teams.tsv | head -5
+          for d in 20261113 20261114 20261115 20261116; do curl -s "https://site.api.espn.com/apis/site/v2/sports/soccer/jpn.1/scoreboard?dates=$d" | python3 -c "import sys,json; d=json.load(sys.stdin); print('$d', [e['name'] for e in d.get('events',[])])"; done
+          for d in 20261114 20261115 20261116; do curl -s "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.friendly/scoreboard?dates=$d" | python3 -c "import sys,json; d=json.load(sys.stdin); print('$d', [(e['name'], e['competitions'][0].get('neutralSite')) for e in d.get('events',[])][:12])"; done
