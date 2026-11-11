@@ -373,6 +373,14 @@ export default async function handler(req, res) {
       case "avisos_get":
         return res.status(200).json(await admin("avisos_get", { usuario }));
       // ---- 🔔 notificaciones al celular
+      // ---- 🔔 bandeja de avisos dentro de la app
+      case "bandeja":
+        return res.status(200).json(await notif("bandeja", { usuario: String(usuario) }));
+      case "bandeja_n":
+        return res.status(200).json({ n: await notif("bandeja_n", { usuario: String(usuario) }) });
+      case "bandeja_leer":
+        await notif("bandeja_leer", { usuario: String(usuario), id: num((b.datos || {}).id) });
+        return res.status(200).json({ ok: true });
       case "push_llave":
         return res.status(200).json({ llave: env("VAPID_PUBLIC") || VAPID_PUBLICA });
       case "push_alta": {
@@ -395,7 +403,7 @@ export default async function handler(req, res) {
           return res.status(200).json(x);
         }
         // prueba directa a sus celulares, sin importar preferencias
-        const x = await notificar({ tipo: "resultados", usuarios: [String(usuario)], ignorarSilencio: true, forzar: true, tag: "prueba",
+        const x = await notificar({ tipo: "resultados", usuarios: [String(usuario)], ignorarSilencio: true, forzar: true, bandeja: false, tag: "prueba",
           para: () => ({ titulo: "🔔 ¡Listo! Así te van a llegar", cuerpo: "Las notificaciones de la Bitácora ya funcionan en este celular. Despliégala para ver la tarjeta.", url: "/#avisos",
             img: { k: "resultado", r: "gana", m: "2 – 1", l: { n: "Tu equipo" }, v: { n: "El rival" }, s: "Así se ve el resultado de una apuesta" } }) }).catch(() => ({ enviados: 0 }));
         return res.status(200).json(x);

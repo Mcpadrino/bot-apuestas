@@ -1,6 +1,6 @@
 // Service worker mínimo: permite instalar la app. Guarda solo la página e íconos para que abra
 // rápido; los datos (/api) siempre van a internet para que nunca veas apuestas viejas.
-const CACHE = "bitacora-v65";
+const CACHE = "bitacora-v66";
 const BASICOS = ["/", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (e) => {
@@ -44,6 +44,8 @@ self.addEventListener("push", (e) => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch (err) { d = { t: "Bitácora", b: e.data ? e.data.text() : "" }; }
   const acc = (d.acc || []).slice(0, 2);
+  // si la app está abierta, que la campanita se actualice sola
+  self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((vs) => vs.forEach((v) => v.postMessage({ tipo: "aviso" })));
   e.waitUntil(self.registration.showNotification(d.t || "Bitácora de Apuestas", {
     body: d.b || "", icon: d.ic || "/icon-192.png", badge: "/badge-96.png", image: d.img || undefined,
     tag: d.tag || undefined, renotify: !!d.tag, vibrate: d.vib || [60], timestamp: d.ts || Date.now(), lang: "es-MX",
@@ -58,7 +60,10 @@ self.addEventListener("notificationclick", (e) => {
   e.waitUntil((async () => {
     const vent = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
     for (const v of vent) {
-      if (new URL(v.url).origin === self.location.origin) { await v.focus(); try { await v.navigate(destino); } catch (err) {} return; }
+      if (new URL(v.url).origin === self.location.origin) {
+        // la app ya está abierta: la llevamos a la sección sin recargar
+        await v.focus(); v.postMessage({ tipo: "ir", u: destino }); return;
+      }
     }
     await self.clients.openWindow(destino);
   })());

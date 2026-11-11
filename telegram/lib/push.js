@@ -71,29 +71,52 @@ const ACCIONES = {
 const VIBRA = { resultados: [90, 50, 90], senales: [40, 30, 40, 30, 140], retos: [120, 60, 120], resumen: [60] };
 export const tarjeta = (d) => d ? `${WEB}/api/tarjeta?d=${Buffer.from(JSON.stringify(d)).toString("base64url")}` : undefined;
 
-// Manda una notificación a cada celular de los usuarios que la quieren.
-//   tipo: uno de TIPOS · titulo/cuerpo/url · usuarios: lista (o null = todos) · excepto: usuario que no la recibe
-//   para(usuario, avisos) → {titulo, cuerpo, url} para personalizarla (o null para no mandarle)
-//   telegram: true → también por Telegram a quien lo pidió (solo para los tipos que no manda ya otra parte del bot)
-export async function notificar({ tipo, titulo, cuerpo, url = "/", tag, usuarios = null, excepto = null, para = null, telegram = false, ignorarSilencio = false, forzar = false, img = null }) {
+// Manda un aviso a quien lo quiere: se guarda en su 🔔 bandeja de la app y, según lo que eligió, llega al celular y/o a Telegram.
+//   tipo: uno de TIPOS · titulo/cuerpo/url/img · usuarios: lista (o null = todos) · excepto: usuario que no lo recibe
+//   para(usuario, avisos) → {titulo, cuerpo, url, img, texto} para personalizarlo (o null para no mandarle)
+//   telegram: true → también por Telegram (solo los tipos que no manda ya otra parte del bot)
+//   bandeja: false → no se guarda (pruebas)
+export async function notificar({ tipo, titulo, cuerpo, url = "/", tag, usuarios = null, excepto = null, para = null, telegram = false,
+  ignorarSilencio = false, forzar = false, img = null, bandeja = true }) {
   let enviados = 0, porTg = 0;
-  const armar = (u, avisos) => {
+  const base = (u, avisos) => {
     if (excepto && String(u) === String(excepto)) return null;
-    if (!ignorarSilencio && enSilencio(avisos)) return null;
     const p = para ? para(u, avisos) : { titulo, cuerpo, url, img };
     return p && p.titulo ? { url, tag: tag || tipo, ...p } : null;
   };
   try {
+    // 1) a quién le toca y qué mensaje (una sola vez por persona)
+    const gente = await notif("gente", { usuarios });
+    const msgs = new Map();
+    for (const g of gente) {
+      const u = String(g.usuario), quiereAlgo = forzar || quiere(g.avisos, tipo, "cel") || quiere(g.avisos, tipo, "tg");
+      if (!quiereAlgo) continue;
+      const m = base(u, g.avisos);
+      if (m) msgs.set(u, { ...m, avisos: g.avisos });
+    }
+    if (!msgs.size) return { enviados, porTg };
+    // 2) a la bandeja de cada quien (aunque esté en horas de silencio: la ve al abrir la app)
+    let ids = {};
+    if (bandeja) {
+      ids = await notif("bandeja_guardar", { filas: [...msgs].map(([u, m]) => ({ usuario: u, tipo, titulo: m.titulo, cuerpo: m.texto || m.cuerpo, url: m.url, img: m.img || null })) })
+        .catch((e) => { console.error("bandeja", e); return {}; });
+    }
+    const conId = (u, url) => {
+      const id = ids[u];
+      if (!id) return url || "/";
+      const [ruta, hash] = String(url || "/").split("#");
+      return `${ruta}${ruta.includes("?") ? "&" : "?"}aviso=${id}${hash ? "#" + hash : ""}`;
+    };
+    // 3) al celular
     await preparar();
-    const subs = await notif("destinos", { usuarios });
+    const subs = await notif("destinos", { usuarios: [...msgs.keys()] });
     await Promise.all(subs.map(async (s) => {
-      if (!forzar && !quiere(s.avisos, tipo, "cel")) return;
-      const m = armar(s.usuario, s.avisos);
-      if (!m) return;
+      const m = msgs.get(String(s.usuario));
+      if (!m || !(forzar || quiere(s.avisos, tipo, "cel")) || (!ignorarSilencio && enSilencio(s.avisos))) return;
       try {
         await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
-          JSON.stringify({ t: m.titulo, b: m.cuerpo, u: m.url, tag: m.tag, tipo, img: tarjeta(m.img), ic: `/iconos/${TIPOS[tipo] ? tipo : "app"}.png`,
-            acc: (ACCIONES[tipo] || []).map(([t, u]) => ({ t, u })), vib: VIBRA[tipo] || [60], ts: Date.now() }),
+          JSON.stringify({ t: m.titulo, b: m.cuerpo, u: conId(s.usuario, m.url), tag: m.tag, tipo, img: tarjeta(m.img), ic: `/iconos/${TIPOS[tipo] ? tipo : "app"}.png`,
+            acc: (ACCIONES[tipo] || []).map(([t, u]) => ({ t, u: conId(s.usuario, u) })), vib: VIBRA[tipo] || [60], ts: Date.now(), id: ids[s.usuario] || null }),
           { TTL: 6 * 3600, urgency: ["resultados", "retos"].includes(tipo) ? "high" : "normal" });
         enviados++;
         notif("enviado", { endpoint: s.endpoint }).catch(() => {});
@@ -103,22 +126,18 @@ export async function notificar({ tipo, titulo, cuerpo, url = "/", tag, usuarios
         if (!gone) console.error("push", e && e.statusCode, e && e.body);
       }
     }));
-  } catch (e) { console.error("notificar", e); }
-  if (telegram && env("TELEGRAM_TOKEN")) {
-    try {
-      const gente = await notif("gente", { usuarios });
-      await Promise.all(gente.filter((g) => /^-?\d+$/.test(String(g.usuario)) && quiere(g.avisos, tipo, "tg")).map(async (g) => {
-        const m = armar(g.usuario, g.avisos);
-        if (!m) return;
+    // 4) por Telegram
+    if (telegram && env("TELEGRAM_TOKEN")) {
+      await Promise.all([...msgs].filter(([u, m]) => /^-?\d+$/.test(u) && quiere(m.avisos, tipo, "tg") && (ignorarSilencio || !enSilencio(m.avisos))).map(async ([u, m]) => {
         const enlace = m.url && m.url.startsWith("/") ? WEB + m.url : m.url;
         await fetch(`https://api.telegram.org/bot${env("TELEGRAM_TOKEN")}/sendMessage`, {
           method: "POST", headers: { "content-type": "application/json" },
-          body: JSON.stringify({ chat_id: g.usuario, disable_web_page_preview: true, text: `${m.titulo}\n${m.texto || m.cuerpo}${enlace ? `\n${enlace}` : ""}` }),
-        });
+          body: JSON.stringify({ chat_id: u, disable_web_page_preview: true, text: `${m.titulo}\n${m.texto || m.cuerpo}${enlace ? `\n${enlace}` : ""}` }),
+        }).catch(() => {});
         porTg++;
       }));
-    } catch (e) { console.error("notificar tg", e); }
-  }
+    }
+  } catch (e) { console.error("notificar", e); }
   return { enviados, porTg };
 }
 

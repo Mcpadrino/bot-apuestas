@@ -340,6 +340,31 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
 .hz-global { margin-block: -6px -4px; }
 @media (prefers-reduced-motion: no-preference) { .hz-global:not([hidden]) { animation: hzbaja .35s cubic-bezier(.2,.9,.25,1); } }
 @keyframes hzbaja { from { opacity: 0; transform: translateY(-14px); } }
+/* 🔔 campana y bandeja de avisos */
+.campana { position: relative; display: grid; place-items: center; width: 38px; height: 38px; padding: 0; border-radius: 12px; }
+.campana.hay svg { animation: campaneo .9s ease 1; transform-origin: 50% 10%; }
+@keyframes campaneo { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(14deg); } 40% { transform: rotate(-12deg); } 60% { transform: rotate(8deg); } 80% { transform: rotate(-4deg); } }
+@media (prefers-reduced-motion: reduce) { .campana.hay svg { animation: none; } }
+.campana-n { position: absolute; top: -5px; right: -5px; min-width: 19px; height: 19px; padding: 0 5px; border-radius: 999px; background: var(--loss); color: #fff; font: 800 .68rem/19px var(--font-body); text-align: center; box-shadow: 0 0 0 2px var(--bg); }
+.bandeja { position: fixed; inset: 0; z-index: 90; background: rgba(0,0,0,.45); display: flex; justify-content: flex-end; align-items: flex-start; padding: max(10px, env(safe-area-inset-top)) 10px 10px; }
+.bandeja[hidden] { display: none; }
+.bj-caja { width: min(440px, 100%); max-height: calc(100dvh - 20px); display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 18px 50px rgba(0,0,0,.35); overflow: hidden; animation: bjEntra .18s ease-out; }
+@keyframes bjEntra { from { transform: translateY(-8px); opacity: 0; } }
+.bj-cab { display: flex; align-items: center; gap: 6px; padding: 12px 12px 10px 16px; border-bottom: 1px solid var(--line); }
+.bj-cab b { flex: 1; font-size: 1.05rem; }
+.bj-cab button { padding: 6px 10px; font-size: .8rem; border-radius: 10px; }
+.bj-lista { overflow-y: auto; overscroll-behavior: contain; padding: 4px 0 8px; }
+.bj-dia { padding: 10px 16px 4px; font-size: .72rem; color: var(--muted); font-weight: 700; letter-spacing: .04em; }
+.bj-item { display: grid; grid-template-columns: 40px 1fr; gap: 10px; width: 100%; text-align: left; padding: 10px 16px; border: 0; border-radius: 0; background: transparent; color: var(--fg); position: relative; }
+.bj-item:hover, .bj-item:focus-visible { background: var(--bg); }
+.bj-item.nuevo { background: color-mix(in srgb, var(--accent) 9%, transparent); }
+.bj-item.nuevo::after { content: ""; position: absolute; right: 14px; top: 16px; width: 9px; height: 9px; border-radius: 50%; background: var(--accent); }
+.bj-item img.ic { width: 40px; height: 40px; border-radius: 12px; }
+.bj-item b { display: block; font-size: .9rem; padding-right: 16px; line-height: 1.25; }
+.bj-item p { margin: 2px 0 0; font-size: .8rem; color: var(--muted); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-line; }
+.bj-item small { font-size: .7rem; color: var(--muted); }
+.bj-item img.tj { grid-column: 2; width: 100%; aspect-ratio: 2 / 1; object-fit: cover; border-radius: 12px; margin-top: 6px; border: 1px solid var(--line); background: #0b1210; }
+.bj-vacio { padding: 28px 18px; text-align: center; color: var(--muted); font-size: .9rem; }
 .hz-mini { justify-self: start; display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px 4px 6px; margin-block: -8px -6px; border-radius: 999px; font: 600 .8rem var(--font-body); background: var(--surface); border: 1px solid var(--line); color: var(--fg); }
 .hz-mini .caritas { display: inline-flex; } .hz-mini .avatar { width: 24px; height: 24px; flex-basis: 24px; font-size: .7rem; border: 2px solid var(--surface); margin-left: -8px; }
 .hz-mini .caritas .avatar:first-child { margin-left: 0; }
@@ -1385,8 +1410,21 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
       <div class="marca" id="marca"><img src="/icon-192.png" alt=""><h1>Bitácora de Apuestas</h1></div>
       <div class="seccion-actual" id="sec-actual" hidden><span class="ico" id="sec-ico">🤖</span><span id="sec-nombre">Banca del bot</span></div>
     </div>
-    <div class="quien" id="quien" hidden><span id="q-nombre"></span><button type="button" id="refrescar" aria-label="Actualizar">↻</button></div>
+    <div class="quien" id="quien" hidden><span id="q-nombre"></span>
+      <button type="button" class="campana" id="campana" aria-label="Avisos" aria-haspopup="dialog" aria-controls="bandeja">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 16V11a6 6 0 1 1 12 0v5l1.6 2.2H4.4z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M10 20.2a2.1 2.1 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+        <span class="campana-n" id="campana-n" hidden></span></button>
+      <button type="button" id="refrescar" aria-label="Actualizar">↻</button></div>
   </header>
+  <div class="bandeja" id="bandeja" role="dialog" aria-modal="true" aria-labelledby="bj-tit" hidden>
+    <div class="bj-caja">
+      <div class="bj-cab"><b id="bj-tit">🔔 Avisos</b>
+        <button type="button" id="bj-leer">Marcar todo leído</button>
+        <button type="button" id="bj-ajustes" aria-label="Elegir qué avisos recibo">⚙️</button>
+        <button type="button" id="bj-cerrar" aria-label="Cerrar">✕</button></div>
+      <div class="bj-lista" id="bj-lista"></div>
+    </div>
+  </div>
   <div class="historias hz-global" data-hz id="hz-global" hidden aria-label="Historias de 24 horas: qué estamos apostando"></div>
   <button type="button" class="hz-mini" id="hz-mini" hidden aria-label="Ver historias"></button>
   <div class="hz-jala" id="hz-jala" aria-hidden="true"><span>📸</span></div>
@@ -7964,7 +8002,7 @@ let yo = null;
 async function revisarYo() {
   if (yo) return;
   try { yo = await api("yo"); } catch (e) { return; }
-  pushRefrescar();
+  pushRefrescar(); bjContar(); bjDesdeUrl();
   if (yo.momio && yo.momio !== MOMIO) cambiarMomio(yo.momio, false);
   if (vista === "inicio") preguntaMomio();
   if (yo.dueno) { window.__dueno = true; $("menu-admin").hidden = false; }
@@ -8094,6 +8132,79 @@ async function cargarAvisos() {
   if (avDatos.silencio) { $("av-de").value = avDatos.silencio.de; $("av-a").value = avDatos.silencio.a; }
   pushPintar();
 }
+
+// ---- 🔔 bandeja de avisos (la campanita de arriba)
+const BJ_DIA = (iso) => {
+  const f = new Date(iso), hoy = new Date(), ayer = new Date(Date.now() - 864e5);
+  const k = (d) => d.toLocaleDateString("es-MX", { timeZone: "America/Mexico_City" });
+  return k(f) === k(hoy) ? "HOY" : k(f) === k(ayer) ? "AYER" : f.toLocaleDateString("es-MX", { timeZone: "America/Mexico_City", weekday: "long", day: "numeric", month: "short" }).toUpperCase();
+};
+const bjHora = (iso) => new Date(iso).toLocaleTimeString("es-MX", { timeZone: "America/Mexico_City", hour: "numeric", minute: "2-digit" });
+const bjTarjeta = (d) => { try { return "/api/tarjeta?d=" + btoa(unescape(encodeURIComponent(JSON.stringify(d)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); } catch (e) { return null; } };
+function bjContador(n) {
+  const c = $("campana-n"), b = $("campana");
+  const antes = Number(c.textContent) || 0;
+  c.hidden = !n; c.textContent = n > 99 ? "99+" : String(n || "");
+  b.setAttribute("aria-label", n ? `Avisos: ${n} sin leer` : "Avisos");
+  if (n > antes) { b.classList.remove("hay"); void b.offsetWidth; b.classList.add("hay"); }
+}
+async function bjContar() {
+  if (!token) return;
+  try { bjContador((await api("bandeja_n")).n); } catch (e) {}
+}
+async function bjAbrir() {
+  $("bandeja").hidden = false; $("bj-cerrar").focus();
+  const L = $("bj-lista"); L.innerHTML = '<p class="bj-vacio">Cargando…</p>';
+  let d; try { d = await api("bandeja"); } catch (e) { L.innerHTML = ""; L.append(el("p", "bj-vacio", e.message || "No se pudo cargar.")); return; }
+  bjContador(d.no_leidas);
+  L.innerHTML = "";
+  if (!d.lista.length) { L.append(el("p", "bj-vacio", "Aquí se guardan tus avisos: señales, resultados, Melate, Progol, comunidad y tu resumen. Elige cuáles quieres en ⚙️.")); return; }
+  let dia = "";
+  d.lista.forEach(a => {
+    const dd = BJ_DIA(a.creado);
+    if (dd !== dia) { dia = dd; L.append(el("div", "bj-dia", dd)); }
+    const it = el("button", "bj-item" + (a.leido ? "" : " nuevo")); it.type = "button";
+    const ic = el("img", "ic"); ic.src = `/iconos/${a.tipo}.png`; ic.alt = ""; ic.onerror = () => { ic.src = "/iconos/app.png"; };
+    const tx = el("div"); tx.append(el("b", "", a.titulo));
+    if (a.cuerpo) tx.append(el("p", "", a.cuerpo));
+    tx.append(el("small", "", bjHora(a.creado)));
+    it.append(ic, tx);
+    if (a.img) { const u = bjTarjeta(a.img); if (u) { const im = el("img", "tj"); im.loading = "lazy"; im.alt = ""; im.src = u; it.append(im); } }
+    it.onclick = () => {
+      if (!a.leido) api("bandeja_leer", { id: a.id }).then(bjContar).catch(() => {});
+      bjCerrar();
+      const h = String(a.url || "").split("#")[1];
+      if (h) irA(h);
+    };
+    L.append(it);
+  });
+}
+function bjCerrar() { $("bandeja").hidden = true; $("campana").focus(); }
+$("campana").onclick = bjAbrir;
+$("bj-cerrar").onclick = bjCerrar;
+$("bandeja").addEventListener("click", (e) => { if (e.target.id === "bandeja") bjCerrar(); });
+$("bandeja").addEventListener("keydown", (e) => { if (e.key === "Escape") bjCerrar(); });
+$("bj-ajustes").onclick = () => { bjCerrar(); irA("avisos"); };
+$("bj-leer").onclick = async () => {
+  try { await api("bandeja_leer", {}); } catch (e) {}
+  document.querySelectorAll(".bj-item.nuevo").forEach(x => x.classList.remove("nuevo")); bjContador(0);
+};
+document.addEventListener("visibilitychange", () => { if (!document.hidden) bjContar(); });
+setInterval(() => { if (!document.hidden) bjContar(); }, 120000);
+// abrir desde una notificación: ?aviso=ID#seccion → se marca leído y se va a esa sección
+function bjDesdeUrl(u) {
+  try {
+    const url = new URL(u || location.href, location.origin), id = url.searchParams.get("aviso");
+    if (id && token) api("bandeja_leer", { id: Number(id) }).then(bjContar).catch(() => {});
+    if (url.searchParams.has("aviso") && !u) { url.searchParams.delete("aviso"); history.replaceState(null, "", url.pathname + url.search + url.hash); }
+    if (u && url.hash) irA(url.hash.slice(1));
+  } catch (e) {}
+}
+if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", (e) => {
+  const d = e.data || {};
+  if (d.tipo === "aviso") bjContar();
+  if (d.tipo === "ir") bjDesdeUrl(d.u);
+});
 
 // ---- 📱 notificaciones del celular (Web Push)
 const pushSoportado = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
@@ -8262,7 +8373,7 @@ const TOUR = [
   { c: "Para practicar", v: "practica", sel: "#pr-modo", t: "🎮 Práctica y Torneo", d: "Apuestas de mentira con los momios del bot. En “Torneo semanal” todos empiezan el lunes con $1,000 y gana quien acabe el domingo con más: hay premios para la mascota." },
   { c: "Tú", v: "diseno", sel: "#v-diseno", t: "🎨 Mi diseño", d: "Elige si ves los momios en americano (+150) o decimal (2.50), los colores, el fondo (¡hasta un estadio real!), la letra y qué secciones salen en tu menú." },
   { c: "Tú", v: "equipo", sel: "#eq-form", t: "⭐ Mi equipo", d: "Busca tu equipo favorito: la app toma sus colores, tu mascota usa su playera y el bot te avisa antes de cada partido suyo." },
-  { c: "Tú", v: "avisos", sel: "#v-avisos", t: "🔔 Mis avisos", d: "Activa las notificaciones en tu celular y elige qué te llega y por dónde (celular o Telegram): señales, resultados, Melate, Progol, comunidad… También tu resumen a la hora que quieras." },
+  { c: "Tú", v: "avisos", sel: "#v-avisos", t: "🔔 Mis avisos", d: "La campanita 🔔 de arriba guarda todos tus avisos. Aquí activas las notificaciones en tu celular y elige qué te llega y por dónde (celular o Telegram): señales, resultados, Melate, Progol, comunidad… También tu resumen a la hora que quieras." },
   { c: "Tú", v: "opiniones", sel: "#op-form", t: "📝 Opiniones", d: "¿Algo falla o tienes una idea? Mándala aquí. Ves las de todos, puedes apoyarlas con 👍 y te avisamos cuando se revisen o se hagan." },
   { c: "Final", v: "inicio", t: "🤖 No olvides Telegram", d: "El bot te manda las señales a las 7:00 y 18:00. Ahí también puedes escribir “Ravens -250?” para checar un momio, “señales” para verlas otra vez o “guía” para recibir el manual." },
   { c: "Final", v: "inicio", t: "🙌 ¡Listo!", d: "Recuerda: apuesta solo cuando te paguen igual o más que el mínimo, montos chicos y nunca para recuperar. Esto es una herramienta, no dinero seguro. ¡Suerte!" },
