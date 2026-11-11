@@ -345,6 +345,28 @@ def grupo_liga(deporte):
     return {"americanfootball_nfl": "nfl", "basketball_nba": "nba", "baseball_mlb": "mlb"}.get(deporte, "otras")
 
 
+def quiere_tg(chat, tipo):
+    """¿Quiere este aviso por Telegram? (Mis avisos > celular / Telegram)."""
+    a = AVISOS.get(chat) or {}
+    n = (a.get("notif") or {}).get(tipo)
+    if isinstance(n, dict) and isinstance(n.get("tg"), bool):
+        return n["tg"]
+    return a.get("movimientos") is not False if tipo == "movimientos" else True
+
+
+def push(envios):
+    """🔔 Notificaciones al celular (la página decide a quién según sus preferencias). Nunca tumba el escaneo."""
+    token = "".join(os.getenv("TELEGRAM_TOKEN", "").split())
+    if not (requests and token and envios):
+        return
+    try:
+        r = requests.post(f"{BOT_URL}/api/telegram", params={"push": "1"}, headers={"x-bot-token": token},
+                          json={"envios": envios}, timeout=40)
+        print(f"🔔 push: {r.json() if r.ok else r.status_code}")
+    except (requests.RequestException, ValueError) as e:
+        print(f"No se pudieron mandar notificaciones: {type(e).__name__}", file=sys.stderr)
+
+
 def filtrar_para(chat, tabla):
     """Aplica las preferencias del usuario: ligas, probabilidad mínima. [] si no quiere ninguna."""
     a = AVISOS.get(chat) or {}
@@ -736,7 +758,7 @@ def escanear(args):
         enviados = 0
         for chat, banca, _nombre in usuarios_alertas():
             suya = filtrar_para(chat, tabla)
-            if not suya or en_silencio(chat):
+            if not suya or en_silencio(chat) or not quiere_tg(chat, "senales"):
                 continue                      # no quiere esas ligas o está en sus horas de silencio (lo ve en la página)
             enviados += 1
             global FORMATO
@@ -756,6 +778,14 @@ def escanear(args):
                 msg.append("🔧 Filtrado según tus avisos (cámbialos en la página: menú > Mis avisos).")
             telegram("\n".join(msg), chat, botones)
         FORMATO = "americano"
+        # 🔔 al celular: la más probable de cada partido (la ⭐), filtrada por las ligas y el % de cada quien
+        mejor = {}
+        for f in tabla:
+            if f["partido"] not in mejor or f["prob"] > mejor[f["partido"]]["prob"]:
+                mejor[f["partido"]] = f
+        push([{"tipo": "senales", "senales": [
+            {"grupo": grupo_liga(f["deporte"]), "prob": round(f["prob"], 4), "partido": f["partido"],
+             "texto": f"{f['seleccion']} · {f['partido']}"[:90], "estrella": mejor.get(f["partido"]) is f} for f in tabla]}])
         guardar_estado("escaneo", {"senales": len(tabla), "partidos": len({f["partido"] for f in tabla}), "enviados": enviados})
         BANCA = banca_original
         # ⚡ Movimientos fuertes de Pinnacle desde el escaneo anterior: el dinero de los profesionales
@@ -769,13 +799,17 @@ def escanear(args):
             for chat, _b, _n in usuarios_alertas():
                 a = AVISOS.get(chat) or {}
                 suyos = [f for f in fuertes if f in filtrar_para(chat, fuertes)]
-                if a.get("movimientos") is False or en_silencio(chat) or not suyos:
+                if not quiere_tg(chat, "movimientos") or en_silencio(chat) or not suyos:
                     continue
                 if len(suyos) == len(fuertes):
                     telegram("\n".join(txt), chat)
                 else:
                     t2 = txt[:2] + [l for f in suyos for l in [f"{f['partido']}\n   {f['seleccion']}: {'🟢 subió' if f['mov'] > 0 else '🔴 bajó'} {abs(f['mov']) * 100:.1f} pts → {f['prob']:.1%}"]] + txt[-1:]
                     telegram("\n".join(t2), chat)
+            f0 = fuertes[0]
+            push([{"tipo": "movimientos", "tag": "movimientos", "url": "/#lineas",
+                   "titulo": f"⚡ {len(fuertes)} movimiento{'s' if len(fuertes) > 1 else ''} fuerte{'s' if len(fuertes) > 1 else ''} de Pinnacle",
+                   "cuerpo": f"{f0['seleccion']} ({f0['partido']}): {'subió' if f0['mov'] > 0 else 'bajó'} {abs(f0['mov']) * 100:.1f} pts → {f0['prob']:.0%}"}])
 
     if valor:
         print("\n=== VALOR ENCONTRADO en casas del feed ===")

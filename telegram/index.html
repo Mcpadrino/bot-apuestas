@@ -1199,6 +1199,22 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
 .chips-ligas { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
 .chips-ligas button { flex: 0 0 auto; padding: 7px 12px; border-radius: 999px; font-size: .82rem; }
 .chips-ligas button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.av-botones { display: flex; flex-wrap: wrap; gap: 6px; }
+.av-botones button { flex: 1 1 auto; }
+.av-tipos { display: grid; gap: 2px; }
+.av-tipo { display: grid; grid-template-columns: 26px 1fr 46px 46px; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.av-tipo:last-child { border-bottom: 0; }
+.av-tipo .ic { font-size: 1.2rem; text-align: center; }
+.av-tipo b { font-size: .9rem; display: block; }
+.av-tipo small { color: var(--muted); font-size: .74rem; line-height: 1.25; display: block; }
+.av-tipo button { height: 40px; border-radius: 10px; padding: 0; font-size: 1.05rem; border: 1px solid var(--line); background: var(--bg); filter: grayscale(1); opacity: .55; }
+.av-tipo button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); filter: none; opacity: 1; }
+.av-tipo button:disabled { opacity: .25; }
+.av-res { display: grid; gap: 8px; margin-top: 6px; }
+.av-res[hidden] { display: none; }
+.av-inc { display: grid; gap: 4px; }
+.av-inc label { display: flex; gap: 8px; align-items: center; font-size: .88rem; }
+.av-inc input { width: auto; }
 .tabla-pos { width: 100%; border-collapse: collapse; font-size: .85rem; background: var(--surface); border-radius: 14px; overflow: hidden; }
 .tabla-pos th { text-align: center; font-size: .68rem; letter-spacing: .06em; color: var(--muted); padding: 8px 4px; border-bottom: 1px solid var(--line); }
 .tabla-pos td { padding: 7px 4px; text-align: center; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
@@ -2150,17 +2166,36 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
 
   <!-- ===================== MI EQUIPO ===================== -->
   <div id="v-avisos" class="vista section" hidden>
-    <div class="tarjeta"><b>🔔 Qué te manda el bot por Telegram</b>
-      <span class="hint" style="margin:0" id="av-nota">Elige qué señales quieres recibir. En la página siempre ves todas.</span></div>
-    <div class="tarjeta"><b>Ligas</b><span class="hint" style="margin:0">Sin ninguna marcada = todas.</span>
+    <div class="tarjeta av-cel"><b>📱 Notificaciones en este celular</b>
+      <span class="hint" style="margin:0" id="av-cel-estado">Revisando…</span>
+      <div class="av-botones">
+        <button type="button" class="primary" id="av-cel-activar">🔔 Activar en este celular</button>
+        <button type="button" id="av-cel-probar" hidden>Mandarme una de prueba</button>
+        <button type="button" id="av-cel-quitar" hidden>Desactivar aquí</button>
+      </div>
+      <span class="hint" style="margin:0" id="av-cel-otros"></span></div>
+    <div class="tarjeta"><b>🔔 Qué quieres que te avise y por dónde</b>
+      <span class="hint" style="margin:0" id="av-nota">Toca 📱 para recibirlo como notificación del celular y ✈️ para recibirlo por Telegram. Puedes prender los dos o ninguno. En la página siempre ves todo.</span>
+      <div class="av-tipos" id="av-tipos"></div></div>
+    <div class="tarjeta"><b>🗓️ Tu resumen</b>
+      <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="av-res-on" style="width:auto">Mándame un resumen a la hora que yo elija</label>
+      <div id="av-res-cfg" class="av-res">
+        <label>A las <select id="av-res-hora"></select></label>
+        <span class="hint" style="margin:0">Qué días (sin ninguno marcado = todos)</span>
+        <div class="chips-ligas" id="av-res-dias"></div>
+        <span class="hint" style="margin:0">Qué incluye</span>
+        <div class="av-inc" id="av-res-inc"></div>
+        <button type="button" id="av-res-probar">👀 Mándamelo ahora para ver cómo queda</button>
+      </div></div>
+    <div class="tarjeta"><b>🎯 Señales: ligas</b><span class="hint" style="margin:0">Sin ninguna marcada = todas. Aplica al celular y a Telegram.</span>
       <div class="chips-ligas" id="av-ligas" style="flex-wrap:wrap"></div></div>
-    <div class="tarjeta"><b>Probabilidad mínima</b>
-      <span class="hint" style="margin:0">Solo te mando selecciones con al menos este % (las más seguras pagan menos).</span>
+    <div class="tarjeta"><b>🎯 Señales: probabilidad mínima</b>
+      <span class="hint" style="margin:0">Solo te aviso de selecciones con al menos este % (las más seguras pagan menos).</span>
       <input type="range" id="av-prob" min="0" max="80" step="5" value="0"><div class="num" id="av-prob-txt">Todas</div></div>
-    <div class="tarjeta"><b>Horas de silencio</b>
-      <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="av-sil" style="width:auto">No me escribas de</label>
-      <div style="display:flex;gap:8px;align-items:center"><select id="av-de"></select><span>a</span><select id="av-a"></select></div></div>
-    <div class="tarjeta"><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="av-mov" style="width:auto" checked>Avisarme de movimientos fuertes de Pinnacle</label></div>
+    <div class="tarjeta"><b>🌙 Horas de silencio</b>
+      <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="av-sil" style="width:auto">No me mandes nada de</label>
+      <div style="display:flex;gap:8px;align-items:center"><select id="av-de"></select><span>a</span><select id="av-a"></select></div>
+      <span class="hint" style="margin:0">Ni al celular ni a Telegram. Tu resumen sí llega a la hora que elegiste.</span></div>
     <button type="button" class="primary" id="av-guardar">Guardar mis avisos</button>
     <p class="hint" id="av-msg"></p>
   </div>
@@ -2307,7 +2342,7 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
     <button class="menu-item" data-v="diseno"><span class="mi">🎨</span><span class="txt">Mi diseño<small>Colores, fondo, estadio y menú</small></span><span class="flecha">›</span></button>
     <button class="menu-item" data-v="equipo"><span class="mi">⭐</span><span class="txt">Mi equipo<small>Su página, colores y avisos</small></span><span class="flecha">›</span></button>
     <button class="menu-item" data-v="opiniones"><span class="mi">📝</span><span class="txt">Opiniones<small>Ideas, fallas y en qué van</small></span><span class="flecha">›</span></button>
-    <button class="menu-item" data-v="avisos"><span class="mi">🔔</span><span class="txt">Mis avisos<small>Qué ligas y a qué horas te escribe el bot</small></span><span class="flecha">›</span></button>
+    <button class="menu-item" data-v="avisos"><span class="mi">🔔</span><span class="txt">Mis avisos<small>Notificaciones en tu celular o Telegram, y tu resumen diario</small></span><span class="flecha">›</span></button>
     <div class="menu-grupo">Ayuda</div>
     <button class="menu-item" type="button" id="ver-tour"><span class="mi">🧭</span><span class="txt">Tour de la app<small>Te enseño todo paso a paso</small></span><span class="flecha">›</span></button>
     <a class="menu-item" href="/docs/guia-usuario.pdf" target="_blank" rel="noopener"><span class="mi">📘</span><span class="txt">Guía completa (PDF)<small>Todo explicado desde cero</small></span><span class="flecha">↗</span></a>
@@ -7929,6 +7964,7 @@ let yo = null;
 async function revisarYo() {
   if (yo) return;
   try { yo = await api("yo"); } catch (e) { return; }
+  pushRefrescar();
   if (yo.momio && yo.momio !== MOMIO) cambiarMomio(yo.momio, false);
   if (vista === "inicio") preguntaMomio();
   if (yo.dueno) { window.__dueno = true; $("menu-admin").hidden = false; }
@@ -7943,24 +7979,109 @@ function registrarUso(v) {
 
 // ---------------------------------------------------------------- 🔔 Mis avisos
 const AV_LIGAS = [["ligamx", "⚽ Liga MX"], ["europa", "⚽ Europa"], ["champions", "🏆 Champions / Europa League"], ["nfl", "🏈 NFL"], ["nba", "🏀 NBA"], ["mlb", "⚾ MLB"]];
-let avDatos = {};
+// tipo, ícono, nombre, explicación, si viene prendido en celular / Telegram, y si Telegram es fijo (lleva botones para confirmar)
+const AV_TIPOS = [
+  ["senales", "🎯", "Señales nuevas", "Cuando el bot encuentra partidos que convienen (con tus ligas y tu % mínimo).", true, true],
+  ["resultados", "🏁", "Resultado de tus apuestas", "Cuando termina un partido que apostaste. Por Telegram siempre te llega para confirmarlo.", true, true, true],
+  ["movimientos", "⚡", "Movimientos fuertes de Pinnacle", "Cuando el dinero de los profesionales mueve mucho una línea.", false, true],
+  ["comunidad", "💬", "Comunidad", "Cuando alguien publica, sube una historia o un ticket.", true, true],
+  ["retos", "⚔️", "Retos", "Cuando alguien te reta. Por Telegram siempre te llega con los botones.", true, true, true],
+  ["melate", "🎱", "Salió el Melate", "Melate, Revancha, Revanchita y Retro: los números y cómo le fue a cada teoría.", true, false],
+  ["progol", "⚽", "Resultados de quinielas", "Progol, Media Semana y Protouch: cuántos atinó el favorito y cuánto habría pagado cada boleto.", true, false],
+  ["quiniela", "🎟️", "Quiniela nueva", "Cuando sale la quiniela de la semana con sus probabilidades.", false, false],
+  ["resumen", "🗓️", "Tu resumen", "A la hora y los días que elijas abajo.", true, false],
+];
+const AV_INC = [["banca", "Mi banca del bot y lo que tengo en juego"], ["dia", "Cómo me fue hoy (o ayer, si es en la mañana)"], ["semana", "Mis últimos 7 días y el mes"],
+  ["senales", "Cuántos partidos tienen señal hoy"], ["sorteos", "Quinielas abiertas y cuándo empiezan"]];
+const AV_DIAS = ["D", "L", "M", "M", "J", "V", "S"];
+let avDatos = {}, avSel = {};
+const avQuiere = (k, canal) => {
+  const n = (avDatos.notif || {})[k], t = AV_TIPOS.find(x => x[0] === k);
+  if (n && typeof n[canal] === "boolean") return n[canal];
+  if (k === "movimientos" && canal === "tg") return avDatos.movimientos !== false;
+  return canal === "cel" ? t[4] : t[5];
+};
 (function initAvisos() {
   const h = (n) => `${n % 12 || 12}:00 ${n < 12 ? "a.m." : "p.m."}`;
-  ["av-de", "av-a"].forEach((id, k) => { for (let i = 0; i < 24; i++) $(id).insertAdjacentHTML("beforeend", `<option value="${i}">${h(i)}</option>`); $(id).value = k ? 7 : 23; });
+  ["av-de", "av-a", "av-res-hora"].forEach((id, k) => { for (let i = 0; i < 24; i++) $(id).insertAdjacentHTML("beforeend", `<option value="${i}">${h(i)}</option>`); $(id).value = [23, 7, 21][k]; });
   $("av-prob").oninput = () => { const v = Number($("av-prob").value); $("av-prob-txt").textContent = v ? `${v}% o más` : "Todas"; };
+  $("av-res-on").onchange = () => { $("av-res-cfg").hidden = !$("av-res-on").checked; };
   $("av-guardar").onclick = async () => {
-    const ligas = [...document.querySelectorAll("#av-ligas button[aria-pressed=true]")].map(b => b.dataset.l);
-    const avisos = { ligas, prob_min: Number($("av-prob").value) / 100,
-      silencio: $("av-sil").checked ? { de: Number($("av-de").value), a: Number($("av-a").value) } : null, movimientos: $("av-mov").checked };
     $("av-guardar").disabled = true;
-    try { await api("avisos_set", { avisos }); $("av-msg").textContent = "✅ Listo. Desde el próximo escaneo el bot te manda solo eso."; }
+    try { await guardarAvisos(); $("av-msg").textContent = "✅ Listo. Desde ahora te aviso así."; }
     catch (e) { $("av-msg").textContent = e.message; }
     $("av-guardar").disabled = false;
   };
+  $("av-cel-activar").onclick = activarPush;
+  $("av-cel-quitar").onclick = quitarPush;
+  $("av-cel-probar").onclick = async () => {
+    $("av-cel-probar").disabled = true;
+    try { const r = await api("push_prueba", {}); $("av-cel-otros").textContent = r.enviados ? "📨 Enviada. Debe llegarte en unos segundos." : "No se pudo enviar. Desactiva y vuelve a activar."; }
+    catch (e) { $("av-cel-otros").textContent = e.message; }
+    $("av-cel-probar").disabled = false;
+  };
+  $("av-res-probar").onclick = async () => {
+    $("av-res-probar").disabled = true;
+    try { await guardarAvisos(); const r = await api("push_prueba", { tipo: "resumen" });
+      $("av-msg").textContent = r.enviados || r.porTg ? "📨 Te mandé tu resumen" + (r.enviados ? " al celular" : "") + (r.porTg ? (r.enviados ? " y" : "") + " por Telegram" : "") + "." : "Activa las notificaciones en este celular (arriba) o prende ✈️ en Tu resumen para recibirlo."; }
+    catch (e) { $("av-msg").textContent = e.message; }
+    $("av-res-probar").disabled = false;
+  };
 })();
+async function guardarAvisos() {
+  const ligas = [...document.querySelectorAll("#av-ligas button[aria-pressed=true]")].map(b => b.dataset.l);
+  const notif = {};
+  AV_TIPOS.forEach(([k]) => { notif[k] = { cel: !!avSel[k + ":cel"], tg: !!avSel[k + ":tg"] }; });
+  const incluir = {}; AV_INC.forEach(([k]) => { incluir[k] = $("av-inc-" + k).checked; });
+  const avisos = { ligas, prob_min: Number($("av-prob").value) / 100,
+    silencio: $("av-sil").checked ? { de: Number($("av-de").value), a: Number($("av-a").value) } : null,
+    movimientos: !!avSel["movimientos:tg"], notif,
+    resumen: { activo: $("av-res-on").checked, hora: Number($("av-res-hora").value),
+      dias: [...document.querySelectorAll("#av-res-dias button[aria-pressed=true]")].map(b => Number(b.dataset.d)), incluir } };
+  await api("avisos_set", { avisos });
+  avDatos = { ...avDatos, ...avisos };
+}
 async function cargarAvisos() {
   try { avDatos = (await api("avisos_get")) || {}; } catch (e) { avDatos = {}; }
-  if (yo && yo.solo_web) $("av-nota").textContent = "Tu cuenta es solo de página: no recibes mensajes de Telegram. Si quieres los avisos, pide acceso al bot y vincula tu cuenta con el administrador.";
+  const soloWeb = !!(yo && yo.solo_web);
+  if (soloWeb) $("av-nota").textContent = "Toca 📱 para recibirlo como notificación del celular. Tu cuenta es solo de página, así que ✈️ Telegram no aplica (si lo quieres, pide acceso al bot).";
+  // tipos
+  const cont = $("av-tipos"); cont.innerHTML = ""; avSel = {};
+  AV_TIPOS.forEach(([k, ic, nom, desc, , , tgFijo]) => {
+    const f = el("div", "av-tipo"), tx = el("div");
+    tx.append(el("b", "", nom), el("small", "", desc));
+    f.append(el("span", "ic", ic), tx);
+    ["cel", "tg"].forEach(canal => {
+      const bt = el("button", "", canal === "cel" ? "📱" : "✈️"); bt.type = "button";
+      let v = avQuiere(k, canal);
+      if (canal === "tg" && (soloWeb || tgFijo)) { bt.disabled = true; v = !soloWeb && !!tgFijo; }
+      avSel[k + ":" + canal] = v;
+      bt.setAttribute("aria-pressed", String(v));
+      bt.setAttribute("aria-label", `${nom}: ${canal === "cel" ? "notificación del celular" : "Telegram"}`);
+      bt.title = canal === "cel" ? "Notificación del celular" : tgFijo ? "Por Telegram siempre llega (trae botones)" : "Telegram";
+      bt.onclick = () => { avSel[k + ":" + canal] = !avSel[k + ":" + canal]; bt.setAttribute("aria-pressed", String(avSel[k + ":" + canal])); };
+      f.append(bt);
+    });
+    cont.append(f);
+  });
+  // resumen
+  const rs = avDatos.resumen || {};
+  $("av-res-on").checked = !!rs.activo; $("av-res-cfg").hidden = !rs.activo;
+  $("av-res-hora").value = rs.hora ?? 21;
+  const dd = $("av-res-dias"); dd.innerHTML = "";
+  [1, 2, 3, 4, 5, 6, 0].forEach(i => {
+    const b = el("button", "", AV_DIAS[i]); b.type = "button"; b.dataset.d = i;
+    b.setAttribute("aria-label", ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"][i]);
+    b.setAttribute("aria-pressed", String((rs.dias || []).includes(i)));
+    b.onclick = () => b.setAttribute("aria-pressed", String(b.getAttribute("aria-pressed") !== "true"));
+    dd.append(b);
+  });
+  const inc = $("av-res-inc"); inc.innerHTML = "";
+  AV_INC.forEach(([k, t]) => {
+    const l = el("label"), c = el("input"); c.type = "checkbox"; c.id = "av-inc-" + k; c.checked = !(rs.incluir && rs.incluir[k] === false);
+    l.append(c, t); inc.append(l);
+  });
+  // ligas, %, silencio
   const bar = $("av-ligas"); bar.innerHTML = "";
   AV_LIGAS.forEach(([k, t]) => {
     const b = el("button", "", t); b.type = "button"; b.dataset.l = k;
@@ -7971,7 +8092,78 @@ async function cargarAvisos() {
   $("av-prob").value = Math.round((avDatos.prob_min || 0) * 100); $("av-prob").oninput();
   $("av-sil").checked = !!avDatos.silencio;
   if (avDatos.silencio) { $("av-de").value = avDatos.silencio.de; $("av-a").value = avDatos.silencio.a; }
-  $("av-mov").checked = avDatos.movimientos !== false;
+  pushPintar();
+}
+
+// ---- 📱 notificaciones del celular (Web Push)
+const pushSoportado = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+const esIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const instalada = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+function u8(b64) { const p = "=".repeat((4 - b64.length % 4) % 4), s = atob((b64 + p).replace(/-/g, "+").replace(/_/g, "/")); return Uint8Array.from(s, c => c.charCodeAt(0)); }
+function nombreCel() {
+  const ua = navigator.userAgent;
+  const m = ua.match(/Android [\d.]+; ([^;)]+)/);
+  return (m ? m[1].replace(/ Build.*/, "") : /iPhone/.test(ua) ? "iPhone" : /iPad/.test(ua) ? "iPad" : /Mac/.test(ua) ? "Mac" : /Windows/.test(ua) ? "Computadora" : "Celular").slice(0, 40);
+}
+async function pushSub() {
+  if (!pushSoportado()) return null;
+  const reg = await navigator.serviceWorker.ready;
+  return reg.pushManager.getSubscription();
+}
+async function pushPintar() {
+  const est = $("av-cel-estado"), act = $("av-cel-activar"), pr = $("av-cel-probar"), qu = $("av-cel-quitar");
+  pr.hidden = qu.hidden = true; act.hidden = false; act.disabled = false;
+  if (!pushSoportado()) {
+    est.textContent = esIOS && !instalada()
+      ? "En iPhone primero agrega la Bitácora a tu pantalla de inicio (Compartir > Agregar a inicio), ábrela desde ahí y vuelve aquí. Necesitas iOS 16.4 o más nuevo."
+      : "Este navegador no permite notificaciones. Usa Chrome en Android, o en iPhone agrégala a tu pantalla de inicio.";
+    act.hidden = true; return;
+  }
+  if (Notification.permission === "denied") {
+    est.textContent = "Bloqueaste las notificaciones para esta página. Para activarlas: en Chrome toca el candado o ⋮ > Configuración del sitio > Notificaciones > Permitir, y vuelve a entrar.";
+    act.hidden = true; return;
+  }
+  const sub = await pushSub().catch(() => null);
+  if (sub && Notification.permission === "granted") {
+    est.textContent = "✅ Activadas en este celular. Elige abajo qué te llega aquí (📱).";
+    act.hidden = true; pr.hidden = qu.hidden = false;
+  } else {
+    est.textContent = "Recibe avisos como cualquier app, aunque la Bitácora esté cerrada." + (esIOS ? " (iPhone: solo desde la app agregada a tu pantalla de inicio.)" : "");
+  }
+  try {
+    const mis = await api("push_mis");
+    const otros = mis.filter(m => !sub || m.endpoint !== sub.endpoint);
+    $("av-cel-otros").textContent = otros.length ? `También activadas en: ${otros.map(m => m.nombre || "otro celular").join(", ")}.` : "";
+  } catch (e) {}
+}
+async function activarPush() {
+  const act = $("av-cel-activar"); act.disabled = true;
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== "granted") { await pushPintar(); $("av-cel-estado").textContent = "No diste permiso. Si cambias de opinión, toca Activar otra vez."; return; }
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) { const { llave } = await api("push_llave"); sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: u8(llave) }); }
+    await api("push_alta", { sub: sub.toJSON(), nombre: nombreCel() });
+    await pushPintar();
+    try { await api("push_prueba", {}); } catch (e) {}
+  } catch (e) { $("av-cel-estado").textContent = "No se pudo activar: " + (e.message || e); }
+  act.disabled = false;
+}
+async function quitarPush() {
+  try {
+    const sub = await pushSub();
+    if (sub) { await api("push_baja", { endpoint: sub.endpoint }).catch(() => {}); await sub.unsubscribe(); }
+  } catch (e) {}
+  pushPintar();
+}
+// al entrar, si este celular ya tenía notificaciones, se vuelve a ligar a la cuenta (por si cambió de usuario o el navegador la renovó)
+async function pushRefrescar() {
+  try {
+    if (!pushSoportado() || Notification.permission !== "granted") return;
+    const sub = await pushSub();
+    if (sub) await api("push_alta", { sub: sub.toJSON(), nombre: nombreCel() });
+  } catch (e) {}
 }
 
 // ---------------------------------------------------------------- 🛠️ Administrador
@@ -8070,7 +8262,7 @@ const TOUR = [
   { c: "Para practicar", v: "practica", sel: "#pr-modo", t: "🎮 Práctica y Torneo", d: "Apuestas de mentira con los momios del bot. En “Torneo semanal” todos empiezan el lunes con $1,000 y gana quien acabe el domingo con más: hay premios para la mascota." },
   { c: "Tú", v: "diseno", sel: "#v-diseno", t: "🎨 Mi diseño", d: "Elige si ves los momios en americano (+150) o decimal (2.50), los colores, el fondo (¡hasta un estadio real!), la letra y qué secciones salen en tu menú." },
   { c: "Tú", v: "equipo", sel: "#eq-form", t: "⭐ Mi equipo", d: "Busca tu equipo favorito: la app toma sus colores, tu mascota usa su playera y el bot te avisa antes de cada partido suyo." },
-  { c: "Tú", v: "avisos", sel: "#v-avisos", t: "🔔 Mis avisos", d: "Elige qué te manda el bot por Telegram: solo ciertas ligas, un % mínimo, horas de silencio y si quieres los avisos de movimientos fuertes." },
+  { c: "Tú", v: "avisos", sel: "#v-avisos", t: "🔔 Mis avisos", d: "Activa las notificaciones en tu celular y elige qué te llega y por dónde (celular o Telegram): señales, resultados, Melate, Progol, comunidad… También tu resumen a la hora que quieras." },
   { c: "Tú", v: "opiniones", sel: "#op-form", t: "📝 Opiniones", d: "¿Algo falla o tienes una idea? Mándala aquí. Ves las de todos, puedes apoyarlas con 👍 y te avisamos cuando se revisen o se hagan." },
   { c: "Final", v: "inicio", t: "🤖 No olvides Telegram", d: "El bot te manda las señales a las 7:00 y 18:00. Ahí también puedes escribir “Ravens -250?” para checar un momio, “señales” para verlas otra vez o “guía” para recibir el manual." },
   { c: "Final", v: "inicio", t: "🙌 ¡Listo!", d: "Recuerda: apuesta solo cuando te paguen igual o más que el mínimo, montos chicos y nunca para recuperar. Esto es una herramienta, no dinero seguro. ¡Suerte!" },

@@ -6,6 +6,7 @@
 import { buscarLogo, sugerencias, equipoPorClave } from "../lib/espn.js";
 import { torneo, amer, momioDoble, setFormato, jugar, admin, opinion, avisarOpinion, avisarAutor, botonesOpinion, ESTADO_OP, TIPO_OP } from "../lib/mas.js";
 import { mas, avisarRespuesta, textoSenales, botonesSenales, sacarMomio, casaDe, buscarSenal, veredicto, conv, guru } from "../lib/mas.js";
+import { notificar, cuerpoSenales, mandarResumenes } from "../lib/push.js";
 
 const env = (k) => (process.env[k] || "").replace(/\s/g, "");
 const TG = () => `https://api.telegram.org/bot${env("TELEGRAM_TOKEN")}`;
@@ -666,6 +667,32 @@ async function pedirAcceso(u, chatId) {
 }
 const limpiar = (t) => String(t || "").replace(/[_*\x60[\]]/g, "");
 
+// ---------------------------------------------------------------- 🔔 avisos de Progol, Media Semana y Protouch
+const NOM_Q = { progol: "Progol", media: "Media Semana", protouch: "Protouch" };
+async function avisosProgol(accion, datos, antes) {
+  const juegoDe = (x) => x.juego || "progol";
+  if (accion === "guardar") {
+    const j = datos.juego || "progol";
+    if (antes.some((x) => juegoDe(x) === j && Number(x.concurso) === Number(datos.concurso))) return;
+    const n = ((datos.datos || {}).partidos || []).length;
+    await notificar({ tipo: "quiniela", telegram: true, tag: "quiniela-" + j,
+      titulo: `🎟️ Ya está la quiniela de ${NOM_Q[j]} ${datos.concurso}`,
+      cuerpo: `${n} partidos con la probabilidad de cada uno. Arma el boleto más probable del tamaño que quieras.`, url: "/#progol" });
+    return;
+  }
+  for (const c of datos.concursos || []) {
+    const j = c.juego || "progol", res = (c.resultados || {})[j];
+    const fila = antes.find((x) => juegoDe(x) === j && Number(x.concurso) === Number(c.concurso));
+    if (!fila || !Array.isArray(res) || !res.length || ((fila.resultados || {})[j] || []).length) continue;   // sin pronóstico guardado o ya avisado
+    const P = (fila.datos || {}).partidos || [];
+    const fav = P.map((p) => ["L", "E", "V"].reduce((a, k) => (p.p[k] > p.p[a] ? k : a), "L"));
+    const atino = fav.filter((k, i) => res[i] === k).length;
+    await notificar({ tipo: "progol", telegram: true, tag: "progol-" + j,
+      titulo: `⚽ Resultados de ${NOM_Q[j]} ${c.concurso}`,
+      cuerpo: `El favorito atinó ${atino} de ${P.length}. Mira cuánto habría pagado cada boleto.`, url: "/#progol" });
+  }
+}
+
 // ---------------------------------------------------------------- entrada HTTP
 export default async function handler(req, res) {
   // Registro del webhook (una sola vez): GET /api/telegram?setup=<WEBHOOK_SECRET>
@@ -697,10 +724,38 @@ export default async function handler(req, res) {
     if (!tokenOk()) return res.status(401).json({ error: "no" });
     const b = req.body || {}, acc = { guardar: "progol_guardar", resultados: "progol_resultados" }[b.accion];
     if (!acc) return res.status(400).json({ error: "acción" });
-    const r = await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/melate`, { method: "POST",
+    const llamar = (a, d) => fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/melate`, { method: "POST",
       headers: { "content-type": "application/json", apikey: process.env.SUPABASE_KEY, authorization: `Bearer ${process.env.SUPABASE_KEY}` },
-      body: JSON.stringify({ p_clave: process.env.BOT_CLAVE, p_accion: acc, p_datos: b.datos || {} }) });
-    return res.status(r.ok ? 200 : 500).json(await r.json());
+      body: JSON.stringify({ p_clave: process.env.BOT_CLAVE, p_accion: a, p_datos: d }) });
+    const antes = await llamar("progol_ver", {}).then((x) => x.json()).catch(() => []);
+    const r = await llamar(acc, b.datos || {});
+    const out = await r.json();
+    if (r.ok && Array.isArray(antes)) {
+      try { await avisosProgol(b.accion, b.datos || {}, antes); } catch (e) { console.error("avisos progol", e); }
+    }
+    return res.status(r.ok ? 200 : 500).json(out);
+  }
+  // 🔔 Para los scripts de GitHub (señales, resultados, movimientos): notificaciones al celular
+  if (req.query.push !== undefined && req.method === "POST") {
+    if (!tokenOk()) return res.status(401).json({ error: "no" });
+    const envios = ((req.body || {}).envios || []).slice(0, 200);
+    let total = 0;
+    for (const e of envios) {
+      if (e.tipo === "senales" && Array.isArray(e.senales)) {
+        const x = await notificar({ tipo: "senales", para: (u, a) => cuerpoSenales(e.senales, a) });
+        total += x.enviados;
+      } else if (["resultados", "movimientos"].includes(e.tipo)) {
+        const x = await notificar({ tipo: e.tipo, usuarios: e.usuarios || null, titulo: String(e.titulo || "").slice(0, 80),
+          cuerpo: String(e.cuerpo || "").slice(0, 300), url: e.url || "/", tag: e.tag });
+        total += x.enviados;
+      }
+    }
+    return res.status(200).json({ enviados: total });
+  }
+  // 🗓️ Resumen diario a la hora que cada quien eligió (lo llama Supabase cada hora)
+  if (req.query.resumen_push !== undefined) {
+    if ((req.headers["x-bot-clave"] || "") !== env("BOT_CLAVE")) return res.status(401).json({ error: "no" });
+    return res.status(200).json(await mandarResumenes());
   }
   // Para pronosticos.py de GitHub: guardar pronósticos del Gurú y sus resultados
   if (req.query.guru !== undefined && req.method === "POST") {

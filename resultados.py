@@ -80,6 +80,9 @@ def mejor_partido(a, partidos):
     return mejor
 
 
+AVISOS_PUSH = []     # 🔔 notificaciones al celular que se mandan juntas al final
+
+
 def enviar(a, p, propuesta, logo, nota=""):
     tipo = p["liga"].split("_")[0]
     linea = {"gana": "Parece que ✅ *ganaste*", "pierde": "Parece que ❌ *perdiste*",
@@ -95,6 +98,10 @@ def enviar(a, p, propuesta, logo, nota=""):
          {"text": "❌ Perdió", "callback_data": f"c:{a['id']}:pierde"},
          {"text": "➖ Nula", "callback_data": f"c:{a['id']}:nula"}],
         [{"text": "🚫 No es este partido", "callback_data": f"n:{a['id']}"}]]}
+    AVISOS_PUSH.append({"tipo": "resultados", "usuarios": [str(a["usuario"])], "tag": f"apuesta-{a['id']}", "url": "/#bot",
+                        "titulo": f"🏁 Final: {espn.texto_marcador(p)}"[:80],
+                        "cuerpo": {"gana": "Parece que ganaste ✅", "pierde": "Parece que perdiste ❌", "nula": "Parece que quedó nula ➖"}.get(propuesta, "¿Cómo quedó?")
+                                  + f" · {seleccion} · ${float(a['monto']):.0f}. Confírmala en Telegram o en la app."})
     base = f"https://api.telegram.org/bot{TOKEN}"
     if logo:
         r = requests.post(f"{base}/sendPhoto", json={"chat_id": a["usuario"], "photo": logo, "caption": texto,
@@ -162,6 +169,13 @@ def main():
             continue
         if proponer(a["id"], p["evento"], espn.texto_marcador(p), logo):
             enviar(a, p, propuesta, logo, nota)
+    if AVISOS_PUSH:
+        try:
+            r = requests.post(f"{BOT_URL}/api/telegram", params={"push": "1"}, headers={"x-bot-token": TOKEN},
+                              json={"envios": AVISOS_PUSH}, timeout=40)
+            print(f"🔔 push: {r.json() if r.ok else r.status_code}")
+        except (requests.RequestException, ValueError) as e:
+            print(f"No se pudieron mandar notificaciones: {type(e).__name__}")
 
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@
 import { buscarLogo, sugerencias, equipoPorClave, proximos, PRINCIPALES, equiposDe, LIGAS_JUEGO } from "../lib/espn.js";
 import { datosLol } from "../lib/lol.js";
 import { opinion, avisarOpinion, avisarAutor, admin, setFormato, torneo } from "../lib/mas.js";
+import { notif, notificar, TIPOS, VAPID_PUBLICA, textoResumen } from "../lib/push.js";
 import { mas, tg, textoReto, botonesReto, avisarRespuesta, agruparSenales, conv, avisarValor, sacarMomio, buscarSenal, veredicto, guru, jugar } from "../lib/mas.js";
 
 // Ligas para la quiniela, en orden: se usa la primera que tenga partidos en los próximos días
@@ -29,16 +30,12 @@ async function rpc(fn, accion, datos = {}) {
 const WEB_URL = env("WEB_URL") || "https://bot-apuestas-telegram.vercel.app";
 
 // Avisa por Telegram a los demás que alguien publicó en la comunidad (sin bloquear la respuesta si falla).
+// Ahora respeta lo que cada quien eligió en Mis avisos (celular, Telegram o los dos) y sus horas de silencio.
 async function avisarComunidad(autorChat, autor, texto) {
   try {
-    const usuarios = await rpc("bot", "usuarios");
-    const corto = texto ? `: “${texto.slice(0, 120)}${texto.length > 120 ? "…" : ""}”` : "";
-    await Promise.all(usuarios.filter((u) => String(u.chat_id) !== String(autorChat)).map((u) =>
-      fetch(`https://api.telegram.org/bot${env("TELEGRAM_TOKEN")}/sendMessage`, {
-        method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ chat_id: u.chat_id, disable_web_page_preview: true,
-          text: `💬 ${autor || "Alguien"} publicó en la comunidad${corto}\n${WEB_URL}/#comunidad` }),
-      })));
+    const corto = texto ? `“${texto.slice(0, 120)}${texto.length > 120 ? "…" : ""}”` : "Toca para verlo.";
+    await notificar({ tipo: "comunidad", excepto: autorChat, telegram: true, tag: "comunidad",
+      titulo: `💬 ${autor || "Alguien"} publicó en la comunidad`, cuerpo: corto, url: "/#comunidad" });
   } catch (e) { console.error("aviso comunidad", e); }
 }
 
@@ -325,6 +322,8 @@ export default async function handler(req, res) {
         if (r && r.error) return res.status(400).json(r);
         await tg("sendMessage", { chat_id: datos.rival, parse_mode: "Markdown", text: textoReto({ ...datos, ...r }),
           reply_markup: botonesReto(r.id) });
+        notificar({ tipo: "retos", usuarios: [String(datos.rival)], tag: "reto-" + r.id, url: "/#retos",
+          titulo: "⚔️ Te retaron", cuerpo: `${datos.partido}${datos.premio ? " · premio: " + datos.premio : ""}. Acéptalo o recházalo.` }).catch(() => {});
         return res.status(200).json(r);
       }
       case "reto_responder": {
@@ -373,6 +372,33 @@ export default async function handler(req, res) {
         return res.status(200).json({ ok: true });
       case "avisos_get":
         return res.status(200).json(await admin("avisos_get", { usuario }));
+      // ---- 🔔 notificaciones al celular
+      case "push_llave":
+        return res.status(200).json({ llave: env("VAPID_PUBLIC") || VAPID_PUBLICA });
+      case "push_alta": {
+        const sb = (b.datos || {}).sub || {}, k = sb.keys || {};
+        if (!/^https:\/\//.test(String(sb.endpoint || "")) || !k.p256dh || !k.auth) return res.status(400).json({ error: "Suscripción inválida." });
+        await notif("alta", { usuario: String(usuario), endpoint: txt(sb.endpoint, 800), p256dh: txt(k.p256dh, 200), auth: txt(k.auth, 100), nombre: txt((b.datos || {}).nombre, 60) });
+        return res.status(200).json({ ok: true });
+      }
+      case "push_baja":
+        await notif("baja", { usuario: String(usuario), endpoint: txt((b.datos || {}).endpoint, 800) });
+        return res.status(200).json({ ok: true });
+      case "push_mis":
+        return res.status(200).json(await notif("mis", { usuario: String(usuario) }));
+      case "push_prueba": {
+        const tipo = Object.keys(TIPOS).includes((b.datos || {}).tipo) ? b.datos.tipo : null;
+        if (tipo === "resumen") {
+          const [r, av] = await Promise.all([notif("resumen", { usuario: String(usuario) }), admin("avisos_get", { usuario })]);
+          const m = textoResumen(r, av);
+          const x = await notificar({ tipo: "resumen", usuarios: [String(usuario)], titulo: m.titulo, cuerpo: m.cuerpo, url: "/#avisos", telegram: true, ignorarSilencio: true, forzar: true });
+          return res.status(200).json(x);
+        }
+        // prueba directa a sus celulares, sin importar preferencias
+        const x = await notificar({ tipo: "resultados", usuarios: [String(usuario)], ignorarSilencio: true, forzar: true, tag: "prueba",
+          para: () => ({ titulo: "🔔 ¡Listo! Así te van a llegar", cuerpo: "Las notificaciones de la Bitácora ya funcionan en este celular.", url: "/#avisos" }) }).catch(() => ({ enviados: 0 }));
+        return res.status(200).json(x);
+      }
       case "avisos_set": {
         const a = (b.datos || {}).avisos || {};
         const GR = ["ligamx", "europa", "champions", "nfl", "nba", "mlb"];
@@ -380,8 +406,20 @@ export default async function handler(req, res) {
         const pm = num(a.prob_min);
         const hora = (h) => (Number.isInteger(h) && h >= 0 && h <= 23 ? h : null);
         const sil = a.silencio && hora(a.silencio.de) !== null && hora(a.silencio.a) !== null ? { de: a.silencio.de, a: a.silencio.a } : null;
+        // qué quiere recibir y por dónde (celular / Telegram), tipo por tipo
+        const nt = {};
+        for (const k of Object.keys(TIPOS)) {
+          const v = (a.notif || {})[k];
+          if (v && typeof v === "object") nt[k] = { cel: v.cel === true, tg: v.tg === true };
+        }
+        const rs = a.resumen || {};
+        const dias = Array.isArray(rs.dias) ? [...new Set(rs.dias.map(Number).filter((x) => Number.isInteger(x) && x >= 0 && x <= 6))] : [];
+        const inc = {};
+        ["banca", "dia", "semana", "senales", "sorteos"].forEach((k) => { inc[k] = !(rs.incluir && rs.incluir[k] === false); });
+        const resumen = { activo: rs.activo === true, hora: hora(Number(rs.hora)) ?? 21, dias, incluir: inc };
         const limpio = { ligas: ligas && ligas.length && ligas.length < GR.length ? ligas : null,
-          prob_min: pm > 0 && pm < 1 ? Math.round(pm * 100) / 100 : null, silencio: sil, movimientos: a.movimientos !== false };
+          prob_min: pm > 0 && pm < 1 ? Math.round(pm * 100) / 100 : null, silencio: sil,
+          movimientos: nt.movimientos ? nt.movimientos.tg : a.movimientos !== false, notif: nt, resumen };
         return res.status(200).json(await admin("avisos_set", { usuario, avisos: limpio }));
       }
       case "admin_panel": case "admin_invitar": case "admin_invitacion_cerrar": case "admin_usuario": case "admin_aceptar": {
