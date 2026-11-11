@@ -744,7 +744,10 @@ body.equipo-mucho header .burger span, body.equipo-mucho header .burger span::be
 .ml-veredicto { padding: 12px 14px; border-radius: 14px; background: var(--win-bg); color: var(--fg); border: 1px solid var(--win); }
 .ml-veredicto.rojo { background: var(--loss-bg); border-color: var(--loss); }
 .ml-barras { width: 100%; height: 150px; }
-.ml-per { display: grid; gap: 2px; } .ml-per > span { font-size: .8rem; color: var(--muted); }
+.ml-per { display: flex; align-items: center; gap: 10px; justify-self: start; padding: 4px 6px 4px 14px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); }
+.ml-per > span { font-size: .85rem; color: var(--muted); white-space: nowrap; }
+.ml-per select { width: auto; min-width: 0; padding: 7px 30px 7px 12px; border-radius: 999px; font-weight: 700; }
+.ml-per[hidden] { display: none; }
 .ml-aviso { font-size: .8rem; padding: 8px 10px; border-radius: 10px; background: var(--loss-bg); color: var(--fg); }
 .mt-card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 14px; display: grid; gap: 10px; }
 .mt-card h3 { margin: 0; font-size: 1rem; }
@@ -1797,10 +1800,11 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
       <button type="button" role="tab" data-j="retro" aria-selected="false">📼 Retro</button>
     </div>
     <div id="ml-ultimo"></div>
-    <div class="ml-per"><span>📅 Periodo:</span><div class="mt-tabs" id="ml-per" role="group" aria-label="Periodo a analizar">
-      <button type="button" data-per="1" aria-selected="false">Último mes</button><button type="button" data-per="6" aria-selected="false">6 meses</button>
-      <button type="button" data-per="12" aria-selected="false">1 año</button><button type="button" data-per="24" aria-selected="false">2 años</button>
-      <button type="button" data-per="60" aria-selected="false">5 años</button><button type="button" data-per="0" aria-selected="true">Todo</button></div></div>
+    <label class="ml-per" id="ml-per"><span>📅 Periodo</span>
+      <select id="ml-per-sel" aria-label="Periodo a analizar">
+        <option value="1">Último mes</option><option value="6">Últimos 6 meses</option><option value="12">Último año</option>
+        <option value="24">Últimos 2 años</option><option value="60">Últimos 5 años</option><option value="0" selected>Toda la historia</option>
+      </select></label>
     <div class="mt-tabs" id="ml-tabs" role="tablist" aria-label="Teorías">
       <button type="button" role="tab" data-ml="numeros" aria-selected="true">📊 Números</button>
       <button type="button" role="tab" data-ml="calientes" aria-selected="false">🔥 Calientes</button>
@@ -2971,9 +2975,7 @@ function mlFiltrar() {
   const corte = ult.toISOString().slice(0, 10);
   return mlD.sorteos.filter(x => x[1] > corte);
 }
-document.querySelectorAll("#ml-per [data-per]").forEach(b => b.addEventListener("click", () => {
-  mlPer = Number(b.dataset.per); document.querySelectorAll("#ml-per [data-per]").forEach(x => x.setAttribute("aria-selected", String(x === b))); mlPintar();
-}));
+$("ml-per-sel").addEventListener("change", () => { mlPer = Number($("ml-per-sel").value); mlPintar(); });
 const mlC = (n, k) => { if (k < 0 || k > n) return 0; let r = 1; for (let i = 1; i <= k; i++) r = r * (n - k + i) / i; return Math.round(r); };
 const mlP = (n, k) => mlC(6, k) * mlC(n - 6, 6 - k) / mlC(n, 6);          // prob. de k aciertos con un boleto
 const mlColor = x => ["#ffd23f", "#7fc8ff", "#ff9a8a", "#9be7a6", "#c9a7ff", "#ffb86b"][Math.floor((x - 1) / 10) % 6];
@@ -3083,7 +3085,7 @@ function mlPintar() {
   const sdE = Math.sqrt(esp * (1 - 6 / n));
   p.innerHTML = "";
   const usaPer = !["reduccion", "prueba"].includes(mlTab);
-  $("ml-per").closest(".ml-per").hidden = !usaPer;
+  $("ml-per").hidden = !usaPer;
   if (usaPer && S < 60) p.append(el("p", "ml-aviso", `⚠️ En ${per} solo hubo ${S} sorteos. Con tan pocos, las diferencias entre números son enormes por puro azar: justo lo que hace creer que hay "calientes" y "fríos".`));
   if (mlTab === "numeros") {
     const c = mlTarjeta(`📊 Cada número en ${per} (${S} sorteos)`,
