@@ -7,16 +7,17 @@ jobs:
   d:
     runs-on: ubuntu-latest
     steps:
-      - name: Progol quiniela
+      - name: Progol momios
         run: |
-          curl -s -L -A "Mozilla/5.0" "https://www.loterianacional.gob.mx/Progol/Quiniela" -o /tmp/p.html
+          for u in "https://www.loterianacional.gob.mx/Progol/Momios" "https://www.loterianacional.gob.mx/Progol/Progol"; do
+          curl -s -L -A "Mozilla/5.0" "$u" -o /tmp/p.html
           python3 - <<'P'
-          import re,html
+          import re
           t=open('/tmp/p.html',encoding='utf-8',errors='replace').read()
-          i=t.find('Instrumentos de Control y Consulta Archiv'); body=t[i:]
-          print("SCRIPTS:", re.findall(r'<script[^>]*src="([^"]+)"', t)[-12:])
-          print("AJAX:", sorted(set(re.findall(r'["\'](/[A-Za-z]+/[A-Za-z]+(?:\?[^"\']*)?)["\']', t)))[:80])
-          b=re.sub(r'<style.*?</style>','',body,flags=re.S)
-          print(re.sub(r'\s+',' ',b)[:6000])
+          i=t.find('<main'); j=t.find('</main>')
+          m=t[i:j]
+          m=re.sub(r'<svg.*?</svg>','',m,flags=re.S)
+          print("IMGS/DOCS:", re.findall(r'(?:src|href|data)="([^"]*(?:Documentos|\.jpg|\.png|\.pdf)[^"]*)"', m)[:20])
+          print(re.sub(r'\s+',' ',re.sub(r'<[^>]+>',' | ',m))[:4000])
           P
-          echo; echo "== CSV Progol"; curl -s -L -A "Mozilla/5.0" "https://www.loterianacional.gob.mx/Home/Historicos?ARHP=UAByAG8AZwBvAGwA" | head -5
+          done
