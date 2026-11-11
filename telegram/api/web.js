@@ -31,11 +31,22 @@ const WEB_URL = env("WEB_URL") || "https://bot-apuestas-telegram.vercel.app";
 
 // Avisa por Telegram a los demás que alguien publicó en la comunidad (sin bloquear la respuesta si falla).
 // Ahora respeta lo que cada quien eligió en Mis avisos (celular, Telegram o los dos) y sus horas de silencio.
-async function avisarComunidad(autorChat, autor, texto) {
+// Historias van como su propio tipo (📸) para que cada quien decida si quiere enterarse de cada una.
+async function avisarComunidad(autorChat, autor, texto, que = {}) {
   try {
-    const corto = texto ? `“${texto.slice(0, 120)}${texto.length > 120 ? "…" : ""}”` : "Toca para verlo.";
-    await notificar({ tipo: "comunidad", excepto: autorChat, telegram: true, tag: "comunidad",
-      titulo: `💬 ${autor || "Alguien"} publicó en la comunidad`, cuerpo: corto, url: "/#comunidad" });
+    const quien = autor || "Alguien", corto = texto ? `“${texto.slice(0, 140)}${texto.length > 140 ? "…" : ""}”` : "";
+    if (que.historia) {
+      const url = que.id ? `/?historia=${que.id}#inicio` : "/#inicio";
+      await notificar({ tipo: "historias", excepto: autorChat, telegram: true, tag: "historia-" + autorChat, url,
+        titulo: `📸 ${quien} subió una historia`, cuerpo: corto || (que.apuesta ? "🎯 Compartió su apuesta. Dura 24 horas." : "Dura 24 horas. Toca para verla."),
+        acc: [["Ver historia", url]] });
+    } else if (que.muro) {
+      await notificar({ tipo: "comunidad", excepto: autorChat, telegram: true, tag: "muro-" + autorChat, url: "/#comunidad",
+        titulo: `🎟️ ${quien} subió un ticket a su perfil`, cuerpo: corto || "Toca para verlo." });
+    } else {
+      await notificar({ tipo: "comunidad", excepto: autorChat, telegram: true, tag: "comunidad", url: "/#comunidad",
+        titulo: que.apuesta ? `🎯 ${quien} compartió lo que está apostando` : `💬 ${quien} publicó en la comunidad`, cuerpo: corto || "Toca para verlo." });
+    }
   } catch (e) { console.error("aviso comunidad", e); }
 }
 
@@ -136,7 +147,7 @@ export default async function handler(req, res) {
           imagen: typeof d.imagen === "string" ? d.imagen : null, horas: num(d.horas) || 48,
           apuesta_id: num(d.apuesta_id) || null, mostrar_monto: d.mostrar_monto === true, historia: d.historia === true, muro: d.muro === true });
         if (r && r.error) return res.status(400).json(r);
-        await avisarComunidad(usuario, r.autor, txt(d.texto, 1000) || (d.muro === true ? "🎟️ subió un ticket a su perfil" : num(d.apuesta_id) ? "🎯 subió una apuesta a su historia" : ""));
+        await avisarComunidad(usuario, r.autor, txt(d.texto, 1000), { historia: d.historia === true, muro: d.muro === true, apuesta: !!num(d.apuesta_id), id: r.id });
         return res.status(200).json(r);
       }
       case "reaccionar": {

@@ -12,6 +12,7 @@ export const TIPOS = {
   resultados: { cel: true, tg: true },
   movimientos: { cel: false, tg: true },
   comunidad: { cel: true, tg: true },
+  historias: { cel: true, tg: false },
   retos: { cel: true, tg: true },
   melate: { cel: true, tg: false },
   progol: { cel: true, tg: false },
@@ -62,6 +63,7 @@ const ACCIONES = {
   resultados: [["Confirmar", "/#bot"]],
   movimientos: [["Ver líneas", "/#lineas"]],
   comunidad: [["Abrir", "/#comunidad"]],
+  historias: [["Ver historia", "/#inicio"]],
   retos: [["Responder", "/#retos"]],
   melate: [["Ver teorías", "/#melate"]],
   progol: [["Ver boletos", "/#progol"]],
@@ -77,11 +79,11 @@ export const tarjeta = (d) => d ? `${WEB}/api/tarjeta?d=${Buffer.from(JSON.strin
 //   telegram: true → también por Telegram (solo los tipos que no manda ya otra parte del bot)
 //   bandeja: false → no se guarda (pruebas)
 export async function notificar({ tipo, titulo, cuerpo, url = "/", tag, usuarios = null, excepto = null, para = null, telegram = false,
-  ignorarSilencio = false, forzar = false, img = null, bandeja = true }) {
+  ignorarSilencio = false, forzar = false, img = null, bandeja = true, acc = null }) {
   let enviados = 0, porTg = 0;
   const base = (u, avisos) => {
     if (excepto && String(u) === String(excepto)) return null;
-    const p = para ? para(u, avisos) : { titulo, cuerpo, url, img };
+    const p = para ? para(u, avisos) : { titulo, cuerpo, url, img, acc };
     return p && p.titulo ? { url, tag: tag || tipo, ...p } : null;
   };
   try {
@@ -116,7 +118,7 @@ export async function notificar({ tipo, titulo, cuerpo, url = "/", tag, usuarios
       try {
         await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
           JSON.stringify({ t: m.titulo, b: m.cuerpo, u: conId(s.usuario, m.url), tag: m.tag, tipo, img: tarjeta(m.img), ic: `/iconos/${TIPOS[tipo] ? tipo : "app"}.png`,
-            acc: (ACCIONES[tipo] || []).map(([t, u]) => ({ t, u: conId(s.usuario, u) })), vib: VIBRA[tipo] || [60], ts: Date.now(), id: ids[s.usuario] || null }),
+            acc: (m.acc || ACCIONES[tipo] || []).map(([t, u]) => ({ t, u: conId(s.usuario, u) })), vib: VIBRA[tipo] || [60], ts: Date.now(), id: ids[s.usuario] || null }),
           { TTL: 6 * 3600, urgency: ["resultados", "retos"].includes(tipo) ? "high" : "normal" });
         enviados++;
         notif("enviado", { endpoint: s.endpoint }).catch(() => {});

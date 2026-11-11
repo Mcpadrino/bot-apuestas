@@ -4073,10 +4073,16 @@ function pintarHistorias(lista) {
     if (cont.id !== "hz-global") cont.hidden = false;
   });
   hzActualizarGlobal();
+  // vienes de una notificación de historia: se abre esa directo
+  if (hzPendiente) {
+    const gi = hzGrupos.findIndex(g => g.l.some(p => Number(p.id) === hzPendiente));
+    hzPendiente = null;
+    if (gi >= 0) setTimeout(() => verHistoria(gi), 200);
+  }
 }
 // barra de historias arriba de TODA la app: se ve si hay historias nuevas; si ya las viste se esconde
 // y vuelve a salir al deslizar hacia abajo estando hasta arriba (como "jalar para actualizar").
-let hzAbierto = false, hzCargadas = 0;
+let hzAbierto = false, hzCargadas = 0, hzPendiente = null;
 function hzActualizarGlobal() {
   const nuevas = hzGrupos.some(g => g.nueva && g.k !== "__yo");
   const g = $("hz-global"), ver = !!(listo && token && (nuevas || hzAbierto));
@@ -8022,7 +8028,8 @@ const AV_TIPOS = [
   ["senales", "🎯", "Señales nuevas", "Cuando el bot encuentra partidos que convienen (con tus ligas y tu % mínimo).", true, true],
   ["resultados", "🏁", "Resultado de tus apuestas", "Cuando termina un partido que apostaste. Por Telegram siempre te llega para confirmarlo.", true, true, true],
   ["movimientos", "⚡", "Movimientos fuertes de Pinnacle", "Cuando el dinero de los profesionales mueve mucho una línea.", false, true],
-  ["comunidad", "💬", "Comunidad", "Cuando alguien publica, sube una historia o un ticket.", true, true],
+  ["comunidad", "💬", "Publicaciones", "Cuando alguien publica en la comunidad, comparte lo que está apostando o sube un ticket a su perfil.", true, true],
+  ["historias", "📸", "Historias", "Cuando alguien sube una historia de 24 horas. Al tocarla se abre directo.", true, false],
   ["retos", "⚔️", "Retos", "Cuando alguien te reta. Por Telegram siempre te llega con los botones.", true, true, true],
   ["melate", "🎱", "Salió el Melate", "Melate, Revancha, Revanchita y Retro: los números y cómo le fue a cada teoría.", true, false],
   ["progol", "⚽", "Resultados de quinielas", "Progol, Media Semana y Protouch: cuántos atinó el favorito y cuánto habría pagado cada boleto.", true, false],
@@ -8173,6 +8180,7 @@ async function bjAbrir() {
     it.onclick = () => {
       if (!a.leido) api("bandeja_leer", { id: a.id }).then(bjContar).catch(() => {});
       bjCerrar();
+      if (/[?&]historia=/.test(a.url || "")) { bjDesdeUrl(a.url); return; }
       const h = String(a.url || "").split("#")[1];
       if (h) irA(h);
     };
@@ -8191,12 +8199,13 @@ $("bj-leer").onclick = async () => {
 };
 document.addEventListener("visibilitychange", () => { if (!document.hidden) bjContar(); });
 setInterval(() => { if (!document.hidden) bjContar(); }, 120000);
-// abrir desde una notificación: ?aviso=ID#seccion → se marca leído y se va a esa sección
+// abrir desde una notificación: ?aviso=ID#seccion → se marca leído y se va a esa sección (?historia=ID abre esa historia)
 function bjDesdeUrl(u) {
   try {
-    const url = new URL(u || location.href, location.origin), id = url.searchParams.get("aviso");
+    const url = new URL(u || location.href, location.origin), id = url.searchParams.get("aviso"), hz = url.searchParams.get("historia");
     if (id && token) api("bandeja_leer", { id: Number(id) }).then(bjContar).catch(() => {});
-    if (url.searchParams.has("aviso") && !u) { url.searchParams.delete("aviso"); history.replaceState(null, "", url.pathname + url.search + url.hash); }
+    if (hz) { hzPendiente = Number(hz); hzRefrescar(true); }
+    if ((url.searchParams.has("aviso") || hz) && !u) { url.searchParams.delete("aviso"); url.searchParams.delete("historia"); history.replaceState(null, "", url.pathname + url.search + url.hash); }
     if (u && url.hash) irA(url.hash.slice(1));
   } catch (e) {}
 }
