@@ -1,15 +1,29 @@
 name: diag
 on: workflow_dispatch
-env:
-  BOT_URL: ${{ vars.BOT_URL }}   # la dirección de TU página en Vercel (variable del repositorio)
-
+permissions:
+  contents: write
 jobs:
   d:
     runs-on: ubuntu-latest
     steps:
-      - name: Elo selecciones y J1
+      - name: Páginas oficiales
         run: |
-          curl -s -A "Mozilla/5.0" https://www.eloratings.net/World.tsv | head -5
-          curl -s -A "Mozilla/5.0" https://www.eloratings.net/en.teams.tsv | head -5
-          for d in 20261113 20261114 20261115 20261116; do curl -s "https://site.api.espn.com/apis/site/v2/sports/soccer/jpn.1/scoreboard?dates=$d" | python3 -c "import sys,json; d=json.load(sys.stdin); print('$d', [e['name'] for e in d.get('events',[])])"; done
-          for d in 20261114 20261115 20261116; do curl -s "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.friendly/scoreboard?dates=$d" | python3 -c "import sys,json; d=json.load(sys.stdin); print('$d', [(e['name'], e['competitions'][0].get('neutralSite')) for e in d.get('events',[])][:12])"; done
+          mkdir -p o && cd o
+          B=https://www.loterianacional.gob.mx
+          for p in Progol/Coperacha ProgolMediaSemana/Coperacha ProgolMediaSemana/ComoJugar ProgolMediaSemana/Resultados ProgolMediaSemana/Quiniela Protouch/Coperacha Protouch/ComoJugar Protouch/Quiniela Protouch/Resultados Progol/Quiniela Progol/Resultados Home/Historicos MediaSemana/Coperacha; do
+            f=$(echo $p | tr / _); curl -s -L -A "Mozilla/5.0" "$B/$p" -o "$f.html"; echo "$p $(wc -c < $f.html)"; done
+          python3 - <<'PY'
+          import re,glob,html
+          for f in glob.glob('*.html'):
+              s=open(f,errors='ignore').read()
+              t=re.sub(r'<script.*?</script>|<style.*?</style>','',s,flags=re.S)
+              t=html.unescape(re.sub(r'<[^>]+>',' ',t)); t=re.sub(r'\s+',' ',t)
+              open(f[:-5]+'.txt','w').write(t)
+              links=sorted(set(re.findall(r'(?:href|src)="([^"]+)"',s)))
+              open(f[:-5]+'.links','w').write('\n'.join(links))
+          PY
+          ls -la
+      - name: Subir
+        run: |
+          cd o && git init -q && git checkout -q -b diag-img && git add -A && git -c user.name=d -c user.email=d@d commit -qm d
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" diag-img
