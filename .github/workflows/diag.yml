@@ -7,6 +7,13 @@ jobs:
   d:
     runs-on: ubuntu-latest
     steps:
-      - name: Estadio Morelos en Wikipedia
+      - name: Melate históricos
         run: |
-          for lang in en es; do curl -s "https://$lang.wikipedia.org/w/api.php?action=query&prop=pageimages&piprop=thumbnail&pithumbsize=1600&redirects=1&format=json&titles=Estadio%20Morelos" -H "user-agent: bitacora-diag" ; echo; done
+          for n in Melate Revancha Revanchita MelateRetro Retro; do
+            for base in https://www.pronosticos.gob.mx/Documentos/Historicos; do
+              code=$(curl -s -L -o /tmp/$n.csv -w "%{http_code} %{content_type} %{size_download}" -A "Mozilla/5.0" "$base/$n.csv"); echo "$base/$n.csv -> $code"; head -c 300 /tmp/$n.csv | tr -d '\r'; echo; echo ---
+            done
+          done
+          for a in TQBlAGwAYQB0AGUA UgBlAHYAYQBuAGMAaABhAA== UgBlAHYAYQBuAGMAaABpAHQAYQA= UgBlAHQAcgBvAA==; do
+            code=$(curl -s -L -o /tmp/x.csv -w "%{http_code} %{content_type} %{size_download}" -A "Mozilla/5.0" "https://www.loterianacional.gob.mx/Home/Historicos?ARHP=$a"); echo "LN $a -> $code"; head -c 300 /tmp/x.csv; echo; echo ---
+          done
