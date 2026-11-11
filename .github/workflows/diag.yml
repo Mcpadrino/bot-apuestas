@@ -7,21 +7,7 @@ jobs:
   d:
     runs-on: ubuntu-latest
     steps:
-      - name: Formato histórico
+      - name: Probar /api/melate en producción
         run: |
-          python3 - <<'P'
-          import urllib.request, csv, io, collections
-          for nom,a in [("Melate","TQBlAGwAYQB0AGUA"),("Revancha","UgBlAHYAYQBuAGMAaABhAA=="),("Revanchita","UgBlAHYAYQBuAGMAaABpAHQAYQA="),("Retro","TQBlAGwAYQB0AGUALQBSAGUAdAByAG8A")]:
-              req=urllib.request.Request("https://www.loterianacional.gob.mx/Home/Historicos?ARHP="+a,headers={"User-Agent":"Mozilla/5.0"})
-              t=urllib.request.urlopen(req,timeout=60).read().decode("utf-8","replace")
-              rows=list(csv.reader(io.StringIO(t)))
-              print("==",nom,rows[0],len(rows)-1, rows[1], rows[-1])
-              h=rows[0]; ix=[i for i,c in enumerate(h) if c[:1] in "RF" and c[1:].isdigit()][:6]
-              fi=h.index("FECHA")
-              por=collections.OrderedDict()
-              for r in reversed(rows[1:]):
-                  try: y=r[fi][-4:]; m=max(int(r[i]) for i in ix)
-                  except: continue
-                  a=por.setdefault(y,[0,0,r[1]]); a[0]=max(a[0],m); a[1]+=1
-              print(" ".join(f"{y}:{v[0]}/{v[1]}(c{v[2]})" for y,v in por.items()))
-          P
+          U="${BOT_URL:-https://bot-apuestas-telegram.vercel.app}"
+          for j in melate revancha revanchita retro; do curl -s "$U/api/melate?juego=$j" | python3 -c "import sys,json; d=json.load(sys.stdin); print('$j', d.get('nombre'), d.get('n'), d.get('desde'), len(d.get('sorteos',[])), d.get('sorteos',[[]])[-1], d.get('error'))"; done
