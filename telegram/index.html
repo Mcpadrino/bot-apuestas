@@ -2357,8 +2357,18 @@ let token = null;
 try { token = localStorage.getItem(LLAVE); } catch (e) {}
 
 async function api(op, datos) {
-  const r = await fetch("/api/web", { method: "POST", headers: { "content-type": "application/json" },
-    body: JSON.stringify({ op, token, datos }) });
+  // si el celular pierde la señal un momento, se reintenta solo dos veces antes de avisar
+  let r;
+  for (let intento = 0; ; intento++) {
+    try {
+      r = await fetch("/api/web", { method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ op, token, datos }) });
+      break;
+    } catch (e) {
+      if (intento >= 2) throw { message: navigator.onLine === false ? "Estás sin internet. Revisa tu conexión y toca Actualizar." : "No se pudo conectar con la Bitácora (la señal se cortó). Toca Actualizar o jala hacia abajo para reintentar." };
+      await new Promise(ok => setTimeout(ok, 1200 * (intento + 1)));
+    }
+  }
   const j = await r.json().catch(() => ({}));
   if (r.status === 401) { salirLocal(); throw { auth: true, message: j.error }; }
   if (!r.ok) throw { message: j.error || "No se pudo completar." };
