@@ -42,8 +42,67 @@ function leer(csv) {
   return { n, sorteos: filas.slice(Math.max(0, ini)) };
 }
 
+// ---------------------------------------------------------------- 📒 registro "¿Cómo nos fue?"
+// Antes de cada sorteo se guarda la combinación que arma cada teoría (sin apostar nada). Cuando sale el resultado
+// oficial se califica. Así se ve, sorteo tras sorteo y sin trampa, si alguna teoría le gana al azar.
+const env = (k) => process.env[k] || "";
+async function rpc(accion, datos) {
+  const r = await fetch(`${env("SUPABASE_URL")}/rest/v1/rpc/melate`, {
+    method: "POST",
+    headers: { "content-type": "application/json", apikey: env("SUPABASE_KEY"), authorization: `Bearer ${env("SUPABASE_KEY")}` },
+    body: JSON.stringify({ p_clave: env("BOT_CLAVE"), p_accion: accion, p_datos: datos }),
+  });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.message || "error de base de datos");
+  return j;
+}
+function rng(sem) { let a = sem >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function azar(n, r) { const s = new Set(); while (s.size < 6) s.add(1 + Math.floor(r() * n)); return [...s].sort((a, b) => a - b); }
+const top = (n, val, menor = false) => Array.from({ length: n }, (_, i) => i + 1)
+  .sort((a, b) => (menor ? val(a) - val(b) : val(b) - val(a)) || (a - b)).slice(0, 6).sort((a, b) => a - b);
+// las mismas teorías que la app (index.html → mlCombo)
+function teorias(sorteos, n, concurso) {
+  const f = new Array(n + 1).fill(0), ult = new Array(n + 1).fill(-1), rec = new Array(n + 1).fill(0), S = sorteos.length;
+  sorteos.forEach((d, i) => { for (let k = 2; k < 8; k++) { f[d[k]]++; ult[d[k]] = i; if (i >= S - 50) rec[d[k]]++; } });
+  const rt = rng(7), sumas = []; for (let i = 0; i < 20000; i++) sumas.push(azar(n, rt).reduce((a, b) => a + b, 0));
+  sumas.sort((a, b) => a - b); const s1 = sumas[5000], s3 = sumas[15000];
+  const ok = (c) => { const pa = c.filter((x) => x % 2 === 0).length, ba = c.filter((x) => x <= n / 2).length, su = c.reduce((a, b) => a + b, 0), co = c.filter((x, i) => i && x - c[i - 1] === 1).length;
+    return pa >= 2 && pa <= 4 && ba >= 2 && ba <= 4 && su >= s1 && su <= s3 && co <= 1; };
+  const rp = rng(concurso * 31 + 5), ra = rng(concurso * 31 + 9);
+  let patron = null; for (let i = 0; i < 400 && !patron; i++) { const c = azar(n, rp); if (ok(c)) patron = c; }
+  return {
+    calientes: top(n, (x) => f[x]), recientes: top(n, (x) => rec[x] * 1000 + f[x]), frios: top(n, (x) => f[x], true),
+    atrasados: top(n, (x) => S - ult[x]), patron: patron || azar(n, rp), azar: azar(n, ra),
+  };
+}
+async function registrar(juego) {
+  const csv = await bajar(JUEGOS[juego].arhp);
+  if (!csv) return false;
+  const { n, sorteos } = leer(csv), ultimo = sorteos[sorteos.length - 1];
+  // 1) calificar con los últimos resultados oficiales
+  await rpc("calificar", { sorteos: sorteos.slice(-12).map((d) => ({ juego, concurso: d[0], fecha: d[1], nums: d.slice(2, 8), adicional: d[8] || 0 })) });
+  // 2) guardar lo que dice cada teoría para el próximo sorteo
+  const sig = ultimo[0] + 1, t = teorias(sorteos, n, sig);
+  await rpc("guardar", { filas: Object.entries(t).map(([teoria, combo]) => ({ juego, concurso: sig, teoria, combo })) });
+  return true;
+}
+
 export default async function handler(req, res) {
-  const juego = String((req.query || {}).juego || "melate").toLowerCase();
+  const q = req.query || {};
+  const juego = String(q.juego || "melate").toLowerCase();
+  if (q.op === "registro") {
+    try {
+      const lista = juego === "todos" ? Object.keys(JUEGOS) : JUEGOS[juego] ? [juego] : [];
+      if (!lista.length) return res.status(400).json({ error: "Juego no disponible" });
+      await Promise.all(lista.map((jg) => registrar(jg).catch((e) => console.error("registro", jg, e))));
+      if (juego === "todos") return res.status(200).json({ ok: true });
+      res.setHeader("cache-control", "no-store");
+      return res.status(200).json(await rpc("ver", { juego }));
+    } catch (e) {
+      console.error(e);
+      return res.status(500).json({ error: "No se pudo leer el registro." });
+    }
+  }
   const j = JUEGOS[juego];
   if (!j) return res.status(400).json({ error: "Juego no disponible" });
   const csv = await bajar(j.arhp);

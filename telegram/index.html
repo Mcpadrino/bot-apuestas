@@ -1814,6 +1814,7 @@ body.cuadradas input, body.cuadradas select, body.cuadradas .menu-item, body.cua
       <button type="button" role="tab" data-ml="reduccion" aria-selected="false">🗂️ Reducciones</button>
       <button type="button" role="tab" data-ml="prueba" aria-selected="false">🧪 A prueba</button>
       <button type="button" role="tab" data-ml="justo" aria-selected="false">⚖️ ¿Es justo?</button>
+      <button type="button" role="tab" data-ml="registro" aria-selected="false">📒 ¿Cómo nos fue?</button>
     </div>
     <div id="ml-panel" class="mt-panel"></div>
     <p class="hint" style="text-align:center">Datos oficiales de la Lotería Nacional, se actualizan solos después de cada sorteo. Esto es para entender el juego, no para predecirlo: cada combinación tiene la misma probabilidad.</p>
@@ -3084,7 +3085,7 @@ function mlPintar() {
   const e = S === Sf ? full : { ...mlEstado(sor, n, S), ult: full.ult, t: full.t };
   const sdE = Math.sqrt(esp * (1 - 6 / n));
   p.innerHTML = "";
-  const usaPer = !["reduccion", "prueba"].includes(mlTab);
+  const usaPer = !["reduccion", "prueba", "registro"].includes(mlTab);
   $("ml-per").hidden = !usaPer;
   if (usaPer && S < 60) p.append(el("p", "ml-aviso", `⚠️ En ${per} solo hubo ${S} sorteos. Con tan pocos, las diferencias entre números son enormes por puro azar: justo lo que hace creer que hay "calientes" y "fríos".`));
   if (mlTab === "numeros") {
@@ -3166,6 +3167,7 @@ function mlPintar() {
     p.append(c);
   }
   if (mlTab === "reduccion") mlPintarReduccion(p);
+  if (mlTab === "registro") mlPintarRegistro(p);
   if (mlTab === "prueba") mlPintarPrueba(p);
   if (mlTab === "justo") {
     let chi = 0; for (let x = 1; x <= n; x++) chi += (e.f[x] - esp) ** 2 / esp;
@@ -3183,6 +3185,52 @@ function mlPintar() {
     if (esp < 5) c.append(el("p", "ml-aviso", `Con ${S} sorteos cada número debería salir apenas ${esp.toFixed(1)} veces: la prueba no es confiable con tan pocos datos. Usa 2 años o más.`));
     p.append(c);
   }
+}
+// 📒 "¿Cómo nos fue?": antes de cada sorteo el servidor guarda lo que dice cada teoría y después lo califica solo
+const ML_TEO_NOM = { ...Object.fromEntries(Object.entries(ML_ESTRATEGIAS).map(([k, v]) => [k, v[0]])) };
+async function mlPintarRegistro(p) {
+  const d = mlD, n = d.n, jg = mlJuego;
+  const c = mlTarjeta("📒 ¿Cómo nos fue? La prueba en vivo",
+    "Antes de cada sorteo, la app guarda sola la combinación que arma cada teoría, sin apostar nada. Cuando sale el resultado oficial la califica. Nadie puede cambiarla después, y si se guardó tarde (después del sorteo) no cuenta. Es la prueba más honesta: hacia adelante y sin ver el futuro.");
+  const caja = el("div"); caja.append(el("p", "hint", "⏳ Revisando el registro…")); c.append(caja); p.append(c);
+  let R;
+  try { const r = await fetch(`/api/melate?op=registro&juego=${jg}`); R = await r.json(); if (!r.ok) throw new Error(R.error); }
+  catch (e) { caja.innerHTML = ""; caja.append(el("p", "empty", e.message || "No se pudo leer el registro.")); return; }
+  if (mlTab !== "registro" || mlJuego !== jg) return;
+  caja.innerHTML = "";
+  const res = R.resumen || [], sor = R.sorteos || [];
+  // marcador acumulado
+  if (res.length) {
+    const N = Math.max(...res.map(x => x.sorteos));
+    const t = el("table", "ml-tabla");
+    t.innerHTML = `<thead><tr><th>Teoría</th><th>Sorteos</th><th>2</th><th>3</th><th>4</th><th>5+</th><th>Prom.</th></tr></thead>`;
+    const tb = el("tbody");
+    res.slice().sort((a, b) => b.prom - a.prom).forEach(x => { const tr = el("tr");
+      tr.innerHTML = `<td>${ML_TEO_NOM[x.teoria] || x.teoria}</td><td>${x.sorteos}</td><td>${x.a2}</td><td>${x.a3}</td><td>${x.a4}</td><td>${x.a5 + x.a6}</td><td>${Number(x.prom).toFixed(2)}</td>`; tb.append(tr); });
+    const tr = el("tr"); tr.innerHTML = `<td><b>🎯 Lo que da el azar</b></td><td>${N}</td><td><b>${(N * mlP(n, 2)).toFixed(1)}</b></td><td><b>${(N * mlP(n, 3)).toFixed(1)}</b></td><td><b>${(N * mlP(n, 4)).toFixed(2)}</b></td><td><b>${(N * (mlP(n, 5) + mlP(n, 6))).toFixed(3)}</b></td><td><b>${(36 / n).toFixed(2)}</b></td>`; tb.append(tr);
+    t.append(tb);
+    caja.append(el("b", "", "Marcador acumulado (aciertos por sorteo)"), t);
+    const v = el("div", "ml-veredicto");
+    v.innerHTML = N < 30 ? `⏳ Llevamos ${N} sorteo${N === 1 ? "" : "s"} calificado${N === 1 ? "" : "s"}. Con tan pocos cualquier teoría puede ir "ganando" por suerte; a partir de ~30 sorteos el marcador empieza a decir algo.`
+      : `Promedio que da el azar: <b>${(36 / n).toFixed(2)}</b> aciertos por sorteo. Si una teoría sirviera, su promedio se separaría de ese número y se mantendría arriba sorteo tras sorteo. Si todas rondan lo mismo, la teoría queda desmentida.`;
+    caja.append(v);
+  } else caja.append(el("div", "ml-veredicto", "🆕 El registro empezó hoy. En cuanto pase el próximo sorteo verás aquí cómo le fue a cada teoría, y el marcador se irá llenando solo."));
+  // sorteo por sorteo
+  sor.forEach(x => {
+    const box = el("div", "ml-combo");
+    if (!x.calificado) {
+      box.append(el("b", "", `⏳ Próximo sorteo #${x.concurso}: lo que dice cada teoría (guardado ${new Date(x.creado).toLocaleString("es-MX", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })})`));
+      x.teorias.forEach(t2 => { const f = el("div", "ml-bolas"); f.append(el("small", "", (ML_TEO_NOM[t2.teoria] || t2.teoria) + ":")); f.append(...mlBolas(t2.combo, { chica: true }).childNodes); box.append(f); });
+    } else {
+      const mejor = Math.max(...x.teorias.map(t2 => t2.aciertos || 0)), quien = x.teorias.filter(t2 => t2.aciertos === mejor).map(t2 => ML_TEO_NOM[t2.teoria] || t2.teoria);
+      box.append(el("b", "", `Sorteo #${x.concurso} · ${new Date(x.fecha + "T12:00:00").toLocaleDateString("es-MX", { weekday: "short", day: "numeric", month: "short" })}`), mlBolas(x.salio, { chica: true, adic: x.adicional }));
+      x.teorias.slice().sort((a, b) => (b.aciertos || 0) - (a.aciertos || 0)).forEach(t2 => {
+        const f = el("div", "ml-bolas"); f.append(el("small", "", `${ML_TEO_NOM[t2.teoria] || t2.teoria}: ${t2.aciertos} acierto${t2.aciertos === 1 ? "" : "s"}${t2.adic ? " + adicional" : ""}`));
+        f.append(...mlBolas(t2.combo, { chica: true, marcar: x.salio }).childNodes); box.append(f); });
+      box.append(el("p", "hint", mejor <= 1 ? `❌ Todas fallaron: la mejor atinó apenas ${mejor}.` : `Le fue "mejor" a ${quien.join(", ")} con ${mejor} aciertos${mejor < 3 ? ", que no alcanza premio" : ""}.` + (x.a_tiempo ? "" : " ⚠️ Esta se guardó tarde y no cuenta en el marcador.")));
+    }
+    caja.append(box);
+  });
 }
 function mlSelector(lista, max, alCambiar) {
   const g = el("div", "ml-sel");
