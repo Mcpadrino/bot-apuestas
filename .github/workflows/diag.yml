@@ -7,13 +7,15 @@ jobs:
   d:
     runs-on: ubuntu-latest
     steps:
+      - name: Certificado
+        run: curl -sv https://www.pronosticos.gob.mx/ -o /dev/null 2>&1 | grep -iE "SSL|certificate|issuer|expire|subject" | head; true
       - name: Melate históricos
         run: |
           for n in Melate Revancha Revanchita MelateRetro Retro; do
             for base in https://www.pronosticos.gob.mx/Documentos/Historicos; do
-              code=$(curl -s -L -o /tmp/$n.csv -w "%{http_code} %{content_type} %{size_download}" -A "Mozilla/5.0" "$base/$n.csv"); echo "$base/$n.csv -> $code"; head -c 300 /tmp/$n.csv | tr -d '\r'; echo; echo ---
+              code=$(curl -s -k -L -o /tmp/$n.csv -w "%{http_code} %{content_type} %{size_download}" -A "Mozilla/5.0" "$base/$n.csv"); echo "$base/$n.csv -> $code"; head -c 300 /tmp/$n.csv | tr -d '\r'; echo; echo ---
             done
           done
           for a in TQBlAGwAYQB0AGUA UgBlAHYAYQBuAGMAaABhAA== UgBlAHYAYQBuAGMAaABpAHQAYQA= UgBlAHQAcgBvAA==; do
-            code=$(curl -s -L -o /tmp/x.csv -w "%{http_code} %{content_type} %{size_download}" -A "Mozilla/5.0" "https://www.loterianacional.gob.mx/Home/Historicos?ARHP=$a"); echo "LN $a -> $code"; head -c 300 /tmp/x.csv; echo; echo ---
+            code=$(curl -s -k -L -o /tmp/x.csv -w "%{http_code} %{content_type} %{size_download}" -A "Mozilla/5.0" "https://www.loterianacional.gob.mx/Home/Historicos?ARHP=$a"); echo "LN $a -> $code"; head -c 300 /tmp/x.csv; echo; echo ---
           done
