@@ -1,6 +1,5 @@
 name: diag
 on: workflow_dispatch
-permissions: { contents: write }
 env:
   BOT_URL: ${{ vars.BOT_URL }}   # la dirección de TU página en Vercel (variable del repositorio)
 
@@ -8,10 +7,13 @@ jobs:
   d:
     runs-on: ubuntu-latest
     steps:
-      - name: Bajar imágenes Progol a una rama temporal
+      - name: ESPN fechas
         run: |
-          mkdir out && cd out
-          curl -s -L -A "Mozilla/5.0" "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/progol_quiniela/QuinielaProgol.jpg" -o quiniela.jpg
-          curl -s -L -A "Mozilla/5.0" "https://www.loterianacional.gob.mx/Documentos/juegos/Concursosysorteos/progol_momios/porce.jpg" -o porce.jpg
-          git init -q && git checkout -q -b diag-img && git add . && git -c user.name=diag -c user.email=diag@x commit -qm img
-          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" diag-img
+          for l in fifa.friendly fifa.worldq.uefa bra.1 bra.2 jpn.1 mex.1 usa.1 fifa.worldq.concacaf; do
+            for q in "dates=20261113-20261117" "dates=20261114" "dates=20261114&limit=300"; do
+              curl -s "https://site.api.espn.com/apis/site/v2/sports/soccer/$l/scoreboard?$q" | python3 -c "import sys,json
+          try:
+            d=json.load(sys.stdin); ev=d.get('events',[]); print('$l','$q',len(ev),[e['name'] for e in ev[:4]], [list((e['competitions'][0].get('odds') or [{}])[0].keys())[:8] for e in ev[:1]])
+          except Exception as e: print('$l','$q','ERR',e)"
+            done
+          done
