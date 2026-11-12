@@ -136,6 +136,7 @@ export default async function handler(req, res) {
   const csv = await bajar(j.arhp);
   if (!csv) return res.status(502).json({ error: "La Lotería Nacional no contestó. Intenta en un rato." });
   const { n, sorteos } = leer(csv);
-  res.setHeader("cache-control", "s-maxage=10800, stale-while-revalidate=86400");
+  // 15 min en el CDN: el sorteo nuevo aparece rápido (la Lotería lo publica después de la medianoche)
+  res.setHeader("cache-control", "s-maxage=900, stale-while-revalidate=300");
   return res.status(200).json({ juego, nombre: j.nombre, n, desde: sorteos[0] ? { concurso: sorteos[0][0], fecha: sorteos[0][1] } : null, sorteos });
 }

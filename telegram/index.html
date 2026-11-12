@@ -2957,6 +2957,12 @@ $("cfg").addEventListener("submit", async e => {
 });
 
 $("refrescar").addEventListener("click", cargar);
+// ↻ también vuelve a bajar Melate y las quinielas si estás en esas secciones
+$("refrescar").addEventListener("click", () => {
+  for (const k in mlCache) mlCache[k]._t = 0;
+  if (!$("v-melate").hidden) mlCargar();
+  if (!$("v-progol").hidden) { pgDatos = null; pgCargar(); }
+});
 document.addEventListener("visibilitychange", () => { if (!document.hidden && listo) cargar(); });
 
 $("menu-salir").addEventListener("click", () => $("salir").click());
@@ -3167,9 +3173,10 @@ function mlCombo(clave, e, n, r, tip) {
 }
 async function mlCargar() {
   const p = $("ml-panel");
-  if (!mlCache[mlJuego]) {
+  // los datos se guardan 10 minutos; después se vuelven a pedir (si dejaste la app abierta desde ayer, trae el sorteo nuevo)
+  if (!mlCache[mlJuego] || Date.now() - (mlCache[mlJuego]._t || 0) > 600000) {
     p.innerHTML = `<p class="hint">⏳ Bajando los resultados oficiales de ${mlJuego === "retro" ? "Melate Retro" : mlJuego[0].toUpperCase() + mlJuego.slice(1)}…</p>`;
-    try { const r = await fetch(`/api/melate?juego=${mlJuego}`); const j = await r.json(); if (!r.ok) throw new Error(j.error); mlCache[mlJuego] = j; }
+    try { const r = await fetch(`/api/melate?juego=${mlJuego}`); const j = await r.json(); if (!r.ok) throw new Error(j.error); j._t = Date.now(); mlCache[mlJuego] = j; }
     catch (e) { p.innerHTML = ""; p.append(el("p", "empty", (e.message || "No se pudieron bajar los resultados.") + " Intenta en un rato.")); return; }
   }
   mlD = mlCache[mlJuego]; mlD.tip = mlD.tip || mlTipico(mlD.n);
