@@ -340,6 +340,12 @@ details summary { cursor: pointer; color: var(--muted); font-size: .9rem; }
 .hz-global { margin-block: -6px -4px; }
 @media (prefers-reduced-motion: no-preference) { .hz-global:not([hidden]) { animation: hzbaja .35s cubic-bezier(.2,.9,.25,1); } }
 @keyframes hzbaja { from { opacity: 0; transform: translateY(-14px); } }
+.ml-fue { display: grid; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.ml-fue-fila { display: flex; flex-wrap: wrap; gap: 6px; }
+.ml-fue-ch { display: grid; padding: 6px 10px; border-radius: 10px; background: var(--bg); border: 1px solid var(--line); min-width: 74px; }
+.ml-fue-ch small { color: var(--muted); font-size: .7rem; }
+.ml-fue-ch b { font-size: .92rem; }
+.ml-fue-ch.ok { border-color: var(--accent); }
 /* 🔔 campana y bandeja de avisos */
 .campana { position: relative; display: grid; place-items: center; width: 38px; height: 38px; padding: 0; border-radius: 12px; }
 .campana.hay svg { animation: campaneo .9s ease 1; transform-origin: 50% 10%; }
@@ -3197,8 +3203,34 @@ function mlPintarUltimo() {
     el("p", "hint", new Date(u[1] + "T12:00:00").toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) + (u[9] ? ` · bolsa de $${Number(u[9]).toLocaleString("es-MX")}` : "")),
     mlBolas(u.slice(2, 8), { adic: u[8] || null }));
   const comb = mlC(d.n, 6);
+  // cómo le fue a cada teoría en este sorteo (se llena solo, sin estorbar)
+  const fue = el("div", "ml-fue"); card.append(fue);
+  const jg = mlJuego;
+  fetch(`/api/melate?op=ver&juego=${jg}`).then(r => r.ok ? r.json() : null).then(R => {
+    if (!R || mlJuego !== jg) return;
+    const s = (R.sorteos || []).find(x => Number(x.concurso) === Number(u[0]) && x.calificado);
+    fue.innerHTML = "";
+    if (s) {
+      fue.append(el("b", "", "📒 Así le fue a cada teoría en este sorteo"));
+      const f = el("div", "ml-fue-fila");
+      [...s.teorias].sort((a, b) => (b.aciertos || 0) - (a.aciertos || 0)).forEach(t => {
+        const ch = el("span", "ml-fue-ch" + ((t.aciertos || 0) >= 2 ? " ok" : ""));
+        ch.append(el("small", "", (ML_ESTRATEGIAS[t.teoria] || [t.teoria])[0]), el("b", "", `${t.aciertos ?? 0} de 6`));
+        f.append(ch);
+      });
+      fue.append(f);
+    } else fue.append(el("p", "hint", "📒 Este sorteo todavía no se califica: se revisa solo cada hora."));
+    const b = el("button", "", "Ver todos los sorteos en ¿Cómo nos fue? →"); b.type = "button"; b.onclick = () => mlIrTab("registro");
+    fue.append(b);
+  }).catch(() => {});
   card.append(el("p", "hint", `Elegir 6 de ${d.n}: ${comb.toLocaleString("es-MX")} combinaciones. Atinarle a las 6 con un boleto es 1 en ${comb.toLocaleString("es-MX")}. Analizamos ${d.sorteos.length.toLocaleString("es-MX")} sorteos desde el #${d.desde.concurso} (${d.desde.fecha.slice(0, 4)}), cuando empezó el formato actual.`));
   c.append(card);
+}
+function mlIrTab(t) {
+  const b = document.querySelector(`#ml-tabs [data-ml="${t}"]`);
+  if (!b) return;
+  b.click(); b.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+  setTimeout(() => $("ml-panel").scrollIntoView({ block: "start", behavior: "smooth" }), 150);
 }
 function mlTarjeta(titulo, explica) { const c = el("div", "mt-card"); c.append(el("h3", "", titulo)); if (explica) { const p = el("p", "hint"); p.innerHTML = explica; c.append(p); } return c; }
 function mlComboCaja(clave, combo) {
@@ -8187,7 +8219,7 @@ async function bjAbrir() {
     it.onclick = () => {
       if (!a.leido) api("bandeja_leer", { id: a.id }).then(bjContar).catch(() => {});
       bjCerrar();
-      if (/[?&]historia=/.test(a.url || "")) { bjDesdeUrl(a.url); return; }
+      if (/[?&](historia|ml)=/.test(a.url || "")) { bjDesdeUrl(a.url); return; }
       const h = String(a.url || "").split("#")[1];
       if (h) irA(h);
     };
@@ -8212,7 +8244,9 @@ function bjDesdeUrl(u) {
     const url = new URL(u || location.href, location.origin), id = url.searchParams.get("aviso"), hz = url.searchParams.get("historia");
     if (id && token) api("bandeja_leer", { id: Number(id) }).then(bjContar).catch(() => {});
     if (hz) { hzPendiente = Number(hz); hzRefrescar(true); }
-    if ((url.searchParams.has("aviso") || hz) && !u) { url.searchParams.delete("aviso"); url.searchParams.delete("historia"); history.replaceState(null, "", url.pathname + url.search + url.hash); }
+    const mt = url.searchParams.get("ml");
+    if (mt) { mlTab = mt; document.querySelectorAll("#ml-tabs [data-ml]").forEach(x => x.setAttribute("aria-selected", String(x.dataset.ml === mt))); if (!$("v-melate").hidden) mlPintar(); }
+    if ((url.searchParams.has("aviso") || hz || mt) && !u) { url.searchParams.delete("aviso"); url.searchParams.delete("historia"); url.searchParams.delete("ml"); history.replaceState(null, "", url.pathname + url.search + url.hash); }
     if (u && url.hash) irA(url.hash.slice(1));
   } catch (e) {}
 }

@@ -107,6 +107,12 @@ export default async function handler(req, res) {
     try { res.setHeader("cache-control", "s-maxage=300, stale-while-revalidate=1800"); return res.status(200).json(await rpc("progol_ver", {})); }
     catch (e) { console.error(e); return res.status(500).json({ error: "No se pudo leer el Progol." }); }
   }
+  // solo leer el registro (rápido, sin bajar el histórico de la Lotería)
+  if (q.op === "ver") {
+    if (!JUEGOS[juego]) return res.status(400).json({ error: "Juego no disponible" });
+    try { res.setHeader("cache-control", "s-maxage=300, stale-while-revalidate=120"); return res.status(200).json(await rpc("ver", { juego })); }
+    catch (e) { console.error(e); return res.status(500).json({ error: "No se pudo leer el registro." }); }
+  }
   if (q.op === "registro") {
     try {
       const lista = juego === "todos" ? Object.keys(JUEGOS) : JUEGOS[juego] ? [juego] : [];
@@ -117,7 +123,7 @@ export default async function handler(req, res) {
         nuevos.sort((a, b) => Object.keys(JUEGOS).indexOf(a.juego) - Object.keys(JUEGOS).indexOf(b.juego));
         const nombres = nuevos.map((x) => JUEGOS[x.juego].nombre);
         const mj = nuevos.find((x) => x.juego === "melate" || x.juego === "retro") || nuevos[0];
-        await notificar({ tipo: "melate", telegram: true, tag: "melate", url: "/#melate",
+        await notificar({ tipo: "melate", telegram: true, tag: "melate", url: "/?ml=registro#melate", acc: [["¿Cómo nos fue?", "/?ml=registro#melate"]],
           img: { k: "melate", j: nuevos.slice(0, 3).map((x) => ({ n: `${JUEGOS[x.juego].nombre}${x === nuevos[0] ? " " + x.concurso : ""}`, nums: x.nums, a: x.adic || null })),
             t: `Mejor teoría en ${JUEGOS[mj.juego].nombre}: ${mj.mejor[1]} de 6 (${NOM_T[mj.mejor[0]] || mj.mejor[0]}). Al azar se esperan 0.6.` },
           titulo: `🎱 Ya salió ${nombres.length > 1 ? nombres.slice(0, -1).join(", ") + " y " + nombres.slice(-1) : nombres[0]}`,
