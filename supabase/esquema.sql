@@ -9,6 +9,7 @@ create schema if not exists privado;
 revoke all on schema privado from anon, authenticated;
 
 create sequence if not exists public.opiniones_id_seq;
+create sequence if not exists public.melate_registro_id_seq;
 
 create table if not exists privado.avisos (
   usuario text not null,
@@ -116,6 +117,28 @@ create table if not exists public.archivo (
 );
 alter table public.archivo enable row level security;
 
+create table if not exists public.avisos_bandeja (
+  id bigint generated always as identity,
+  usuario text not null,
+  tipo text not null,
+  titulo text not null,
+  cuerpo text,
+  url text,
+  img jsonb,
+  creado timestamp with time zone not null default now(),
+  leido timestamp with time zone,
+  constraint avisos_bandeja_pkey PRIMARY KEY (id)
+);
+alter table public.avisos_bandeja enable row level security;
+
+create table if not exists public.avisos_marcas (
+  clave text not null,
+  valor jsonb,
+  actualizado timestamp with time zone not null default now(),
+  constraint avisos_marcas_pkey PRIMARY KEY (clave)
+);
+alter table public.avisos_marcas enable row level security;
+
 create table if not exists public.config (
   clave text not null,
   valor text not null,
@@ -170,6 +193,25 @@ create table if not exists public.mascota (
   constraint mascota_pkey PRIMARY KEY (usuario)
 );
 alter table public.mascota enable row level security;
+
+create table if not exists public.melate_registro (
+  id bigint not null default nextval('public.melate_registro_id_seq'::regclass),
+  juego text not null,
+  concurso integer not null,
+  teoria text not null,
+  combo integer[] not null,
+  creado timestamp with time zone not null default now(),
+  fecha_sorteo date,
+  salio integer[],
+  adicional integer,
+  aciertos integer,
+  con_adicional boolean,
+  a_tiempo boolean,
+  calificado timestamp with time zone,
+  constraint melate_registro_juego_concurso_teoria_key UNIQUE (juego, concurso, teoria),
+  constraint melate_registro_pkey PRIMARY KEY (id)
+);
+alter table public.melate_registro enable row level security;
 
 create table if not exists public.monedas (
   id bigint generated always as identity,
@@ -254,6 +296,17 @@ create table if not exists public.practica_piernas (
 );
 alter table public.practica_piernas enable row level security;
 
+create table if not exists public.progol (
+  concurso integer not null,
+  datos jsonb not null,
+  resultados jsonb,
+  creado timestamp with time zone not null default now(),
+  actualizado timestamp with time zone not null default now(),
+  juego text not null default 'progol'::text,
+  constraint progol_pkey PRIMARY KEY (juego, concurso)
+);
+alter table public.progol enable row level security;
+
 create table if not exists public.pronosticos (
   evento text not null,
   ruta text not null,
@@ -287,9 +340,27 @@ create table if not exists public.publicaciones (
   creada timestamp with time zone not null default now(),
   expira timestamp with time zone not null default (now() + '48:00:00'::interval),
   activa boolean not null default true,
+  apuesta_id bigint,
+  mostrar_monto boolean not null default false,
+  historia boolean not null default false,
+  muro boolean not null default false,
   constraint publicaciones_pkey PRIMARY KEY (id)
 );
 alter table public.publicaciones enable row level security;
+
+create table if not exists public.push_subs (
+  endpoint text not null,
+  usuario text not null,
+  p256dh text not null,
+  auth text not null,
+  nombre text,
+  activo boolean not null default true,
+  fallos integer not null default 0,
+  creado timestamp with time zone not null default now(),
+  ultimo timestamp with time zone,
+  constraint push_subs_pkey PRIMARY KEY (endpoint)
+);
+alter table public.push_subs enable row level security;
 
 create table if not exists public.quiniela_picks (
   usuario text not null,
@@ -393,6 +464,7 @@ create table if not exists public.usuarios (
   terminos jsonb,
   avisos jsonb,
   ultima_vez timestamp with time zone,
+  perfil jsonb not null default '{}'::jsonb,
   constraint usuarios_banca_inicial_check CHECK ((banca_inicial > (0)::numeric)),
   constraint usuarios_limite_semanal_check CHECK (((limite_semanal IS NULL) OR (limite_semanal > (0)::numeric))),
   constraint usuarios_pkey PRIMARY KEY (chat_id),
@@ -416,8 +488,10 @@ alter table public.votos enable row level security;
 CREATE INDEX IF NOT EXISTS apuestas_usuario_resultado_idx ON public.apuestas USING btree (usuario, resultado);
 CREATE INDEX IF NOT EXISTS archivo_fecha ON public.archivo USING btree (fecha DESC);
 CREATE INDEX IF NOT EXISTS archivo_ruta ON public.archivo USING btree (ruta, fecha DESC);
+CREATE INDEX IF NOT EXISTS avisos_bandeja_u ON public.avisos_bandeja USING btree (usuario, creado DESC);
 CREATE INDEX IF NOT EXISTS practica_torneo ON public.practica USING btree (torneo) WHERE (torneo IS NOT NULL);
 CREATE INDEX IF NOT EXISTS publicaciones_activas ON public.publicaciones USING btree (activa, creada);
+CREATE INDEX IF NOT EXISTS push_subs_usuario ON public.push_subs USING btree (usuario) WHERE activo;
 CREATE INDEX IF NOT EXISTS senales_lote_evento ON public.senales USING btree (lote, evento);
 
 -- ======================= funciones (toda la lógica vive aquí)
@@ -743,15 +817,20 @@ begin
 
   if p_accion = 'feed' then
     select coalesce(jsonb_agg(jsonb_build_object(
-             'id', p.id, 'autor', coalesce(nullif(u.nombre, ''), 'Alguien'), 'mio', p.usuario = v_u,
+             'id', p.id, 'autor', coalesce(nullif(u.nombre, ''), 'Alguien'), 'mio', p.usuario = v_u, 'historia', p.historia,
              'texto', p.texto, 'link', p.link, 'foto', p.imagen is not null, 'creada', p.creada, 'expira', p.expira,
+             'apuesta', (select jsonb_build_object('partido', a.partido, 'seleccion', a.seleccion, 'cuota', coalesce(a.cuota_original, a.cuota),
+                 'casa', a.casa, 'liga', a.liga, 'logo', a.logo, 'cartera', a.cartera, 'resultado', a.resultado, 'marcador', a.marcador, 'prob', a.prob,
+                 'cobro', a.cobro, 'monto', case when p.mostrar_monto then coalesce(a.monto_original, a.monto) end,
+                 'valor', case when a.prob is null then null else coalesce(a.cuota_original, a.cuota) * a.prob >= 1.03 end)
+               from public.apuestas a where a.id = p.apuesta_id),
              'reacciones', coalesce((select jsonb_object_agg(r.emoji, r.n) from (
                  select emoji, count(*) n from public.reacciones where publicacion_id = p.id and activa group by emoji) r), '{}'::jsonb),
              'mias', coalesce((select jsonb_agg(emoji) from public.reacciones
                  where publicacion_id = p.id and usuario = v_u and activa), '[]'::jsonb))
              order by p.creada), '[]'::jsonb)
       into v_res
-      from (select * from public.publicaciones where activa order by creada desc limit 100) p
+      from (select * from public.publicaciones where activa and not muro order by creada desc limit 100) p
       left join public.usuarios u on u.chat_id = p.usuario;
     return v_res;
 
@@ -770,7 +849,10 @@ begin
     return coalesce(v_res, 'null'::jsonb);
 
   elsif p_accion = 'publicar' then
-    if v_texto = '' and v_img is null and v_link is null then
+    if (p_datos->>'apuesta_id') is not null and not exists(select 1 from public.apuestas where id = (p_datos->>'apuesta_id')::bigint and usuario = v_u) then
+      return jsonb_build_object('error', 'Esa apuesta no es tuya o ya no existe.');
+    end if;
+    if v_texto = '' and v_img is null and v_link is null and (p_datos->>'apuesta_id') is null then
       return jsonb_build_object('error', 'Escribe algo, agrega una foto o un link.');
     end if;
     if v_link is not null and (v_link !~ '^https://[^\s]+$' or length(v_link) > 500) then
@@ -779,19 +861,33 @@ begin
     if v_img is not null and (v_img !~ '^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$' or length(v_img) > 600000) then
       return jsonb_build_object('error', 'La foto no es válida o es muy grande.');
     end if;
-    if (select count(*) from public.publicaciones where usuario = v_u and activa) >= 20 then
+    if coalesce((p_datos->>'muro')::boolean, false) then
+      if v_img is null then return jsonb_build_object('error', 'Para tu perfil sube la foto del ticket.'); end if;
+      if (select count(*) from public.publicaciones where usuario = v_u and activa and muro) >= 90 then
+        return jsonb_build_object('error', 'Tienes 90 tickets en tu perfil. Borra alguno para subir otro.');
+      end if;
+    elsif (select count(*) from public.publicaciones where usuario = v_u and activa and not muro) >= 20 then
       return jsonb_build_object('error', 'Tienes 20 publicaciones activas. Baja alguna antes de publicar otra.');
     end if;
-    insert into public.publicaciones (usuario, texto, link, imagen, expira)
+    insert into public.publicaciones (usuario, texto, link, imagen, expira, apuesta_id, mostrar_monto, historia, muro)
     values (v_u, v_texto, v_link, v_img,
-            now() + make_interval(hours => greatest(1, least(coalesce((p_datos->>'horas')::int, 48), 168))))
+            now() + make_interval(hours => case when coalesce((p_datos->>'muro')::boolean, false) then 24 * 365 * 20
+                                                 when coalesce((p_datos->>'historia')::boolean, false) then 24
+                                                 when (p_datos->>'apuesta_id') is not null then 168
+                                                 else greatest(1, least(coalesce((p_datos->>'horas')::int, 48), 168)) end),
+            (p_datos->>'apuesta_id')::bigint, coalesce((p_datos->>'mostrar_monto')::boolean, false), coalesce((p_datos->>'historia')::boolean, false) and not coalesce((p_datos->>'muro')::boolean, false), coalesce((p_datos->>'muro')::boolean, false))
     returning jsonb_build_object('id', id, 'autor', (select nombre from public.usuarios where chat_id = v_u)) into v_res;
     return v_res;
 
   elsif p_accion = 'bajar' then
     update public.publicaciones set imagen = null, texto = '', link = null, activa = false
      where id = (p_datos->>'id')::bigint and usuario = v_u and activa
+       and not exists(select 1 from public.apuestas a where a.id = public.publicaciones.apuesta_id and a.resultado is not null)
     returning jsonb_build_object('id', id) into v_res;
+    if v_res is null and exists(select 1 from public.publicaciones p join public.apuestas a on a.id = p.apuesta_id
+                                 where p.id = (p_datos->>'id')::bigint and p.usuario = v_u and p.activa and a.resultado is not null) then
+      return jsonb_build_object('error', 'Una apuesta compartida que ya se calificó no se puede bajar: así el récord del grupo es real.');
+    end if;
     return coalesce(v_res, 'null'::jsonb);
   end if;
 
@@ -1624,6 +1720,81 @@ AS $function$
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.melate(p_clave text, p_accion text, p_datos jsonb DEFAULT '{}'::jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare v_res jsonb; f jsonb;
+begin
+  if not exists(select 1 from privado.secretos where nombre = 'bot' and valor = p_clave) then raise exception 'no autorizado'; end if;
+
+  if p_accion = 'guardar' then
+    -- pronósticos de cada teoría para el PRÓXIMO sorteo (si ya existen no se tocan: no se puede "corregir" después)
+    for f in select * from jsonb_array_elements(coalesce(p_datos->'filas', '[]'::jsonb)) loop
+      insert into public.melate_registro (juego, concurso, teoria, combo)
+      values (f->>'juego', (f->>'concurso')::int, f->>'teoria', array(select jsonb_array_elements_text(f->'combo')::int))
+      on conflict (juego, concurso, teoria) do nothing;
+    end loop;
+    return 'true'::jsonb;
+
+  elsif p_accion = 'calificar' then
+    -- resultados oficiales: califica los pronósticos de ese concurso
+    for f in select * from jsonb_array_elements(coalesce(p_datos->'sorteos', '[]'::jsonb)) loop
+      update public.melate_registro r set
+        salio = array(select jsonb_array_elements_text(f->'nums')::int),
+        adicional = nullif((f->>'adicional')::int, 0),
+        fecha_sorteo = (f->>'fecha')::date,
+        aciertos = (select count(*) from unnest(r.combo) x where x = any(array(select jsonb_array_elements_text(f->'nums')::int))),
+        con_adicional = nullif((f->>'adicional')::int, 0) = any(r.combo),
+        -- cuenta solo si se guardó antes del sorteo (los sorteos son en la noche, hora de CDMX)
+        a_tiempo = r.creado < (((f->>'fecha')::date + time '19:00') at time zone 'America/Mexico_City'),
+        calificado = now()
+      where r.juego = f->>'juego' and r.concurso = (f->>'concurso')::int and r.calificado is null;
+    end loop;
+    return 'true'::jsonb;
+
+  elsif p_accion = 'progol_guardar' then
+    -- las probabilidades se pueden actualizar hasta que empieza el primer partido; después quedan congeladas
+    insert into public.progol (juego, concurso, datos) values (coalesce(p_datos->>'juego', 'progol'), (p_datos->>'concurso')::int, p_datos->'datos')
+    on conflict (juego, concurso) do update set datos = excluded.datos, actualizado = now()
+      where now() < coalesce((public.progol.datos->>'cierre')::timestamptz, now() + interval '1 day');
+    return 'true'::jsonb;
+
+  elsif p_accion = 'progol_resultados' then
+    for f in select * from jsonb_array_elements(coalesce(p_datos->'concursos', '[]'::jsonb)) loop
+      update public.progol set resultados = coalesce(resultados, '{}'::jsonb) || coalesce(f->'resultados', jsonb_build_object('progol', f->'progol', 'revancha', f->'revancha')), actualizado = now()
+       where juego = coalesce(f->>'juego', 'progol') and concurso = (f->>'concurso')::int;
+    end loop;
+    return 'true'::jsonb;
+
+  elsif p_accion = 'progol_ver' then
+    select coalesce(jsonb_agg(jsonb_build_object('juego', juego, 'concurso', concurso, 'datos', datos, 'resultados', resultados, 'creado', creado, 'actualizado', actualizado)
+           order by juego, concurso desc), '[]'::jsonb) into v_res
+      from (select *, row_number() over (partition by juego order by concurso desc) rn from public.progol) x where rn <= 30;
+    return v_res;
+
+  elsif p_accion = 'ver' then
+    select jsonb_build_object(
+      'resumen', coalesce((select jsonb_agg(x order by x->>'teoria') from (
+          select jsonb_build_object('teoria', teoria, 'sorteos', count(*),
+            'a0', count(*) filter (where aciertos = 0), 'a1', count(*) filter (where aciertos = 1), 'a2', count(*) filter (where aciertos = 2),
+            'a3', count(*) filter (where aciertos = 3), 'a4', count(*) filter (where aciertos = 4), 'a5', count(*) filter (where aciertos = 5),
+            'a6', count(*) filter (where aciertos = 6), 'prom', round(avg(aciertos), 3), 'mejor', max(aciertos)) x
+          from public.melate_registro where juego = p_datos->>'juego' and calificado is not null and a_tiempo group by teoria) t), '[]'::jsonb),
+      'sorteos', coalesce((select jsonb_agg(s order by (s->>'concurso')::int desc) from (
+          select jsonb_build_object('concurso', concurso, 'fecha', max(fecha_sorteo), 'salio', (jsonb_agg(to_jsonb(salio)) filter (where salio is not null))->0, 'adicional', max(adicional),
+            'creado', min(creado), 'calificado', bool_and(calificado is not null), 'a_tiempo', bool_and(coalesce(a_tiempo, true)),
+            'teorias', jsonb_agg(jsonb_build_object('teoria', teoria, 'combo', combo, 'aciertos', aciertos, 'adic', con_adicional) order by teoria)) s
+          from public.melate_registro where juego = p_datos->>'juego' group by concurso order by concurso desc limit 40) q), '[]'::jsonb)
+    ) into v_res;
+    return v_res;
+  end if;
+  raise exception 'acción desconocida: %', p_accion;
+end; $function$
+;
+
 CREATE OR REPLACE FUNCTION public.neto_libre(u text)
  RETURNS jsonb
  LANGUAGE sql
@@ -1644,6 +1815,138 @@ CREATE OR REPLACE FUNCTION public.neto_mov(u text)
 AS $function$
   select coalesce(sum(case tipo when 'deposito' then monto else -monto end), 0) from public.movimientos where usuario = u and not anulado and cartera = 'bot'
 $function$
+;
+
+CREATE OR REPLACE FUNCTION public.notif(p_clave text, p_accion text, p_datos jsonb DEFAULT '{}'::jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare v_res jsonb; v_u text := p_datos->>'usuario'; v_hoy date := (now() at time zone 'America/Mexico_City')::date;
+begin
+  if not exists(select 1 from privado.secretos where nombre = 'bot' and valor = p_clave) then raise exception 'no autorizado'; end if;
+
+  if p_accion = 'vapid' then
+    return to_jsonb((select valor from privado.secretos where nombre = 'vapid_privada'));
+
+  elsif p_accion = 'alta' then
+    insert into public.push_subs (endpoint, usuario, p256dh, auth, nombre)
+    values (p_datos->>'endpoint', v_u, p_datos->>'p256dh', p_datos->>'auth', left(p_datos->>'nombre', 60))
+    on conflict (endpoint) do update set usuario = excluded.usuario, p256dh = excluded.p256dh, auth = excluded.auth,
+      nombre = coalesce(excluded.nombre, public.push_subs.nombre), activo = true, fallos = 0;
+    return 'true'::jsonb;
+
+  elsif p_accion = 'baja' then
+    update public.push_subs set activo = false where endpoint = p_datos->>'endpoint' and (v_u is null or usuario = v_u);
+    return 'true'::jsonb;
+
+  elsif p_accion = 'mis' then
+    select coalesce(jsonb_agg(jsonb_build_object('endpoint', endpoint, 'nombre', nombre, 'creado', creado, 'ultimo', ultimo) order by creado), '[]'::jsonb)
+      into v_res from public.push_subs where usuario = v_u and activo;
+    return v_res;
+
+  elsif p_accion = 'destinos' then
+    -- celulares activos (de usuarios activos), opcionalmente solo de ciertos usuarios
+    select coalesce(jsonb_agg(jsonb_build_object('usuario', s.usuario, 'endpoint', s.endpoint, 'p256dh', s.p256dh, 'auth', s.auth,
+             'avisos', coalesce(u.avisos, '{}'::jsonb))), '[]'::jsonb)
+      into v_res
+      from public.push_subs s join public.usuarios u on u.chat_id = s.usuario
+     where s.activo and coalesce(u.activo, true)
+       and (p_datos->'usuarios' is null or jsonb_typeof(p_datos->'usuarios') <> 'array' or s.usuario in (select jsonb_array_elements_text(p_datos->'usuarios')));
+    return v_res;
+
+  elsif p_accion = 'gente' then
+    -- usuarios activos con sus preferencias (para avisos por Telegram de los tipos nuevos)
+    select coalesce(jsonb_agg(jsonb_build_object('usuario', chat_id, 'nombre', nombre, 'avisos', coalesce(avisos, '{}'::jsonb))), '[]'::jsonb)
+      into v_res from public.usuarios
+     where coalesce(activo, true)
+       and (p_datos->'usuarios' is null or jsonb_typeof(p_datos->'usuarios') <> 'array' or chat_id in (select jsonb_array_elements_text(p_datos->'usuarios')));
+    return v_res;
+
+  elsif p_accion = 'enviado' then
+    update public.push_subs set ultimo = now(), fallos = 0 where endpoint = p_datos->>'endpoint';
+    return 'true'::jsonb;
+
+  elsif p_accion = 'fallo' then
+    update public.push_subs set fallos = fallos + 1,
+      activo = case when (p_datos->>'gone')::boolean or fallos >= 9 then false else activo end
+     where endpoint = p_datos->>'endpoint';
+    return 'true'::jsonb;
+
+  elsif p_accion = 'resumen_quienes' then
+    -- a quién le toca su resumen a esta hora (hora del centro de México) y este día (0 = domingo)
+    select coalesce(jsonb_agg(jsonb_build_object('usuario', chat_id, 'nombre', nombre, 'avisos', avisos)), '[]'::jsonb) into v_res
+      from public.usuarios
+     where coalesce(activo, true)
+       and coalesce((avisos->'resumen'->>'activo')::boolean, false)
+       and (avisos->'resumen'->>'hora')::int = (p_datos->>'hora')::int
+       and (avisos->'resumen'->'dias' is null or jsonb_typeof(avisos->'resumen'->'dias') <> 'array'
+            or jsonb_array_length(avisos->'resumen'->'dias') = 0
+            or (avisos->'resumen'->'dias') @> to_jsonb((p_datos->>'dia')::int));
+    return v_res;
+
+  elsif p_accion = 'resumen' then
+    with a as (
+      select cartera, resultado, monto, cuota, creada,
+             (cerrada at time zone 'America/Mexico_City')::date dia,
+             case resultado when 'gana' then monto*(cuota-1) when 'pierde' then -monto else 0 end g
+        from public.apuestas where usuario = v_u)
+    select jsonb_build_object(
+      'nombre', (select nombre from public.usuarios where chat_id = v_u),
+      'banca_bot', (select banca_inicial + public.neto_mov(chat_id) from public.usuarios where chat_id = v_u)
+                   + coalesce((select sum(g) from a where cartera = 'bot'), 0),
+      'en_juego', coalesce((select sum(monto) from a where resultado = 'pendiente'), 0),
+      'pendientes', (select count(*) from a where resultado = 'pendiente'),
+      'hoy', (select jsonb_build_object('n', count(*), 'g', coalesce(sum(g), 0), 'gan', count(*) filter (where resultado = 'gana'), 'per', count(*) filter (where resultado = 'pierde'))
+                from a where resultado <> 'pendiente' and dia = v_hoy),
+      'ayer', (select jsonb_build_object('n', count(*), 'g', coalesce(sum(g), 0)) from a where resultado <> 'pendiente' and dia = v_hoy - 1),
+      'semana', (select jsonb_build_object('n', count(*), 'g', coalesce(sum(g), 0), 'gan', count(*) filter (where resultado = 'gana'), 'per', count(*) filter (where resultado = 'pierde'))
+                from a where resultado <> 'pendiente' and dia > v_hoy - 7),
+      'mes', (select jsonb_build_object('n', count(*), 'g', coalesce(sum(g), 0)) from a where resultado <> 'pendiente' and date_trunc('month', dia) = date_trunc('month', v_hoy)),
+      'senales_hoy', (select count(distinct evento) from public.senales where (creada at time zone 'America/Mexico_City')::date = v_hoy),
+      'progol', (select jsonb_agg(jsonb_build_object('juego', juego, 'concurso', concurso, 'cierre', datos->>'cierre'))
+                   from public.progol where resultados is null and coalesce((datos->>'cierre')::timestamptz, now()) > now())
+    ) into v_res;
+    return v_res;
+
+  elsif p_accion = 'bandeja_guardar' then
+    with ins as (
+      insert into public.avisos_bandeja (usuario, tipo, titulo, cuerpo, url, img)
+      select f->>'usuario', f->>'tipo', left(f->>'titulo', 120), left(f->>'cuerpo', 600), left(f->>'url', 200),
+             case when jsonb_typeof(f->'img') = 'object' then f->'img' end
+        from jsonb_array_elements(coalesce(p_datos->'filas', '[]'::jsonb)) f
+       where coalesce(f->>'usuario', '') <> '' and coalesce(f->>'titulo', '') <> ''
+      returning id, usuario)
+    select coalesce(jsonb_object_agg(usuario, id), '{}'::jsonb) into v_res from ins;
+    return v_res;
+
+  elsif p_accion = 'bandeja' then
+    select jsonb_build_object(
+      'no_leidas', (select count(*) from public.avisos_bandeja where usuario = v_u and leido is null and creado > now() - interval '30 days'),
+      'lista', coalesce((select jsonb_agg(to_jsonb(b) order by b.creado desc) from (
+          select id, tipo, titulo, cuerpo, url, img, creado, leido from public.avisos_bandeja
+           where usuario = v_u order by creado desc limit 80) b), '[]'::jsonb)) into v_res;
+    return v_res;
+
+  elsif p_accion = 'bandeja_n' then
+    return to_jsonb((select count(*) from public.avisos_bandeja where usuario = v_u and leido is null and creado > now() - interval '30 days'));
+
+  elsif p_accion = 'bandeja_leer' then
+    update public.avisos_bandeja set leido = now()
+     where usuario = v_u and leido is null and (p_datos->>'id' is null or id = (p_datos->>'id')::bigint);
+    return 'true'::jsonb;
+
+  elsif p_accion = 'marca_get' then
+    return (select valor from public.avisos_marcas where clave = p_datos->>'clave');
+
+  elsif p_accion = 'marca_set' then
+    insert into public.avisos_marcas (clave, valor) values (p_datos->>'clave', p_datos->'valor')
+    on conflict (clave) do update set valor = excluded.valor, actualizado = now();
+    return 'true'::jsonb;
+  end if;
+  raise exception 'acción desconocida: %', p_accion;
+end; $function$
 ;
 
 CREATE OR REPLACE FUNCTION public.opinion(p_clave text, p_accion text, p_datos jsonb DEFAULT '{}'::jsonb)
@@ -1708,6 +2011,85 @@ begin
   end if;
   raise exception 'acción desconocida';
 end $function$
+;
+
+CREATE OR REPLACE FUNCTION public.perfiles(p_clave text, p_accion text, p_datos jsonb DEFAULT '{}'::jsonb)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+  v_u text := p_datos->>'usuario';
+  v_obj text;
+  v_p jsonb;
+  v_res jsonb;
+begin
+  if not exists(select 1 from privado.secretos where nombre = 'bot' and valor = p_clave) then raise exception 'no autorizado'; end if;
+  if v_u is null or not exists(select 1 from public.usuarios where chat_id = v_u and activo) then raise exception 'usuario sin acceso'; end if;
+
+  if p_accion = 'avatares' then
+    -- caritas de todos los usuarios activos (para historias y comunidad)
+    select coalesce(jsonb_object_agg(public.uid_publico(u.chat_id), jsonb_build_object(
+             'nombre', coalesce(nullif(u.nombre, ''), 'Alguien'), 'emoji', u.perfil->>'emoji', 'color', u.perfil->>'color',
+             'foto', u.perfil->>'foto', 'yo', u.chat_id = v_u)), '{}'::jsonb)
+      into v_res from public.usuarios u where u.activo;
+    return v_res;
+
+  elsif p_accion = 'ver' then
+    select chat_id into v_obj from public.usuarios where activo and public.uid_publico(chat_id) = p_datos->>'uid';
+    if v_obj is null then return 'null'::jsonb; end if;
+    with c as (select a.*, coalesce(a.cuota_original, a.cuota) cq,
+                 case when a.resultado = 'gana' then a.monto * (a.cuota - 1) when a.resultado = 'pierde' then -a.monto else 0 end g
+               from public.apuestas a where a.usuario = v_obj and a.resultado in ('gana','pierde','nula')),
+         r as (select resultado, row_number() over (order by coalesce(cerrada, creada) desc) n from c where resultado <> 'nula'),
+         racha as (select count(*) k from r where n < coalesce((select min(n) from r where resultado = 'pierde'), 1e9))
+    select jsonb_build_object(
+      'uid', p_datos->>'uid', 'mio', v_obj = v_u,
+      'nombre', coalesce(nullif(u.nombre, ''), 'Alguien'), 'desde', u.creado, 'perfil', u.perfil - 'foto', 'foto', u.perfil->>'foto',
+      'equipo', u.equipo_fav,
+      'mascota', (select jsonb_build_object('especie', m.especie, 'nombre', m.nombre) from public.mascota m where m.usuario = v_obj),
+      'logros', coalesce((select jsonb_agg(l.logro order by l.creada) from public.logros l where l.usuario = v_obj), '[]'::jsonb),
+      'stats', (select jsonb_build_object(
+          'cerradas', count(*) filter (where resultado <> 'nula'),
+          'ganadas', count(*) filter (where resultado = 'gana'),
+          'perdidas', count(*) filter (where resultado = 'pierde'),
+          'roi', case when sum(monto) filter (where resultado <> 'nula') > 0 then round(sum(g) / sum(monto) filter (where resultado <> 'nula') * 100, 1) end,
+          'neto', case when v_obj = v_u or coalesce((u.perfil->>'mostrar_dinero')::boolean, false) then round(sum(g), 2) end,
+          'racha', (select k from racha),
+          'disciplina', case when count(*) filter (where prob is not null and resultado <> 'nula') >= 3 then
+              round(100.0 * count(*) filter (where prob is not null and resultado <> 'nula' and cq * prob >= 1.03) / count(*) filter (where prob is not null and resultado <> 'nula')) end,
+          'mejor', (select jsonb_build_object('seleccion', x.seleccion, 'cuota', x.cq, 'partido', x.partido) from c x where x.resultado = 'gana' order by x.cq desc limit 1),
+          'clv', (select round(avg(clv) * 100, 1) from public.apuestas where usuario = v_obj and clv is not null)
+        ) from c),
+      'muro', coalesce((select jsonb_agg(jsonb_build_object('id', p.id, 'texto', p.texto, 'creada', p.creada, 'link', p.link,
+             'reacciones', (select count(*) from public.reacciones r where r.publicacion_id = p.id and r.activa),
+             'apuesta', (select jsonb_build_object('seleccion', a.seleccion, 'cuota', coalesce(a.cuota_original, a.cuota), 'resultado', a.resultado, 'partido', a.partido, 'casa', a.casa)
+                         from public.apuestas a where a.id = p.apuesta_id)) order by p.creada desc)
+           from (select * from public.publicaciones where usuario = v_obj and activa and muro order by creada desc limit 90) p), '[]'::jsonb),
+      'historias', (select count(*) from public.publicaciones where usuario = v_obj and activa and historia and expira > now())
+    ) into v_res from public.usuarios u where u.chat_id = v_obj;
+    return v_res;
+
+  elsif p_accion = 'editar' then
+    v_p := coalesce(p_datos->'perfil', '{}'::jsonb);
+    if (v_p->>'foto') is not null and ((v_p->>'foto') !~ '^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$' or length(v_p->>'foto') > 90000) then
+      return jsonb_build_object('error', 'La foto no es válida o es muy pesada.');
+    end if;
+    if (v_p->>'portada_foto') is not null and ((v_p->>'portada_foto') !~ '^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$' or length(v_p->>'portada_foto') > 260000) then
+      return jsonb_build_object('error', 'La foto de portada no es válida o es muy pesada.');
+    end if;
+    if (v_p->>'color') is not null and (v_p->>'color') !~ '^#[0-9a-fA-F]{6}$' then return jsonb_build_object('error', 'Color inválido.'); end if;
+    update public.usuarios set perfil = jsonb_strip_nulls(jsonb_build_object(
+        'bio', left(trim(coalesce(v_p->>'bio', '')), 140),
+        'emoji', left(v_p->>'emoji', 8), 'color', v_p->>'color', 'foto', v_p->>'foto',
+        'portada', left(v_p->>'portada', 20), 'portada_foto', v_p->>'portada_foto', 'frase', left(trim(coalesce(v_p->>'frase', '')), 40),
+        'mostrar_dinero', coalesce((v_p->>'mostrar_dinero')::boolean, false)))
+     where chat_id = v_u and activo;
+    return 'true'::jsonb;
+  end if;
+  raise exception 'acción desconocida: %', p_accion;
+end; $function$
 ;
 
 CREATE OR REPLACE FUNCTION public.resultados(p_clave text, p_accion text, p_datos jsonb DEFAULT '{}'::jsonb)
@@ -1936,6 +2318,14 @@ begin
 end $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.uid_publico(p_chat text)
+ RETURNS text
+ LANGUAGE sql
+ IMMUTABLE
+ SET search_path TO ''
+AS $function$ select left(md5('perfil:' || p_chat), 12) $function$
+;
+
 CREATE OR REPLACE FUNCTION public.web(p_clave text, p_accion text, p_datos jsonb DEFAULT '{}'::jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -2036,7 +2426,10 @@ select cron.schedule('alertas-tarde', '0 0 * * *', 'select privado.disparar(''al
 select cron.schedule('guru-excel', '45 13 * * *', 'select privado.disparar(''guru_excel.yml'', ''{"prueba":"false"}'')');
 select cron.schedule('guru-manana', '25 13 * * *', 'select privado.disparar(''pronosticos.yml'', ''{"prueba":"false"}'')');
 select cron.schedule('guru-tarde', '25 0 * * *', 'select privado.disparar(''pronosticos.yml'', ''{"prueba":"false"}'')');
+select cron.schedule('melate-registro', '7 * * * *', 'select net.http_get(''https://bot-apuestas-telegram.vercel.app/api/melate?op=registro&juego=todos'', timeout_milliseconds => 30000)');
+select cron.schedule('progol', '23 1,7,13,19 * * *', 'select privado.disparar(''progol.yml'', ''{"prueba":"false"}'')');
 select cron.schedule('respaldo-mes', '7 15 1 * *', 'select privado.disparar(''respaldo.yml'', ''{"prueba":"false"}'')');
 select cron.schedule('resultados-15min', '2,17,32,47 0-7,12-23 * * *', 'select privado.disparar(''resultados.yml'', ''{"prueba":"false"}'')');
 select cron.schedule('resultados-madrugada', '17 8-11 * * *', 'select privado.disparar(''resultados.yml'', ''{"prueba":"false"}'')');
 select cron.schedule('resumen-lunes', '0 3 * * 1', 'select privado.disparar(''resumen.yml'', ''{"prueba":"false"}'')');
+select cron.schedule('resumen-push', '1 * * * *', 'select net.http_post(url := ''https://bot-apuestas-telegram.vercel.app/api/telegram?resumen_push=1'', headers := jsonb_build_object(''content-type'', ''application/json'', ''x-bot-clave'', (select valor from privado.secretos where nombre = ''bot'')), body := ''{}''::jsonb, timeout_milliseconds := 30000)');
