@@ -65,6 +65,8 @@ NOMBRES = {
     "ny r bulls": "new york red bulls", "at mineiro": "atletico-mg", "atl mineiro": "atletico-mg", "novorizont": "novorizontino",
     "cerezo osak": "cerezo osaka", "yokohama m": "yokohama f. marinos", "queretaro": "queretaro", "s laguna": "santos",
     "c azul": "cruz azul", "atl madrid": "atletico madrid", "man united": "manchester united", "napoles": "napoli", "los angeles": "los angeles fc",
+    "sp lisboa": "sporting cp", "sporting lisboa": "sporting cp", "sp braga": "braga", "man city": "manchester city", "b dortmund": "borussia dortmund",
+    "brujas": "club brugge", "slavia prag": "slavia prague", "estrella roja": "crvena zvezda", "bayern munich": "bayern munich", "psg": "paris saint-germain",
     "la galaxy": "la galaxy", "racing sant": "racing santander", "ath bilbao": "athletic club", "bolonia": "bologna", "vasco da ga": "vasco da gama",
 }
 
@@ -204,6 +206,7 @@ def leer_otra(juego):
     cab = re.sub(r"\s+", " ", re.sub(r"[^\w\s:]", " ", _ocr(im, caja(cfg["cab"]), umbral=110))).strip()
     con = _titulo(im, *cfg["tit"])
     partidos = [{"n": i + 1, "local": lo[i].title(), "visita": vi[i].title()} for i in range(min(len(lo), len(vi), cfg["n"]))]
+    _liguilla(partidos)
     out = {"concurso": con, "texto": cab, "partidos": partidos}
     if cfg.get("inicial"):      # Protouch Inicial: "LOCAL CUERVOS" / "VISITA CARGADORES"
         t = _ocr(im, caja(cfg["inicial"]), psm=6, umbral=120).upper()
@@ -492,6 +495,43 @@ def probabilidades_americano(lista, evs, base):
     return lista
 
 
+_tabla_mx = None
+def _liguilla(partidos):
+    """En Liguilla la Lotería imprime "Eq8 Liga MX vs Eq1 Liga MX" porque aún no se sabe quién juega:
+    el número es el lugar en la tabla. Si ESPN ya tiene la tabla, ponemos el equipo; si no, un nombre entendible."""
+    global _tabla_mx
+    pat = re.compile(r"^\s*e\s*q\s*(\d{1,2})\b.*liga\s*mx", re.I)
+    if not any(pat.match(p[k]) for p in partidos for k in ("local", "visita")):
+        return
+    if _tabla_mx is None:
+        _tabla_mx = {}
+        r = get("https://site.api.espn.com/apis/v2/sports/soccer/mex.1/standings")
+        try:
+            def recorrer(n):
+                for e in (n.get("standings") or {}).get("entries") or []:
+                    v = {x.get("name"): x.get("value") for x in e.get("stats") or []}
+                    rk, pj = int(float(v.get("rank") or 0)), float(v.get("gamesPlayed") or 0)
+                    if rk and rk not in _tabla_mx:
+                        _tabla_mx[rk] = (e["team"]["displayName"], pj)
+                for c in n.get("children") or []:
+                    recorrer(c)
+            if r:
+                recorrer(r.json())
+        except Exception as ex:
+            print("tabla Liga MX:", ex)
+        # solo sirve cuando ya se jugó toda la fase regular (17 jornadas): antes los lugares todavía se mueven
+        _tabla_mx = {k: n for k, (n, pj) in _tabla_mx.items()} if _tabla_mx and min(pj for _, pj in _tabla_mx.values()) >= 17 else {}
+        print("Liguilla: tabla final" if _tabla_mx else "Liguilla: la fase regular no ha terminado, se muestran lugares")
+    for p in partidos:
+        for k in ("local", "visita"):
+            m = pat.match(p[k])
+            if m:
+                lugar = int(m.group(1))
+                p[k + "_lugar"] = lugar
+                # del 1 al 6 el lugar en la tabla es el lugar en Liguilla; 7 y 8 pueden salir del repechaje
+                p[k] = (_tabla_mx.get(lugar) if lugar <= 6 else None) or f"{lugar}° Liga MX"
+
+
 def _limpio(nombre):
     n = espn.normalizar(nombre).replace(".", " ")
     n = re.sub(r"\s+", " ", n).strip()
@@ -652,7 +692,8 @@ def main():
                 probabilidades(q["partidos"], evs, b)
                 for p in q["partidos"]:
                     if p["fuente"].startswith("Promedio"):
-                        p["fuente"] = "Promedio histórico de Media Semana"
+                        p["fuente"] = ("Liguilla aún sin rivales definidos · promedio histórico" if ("local_lugar" in p or "visita_lugar" in p)
+                                       else "Promedio histórico de Media Semana")
             else:
                 evs = eventos_americano(d1, d2)
                 probabilidades_americano(q["partidos"], evs, b)
